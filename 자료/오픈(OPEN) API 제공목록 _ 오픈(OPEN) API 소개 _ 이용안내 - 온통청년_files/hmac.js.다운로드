@@ -1,0 +1,8 @@
+window.generateHmacSignature = function({ data, keys, secret }) {
+    const SECRET_KEY = secret || window.SECRET_KEY;
+    if (!SECRET_KEY) {
+        throw new Error("SECRET_KEY가 설정되어 있지 않습니다.");
+    }
+    const message = keys.map(k => data[k] ?? '').join(':');
+    return CryptoJS.HmacSHA256(message, SECRET_KEY).toString(CryptoJS.enc.Hex);
+}

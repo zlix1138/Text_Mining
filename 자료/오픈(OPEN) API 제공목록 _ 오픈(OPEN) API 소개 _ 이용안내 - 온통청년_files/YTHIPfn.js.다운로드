@@ -1,0 +1,320 @@
+(function($) {
+    var $fn = $.fn;
+    /**
+     * on (bind(), delegate(), live(), one() 등을 on 함수로 대체)
+     * 화면에서 YTHIPon 이벤트시 중복 이벤트가 적용된다면 YTHIPon 함수에 return false;를 적용하여 중복 클릭 제거해줘야 함
+     * 또는 off(이벤트) 후 바인딩 적용해야함
+     * ex :  $("#AtagSample").off("click").YTHIPon("click",function(){ ....로직    return false;});
+     */
+    $fn.YTHIPon = function(events, selector, handler){
+        //$(this).off(events).on(events, selector, handler);
+        $(this).on(events, selector, handler);
+    };
+
+    /**
+     * 버튼의 연속된 다중 클릭을 방지 한다.
+     * 첫 클릭은 return true; 그외는 return false;
+     * 기본 0.8초 후에 자동으로 클릭 방지기능은 풀린다.
+     * 인자값으로 밀리세컨드 단위의 시간을 넣으면 그 시간 동안 이중 클릭을 막는다.(1초 = 1000)
+     *
+     * ex : $("#AtagSample").YTHIPon('click', null, function(){
+     * 		return $(this).btnCheckDupClick(1000);
+     * });
+     * ex : $("#AtagSample").YTHIPon('click', null, function(){
+     * 		if(!$(this).btnCheckDupClick()) return false;
+     * });
+     *
+     * a tag의 class에 btnCheckDupClick를 선언하면 초기화 함수에서 다중 클릭을 방지 한다.
+     * ex : <a href="/CECMSM0000.do" class="btnCheckDupClick">샘플</a>
+     *
+     */
+    $fn.btnCheckDupClick = function(defendTime){
+        var $this = $(this);
+        if($this.YTHIPidDisabled()){
+            YTHIPcomm.log(($this.attr("id") || $this.attr("name") || $this.attr("class")) + "  =====>>>>> CLICK DEFEND.");
+            return false;
+        }else{
+            $this.YTHIPdisabled(true);
+            setTimeout(function(){
+                $this.YTHIPdisabled(false);
+                YTHIPcomm.log(($this.attr("id") || $this.attr("name") || $this.attr("class")) + "  =====>>>>> CLICK DEFEND REMOVE");
+            }, (defendTime || 800));
+            return true;
+        }
+    };
+
+    /**
+     * $selector.YTHIPidDisabled() 해당 객체 disabled 여부
+     */
+    $fn.YTHIPidDisabled = function(){
+        var $this = $(this);
+        return ($this.hasClass('disabled') || $this.hasClass('btn_disabled') || $this.attr('disabled'));
+    };
+
+    /**
+     * $selector.YTHIPdisabled(), $selector.YTHIPdisabled(true) <= 항목 disable
+     * $selector.YTHIPdisabled(false) <= 항목 enable
+     */
+    $fn.YTHIPdisabled = function(flag){
+        if(flag || flag == undefined || flag == null){
+            $(this).addClass('disable btn_disabled').attr('disabled', true);
+        } else {
+            $(this).removeClass('disable btn_disabled').removeAttr('disabled');
+        };
+    };
+
+    /**
+     * form의 input를 json object로 만듬 {"aa":"bb"}
+     */
+    $fn.toJson = function(){
+        var $this = $(this);
+        var json = {};
+        if($this.prop("tagName") == "FORM"){
+            $.each($this.serializeArray(), function(idx, obj){
+                json[obj["name"]] = obj["value"];
+            });
+        }else{
+            var _childs = $("input, select, radio, checkbox, textarea", $this);
+            _childs.each(function(_i,_obj){
+                var _o = $(_obj);
+                var _key = _o.attr('name')
+                if(!_o.is(':disabled') && _key){
+                    json[_key] = _o.val() || "";
+                }
+            });
+        }
+        return json;
+    };
+
+    $fn.toGetParams = function(){
+        var _datas = [];
+        var _childs = $(this).find("input, select, radio, checkbox, textarea");
+        _childs.each(function(_i,_obj){
+            var _o = $(_obj);
+            var _key = _o.attr('name')
+            if(!_o.is(':disabled') && _key){
+                _datas[_datas.length] = encodeURIComponent(_key) + "=" + encodeURIComponent(_o.val() || "");
+            }
+        });
+        return _datas.join("&");
+    };
+
+    /**
+     * ex) $('#_inputFilter7').YTHIPinsertComma();
+     * INPUT 에 숫자 키패드만 입력되고 3자리마다 ',' 찍어줌
+     */
+    /*
+    $fn.YTHIPinsertComma = function(obj){
+        $(this).on('keyup',function(){
+            $(this).val(YTHIPutil.format.insertComma(YTHIPutil.validate.getOnlyNumber($(this).val())));
+            if(obj){
+                YTHIPutil.format.amountHangle($(this).val(),$('#'+obj));
+            }
+        })
+        $(this).on('focus',function(){
+            if(obj){
+                YTHIPutil.format.amountHangle($(this).val(),$('#'+obj));
+            }
+        })
+    };
+     */
+
+    /**
+     * ex) $('#_inputFilter7').YTHIPinsertDate();
+     * INPUT 에 Date 포맷 형신으로
+     */
+    $fn.YTHIPinsertDate = function(){
+        $(this).on('keyup',function(){
+            $(this).val(YTHIPutil.format.insertDate(YTHIPutil.validate.getOnlyNumber($(this).val())));
+        })
+    };
+
+    /**
+     * 숫자 입력 체크
+     * 사용방법
+     * $obj.inputNumberCheck(false);
+     */
+    /*
+    $fn.inputNumberCheck = function(isDate){
+        return YTHIPutil.validate.inputNumberCheck($(this), isDate);
+    };
+     */
+
+    /**
+     * 금액 콤마 입력
+     * 사용 방법
+     * $obj.insertComma(false);
+     */
+    /*
+    $fn.insertComma = function(isText){
+        if (isText){
+            $(this).text(YTHIPutil.format.insertComma(YTHIPutil.validate.getOnlyNumber($(this).text())));
+        } else {
+            $(this).val(YTHIPutil.format.insertComma(YTHIPutil.validate.getOnlyNumber($(this).val())));
+        }
+    };
+     */
+
+    /**
+     * 입력데이터중 숫자만 리턴
+     * 사용 방법
+     * $obj.getOnlyNumber(false);
+     */
+    /*
+    $fn.getOnlyNumber = function(isText){
+        var retValue = '';
+        if (isText){
+            retValue = YTHIPutil.validate.getOnlyNumber($(this).text());
+        } else {
+            retValue = YTHIPutil.validate.getOnlyNumber($(this).val());
+        }
+        return retValue;
+    };
+     */
+;
+    /**
+     * 문자열 체크 후 #이나 .으로 시작하지 않으면 #을 붙여서 돌려준다
+     * 사용 방법
+     * $("#userid").getJqueryId();
+     */
+    $fn.getId = function(){
+        var $this = $(this);
+        if($this.attr("id")){
+            return "#"+$this.attr("id");
+        }else if($this.attr("name")){
+            return $this.prop("tagName").toLowerCase()+"[name='"+$this.attr("name")+"']";
+        }else if($this.attr("class")){
+            return "."+$.trim($this.attr("class").replace("error","")).replace(/[\s]/g, ".");
+        }else{
+            return null;
+        }
+    };
+    /**
+     * 타이틀을 이용해서 에러 메세지를 추출합니다.
+     * 사용 방법
+     * $("#userid").getTitleMsg();
+     */
+    $fn.getTitleMsg = function(_msg,_josa, _afMsg, _beMsg){
+        var msg = $.trim(_msg || ($(this).data("msg") || $(this).attr("title")) || "");
+        if(msg.length > 0){
+            if(/[.?!]$/.test(msg)){
+                return msg;
+            }else{
+                msg = YTHIPutil.convertJoSa(msg, _josa)+" ";
+            }
+        }
+        return (_beMsg || "") + msg + (_afMsg || "");
+    };
+
+    $fn.getValue = function(){
+        var _tatget = $(this);
+        var $type = _tatget.attr("type")||"";
+        if($type == "radio"){
+            var name = _tatget.attr('name') || "";
+            if(name) return $("input:radio[name='"+name+"']:checked").val();
+        } else if($type == "checkbox"){
+            var name = _tatget.attr('name') || "";
+            if(name) return $('input:checkbox[name='+name+']:checked').val();
+        }else{
+            return _tatget.val();
+        }
+    };
+
+    /**
+     * 에러처리 메세지를 제거한다.
+     * 사용 방법
+     * $("#userid").removeErrorMsg();
+     */
+    $fn.removeErrorMsg = function(_blurError){
+        var $this = $(this);
+        if($this.hasClass('error')){
+            if($this.attr("data-error-type") == "alert"){
+                $this.removeClass('error');
+            }else{
+                if(_blurError){
+                    $("."+$this.attr("id")).remove();
+                }else{
+                    $("."+$this.attr("id")).each(function(_cnt,_obj){
+                        if(!$(_obj).hasClass('blurError')){
+                            $(_obj).remove();
+                        }
+                    });
+                }
+                if($("."+$this.attr("id")).length == 0){
+                    $this.removeClass('error');
+                }
+            }
+        }
+    };
+
+    /**
+     * String.prototype.startsWith
+     * ie 지원하지 않아 재선언
+     */
+    if(!String.prototype.startsWith){
+        String.prototype.startsWith = function(search, pos){
+            return this.substr(!pos || pos < 0 ? 0 : +pos, search.length) === search;
+        }
+    }
+
+    $.fn.hasScrollBarY = function () {
+        return (this.prop("scrollHeight") == 0 && this.prop("clientHeight") == 0) || (this.prop("scrollHeight") > this.prop("clientHeight"));
+    };
+
+    $fn.filterVals = {"KOR" : "ㄱ-ㅎㅏ-ㅣ가-힣", "NUM" : "0-9", "ENG"	: "A-Za-z", "ENL" : "a-z", "ENU" : "A-Z", "SPC" : "", "DATE" : "0-9.-"};
+    $fn.filterMsgs = {"KOR" : "한글", "NUM" : "숫자", "ENG"	: "영문", "ENL" : "영문(소문자)", "ENU" : "영문(대문자)", "SPC" : "", "DATE" : "날짜형식"};
+    // 화면 시작 - 각 업무화면 전체 공통 처리를 위해서 반드시 사용해야 함.
+    $fn.isFirstInit = 1;
+    $fn.YTHIPinit = function(initFn){
+        /** 페이지 초기화때만 실행됨 */
+        if($fn.isFirstInit == 1){
+            $fn.isFirstInit++;
+        }
+
+        //E: 선처리
+        $(document).ready(function(){
+            if($fn.isFirstInit == 2){
+                //YTHIPcomm.indicator(true);
+            }
+            //YTHIPutil.log('>>>>> =============== PAGE INIT  ===============');
+            $(window).off("keydown").on("keydown",function(e){
+                if($("#loading-box").length > 0){
+                    return false;
+                }else{
+                    return true;
+                }
+            });
+
+            // 권한체크
+            // YTHIPutil.log(">>>>> =============== MENU TREE LOAD ===============");
+            // var param = {};
+            // param.sysCd = "0002002";
+            // param.useYn = "Y";
+            // YTHIPcomm.promise("GET", YTHIPcomm.API_COM_URL + "/sur/com/menu/menu", param)
+            //     .catch(() => {
+            //
+            //     })
+            //     .then(data => {
+                    //console.clear();
+                    setTimeout(function(){
+
+                        if(initFn){
+                            try {
+                                initFn();
+
+                                let $page = $("main#content");
+                                if($page){
+                                    $("a[href*='#;'],a[href*='#none'],a[href='']", $page).attr("href", "javascript:;");
+                                    $("a.btnCheckDupClick", $page).on("click", function(){return $(this).btnCheckDupClick();});
+                                }
+
+                            } catch (e) {
+                                console && console.log(e);
+                                YTHIPcomm.alert({title:"오류", msg:""+e}, null, "YTHIPinit 초기화 에러");
+                            }
+                        }
+                    }, 100);
+                // });
+        });
+    };
+})(jQuery);

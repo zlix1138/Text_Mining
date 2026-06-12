@@ -1,0 +1,1247 @@
+@charset "utf-8";
+
+/*---------------------------------------------------------------
+border Style Sheet / Version : 1.0 / myeong-hee park
+-----------------------------------------------------------------*/
+.btn-guide.active .svg-icon::after {
+    transform: rotateX(180deg);
+}
+
+.warning-txt + .form-entry {
+    margin-top: var(--spacer4);
+}
+
+.whitebox + .lstyle-dot {
+    margin-top: var(--spacer4);
+    font-size: 1.6rem;
+}
+
+/* graybox 안에 입력하는 양식 */
+.form-entry .txt-bold,
+.form-entry .subject {
+    display: block;
+    margin-bottom: var(--spacer3);
+    line-height: 1;
+    font-weight: 700;
+}
+
+.form-entry > li:not(:first-child) {
+    margin-top: var(--spacer6);
+}
+
+.form-entry .write-info {
+    margin-top: var(--spacer1);
+}
+
+.form-entry [class*="btn-type"].small {
+    height: 3.6rem;
+}
+
+.form-entry .check-list input[type="checkbox"] + label::before,
+.form-entry .check-list input[type="checkbox"] + label::after {
+    background-color: transparent;
+}
+
+.form-entry .check-list input[type="checkbox"]:checked + label::before {
+    background-color: var(--primary);
+}
+
+.form-entry .field-counseling .checks {
+    display: flex;
+    flex-flow: row wrap;
+    margin: -.4em;
+}
+
+.form-entry .field-counseling li {
+    width: calc(25% - var(--spacer2));
+    margin: var(--spacer1);
+}
+
+.whitebox.chk-area {
+    align-items: center;
+    padding: var(--spacer7) var(--spacer10);
+    flex-flow: row wrap;
+}
+
+.whitebox.chk-area .checks {
+    padding: var(--spacer1) 0;
+}
+
+.whitebox.chk-area label + select {
+    margin-left: var(--spacer3);
+}
+
+.openapi-select .subject {
+    display: inline-block;
+    margin-right: var(--spacer1);
+}
+
+/* 청년정책 > 청년정책 통합검색 - 신청자격진단 안내 */
+.eligibility-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 1.5rem;
+}
+
+.eligibility-info [class*="btn-type"] {
+    margin-left: var(--spacer7);
+}
+
+.eligibility-info .float-wrap {
+    text-align: right;
+}
+
+/* 청년정책통합검색 */
+.new-policy {
+    margin-bottom: var(--spacer16);
+    overflow: hidden;
+}
+
+.new-policy .board-list {
+    flex-flow: nowrap;
+    margin: 0;
+}
+
+.new-policy .board-list li {
+    width: 28.6rem !important;
+    height: 100%;
+    margin: 0 2rem 0 0 !important;
+}
+
+.new-policy .slide-controls {
+    position: relative;
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: space-between;
+    margin-top: var(--spacer6);
+    line-height: 1;
+}
+
+.new-policy .swiper-pagination {
+    width: auto;
+    margin-top: 0;
+}
+
+.new-policy .swiper-controls-auto {
+    display: flex;
+    flex-flow: row wrap;
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+}
+
+.new-policy .swiper-controls-auto button {
+    position: relative;
+    top: inherit;
+    left: inherit;
+    right: inherit;
+    width: 4rem;
+    height: 4rem;
+    margin-left: 0.4rem;
+    border-radius: 100%;
+    border: 1px solid var(--gray20);
+}
+
+.new-policy .swiper-controls-auto button:hover {
+    background-color: #EDF1F5;
+}
+
+.new-policy .swiper-button-disabled {
+    display: block;
+}
+
+.new-policy .swiper-button-prev::after {
+    background-image: url(../../images/common/icon/ico_arrow_right_20.svg);
+    transform: rotate(-180deg);
+}
+
+.new-policy .swiper-button-next::after {
+    background-image: url(../../images/common/icon/ico_arrow_right_20.svg);
+}
+
+.new-policy .swiper-button-play,
+.new-policy .swiper-pagination-lock,
+.new-policy .swiper-pagination-lock + .swiper-controls-auto {
+    display: none;
+}
+
+/* 202510 */
+/* 청년정책 통합검색 - 검색 */
+.policy-secrch {
+    position: relative;
+    margin-bottom: 5.5rem;
+}
+
+.policy-secrch .search-in {
+    padding: 0 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    max-width: 81rem;
+    margin:0 auto;
+}
+
+.policy-secrch.active {
+    overflow: visible;
+}
+
+
+.policy-secrch .search-input {
+    margin-bottom: 0;
+    position: relative;
+    width: calc(100% - 27rem);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+}
+
+.policy-secrch .search-input .input-line {
+    width: 100%;
+    max-width: 41rem;
+    height: 5rem;
+    min-height: auto;
+    border: 1px solid #13457F;
+    border-radius: 4rem;
+    background-color: #fff;
+    position: relative;
+}
+
+.policy-secrch .search-input::-webkit-input-placeholder {
+    font-size: 1.8rem;
+}
+
+.policy-secrch .search-input .btn-delete {
+    right: 1.5rem;
+}
+.policy-secrch .search-input .btn{
+    display: flex;
+    align-items: center;
+    gap:0.5rem;
+}
+
+.policy-secrch .search-input .btn-policy {
+    width: 5rem;
+    height: 5rem;
+    border-radius: 50%;
+    border: 1px solid #8d9bb6;
+    background: #fff;
+    position: static;
+    transform: translateY(0);
+}
+
+.policy-secrch .btn-search .ico-search {
+    width: 2.3rem;
+    height: 2.3rem;
+}
+
+.policy-secrch .btn-search .ico-search::after {
+    background-image: url("../../images/common/icon/ico_sch_Dblue_23.png");
+}
+
+.policy-secrch .btn-initialize .ico-refresh {
+    width: 2.5rem;
+    height: 2.1rem;
+}
+
+.policy-secrch .btn-initialize .ico-refresh::after {
+    background-image: url("../../images/common/icon/ico_refresh_Dblue25.png");
+}
+
+.policy-secrch .personal-area {
+    position: relative;
+}
+
+.policy-secrch .btn-personal {
+    width: 100%;
+    height: 5rem;
+    max-width: 15.2rem;
+    border-radius: 4rem;
+    background-color: #ECF2FE;
+    color: #0A3E7B;
+}
+
+.policy-secrch .btn-personal .svg-icon {
+    width: 1.2rem;
+    height: 1.2rem;
+    vertical-align: baseline;
+}
+
+.policy-secrch .btn-personal .svg-icon::after {
+    background-image: url("../../images/common/icon/icon_arrow_bot_fill_Dblue.png");
+}
+
+.policy-secrch .btn-personal.active {
+    background-color: #0A3E7B;
+    color: #ECF2FE;
+}
+
+.policy-secrch .btn-personal.active .svg-icon::after {
+    transform: rotate(180deg);
+    filter: brightness(0) saturate(100%) invert(93%) sepia(32%) saturate(2985%) hue-rotate(179deg) brightness(106%) contrast(106%);
+}
+
+.policy-secrch .select-field {
+    /* 상세검색 */
+    display: none;
+    width: 100%;
+    margin-top: var(--spacer5);
+    padding: var(--spacer8) var(--spacer8) 0;
+    border: 1px solid #0A3E7B;
+    border-radius: 8px;
+    text-align: left;
+    overflow: hidden;
+    position: absolute;
+    left: 50%;
+    top: 100%;
+    transform: translateX(-50%);
+    background-color: #fff;
+    z-index: 9;
+}
+
+.policy-secrch .select-field.active {
+    display: block;
+}
+
+.policy-secrch .select-field > .btn-area {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 0.8rem;
+    margin: var(--spacer6) -3.2rem 0;
+    padding: var(--spacer5);
+    background-color: #ECF2FE;
+}
+
+.policy-secrch .select-field > .btn-area [class*="btn-type"] {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.4rem;
+    height: 3.6rem;
+    padding: var(--spacer1) var(--spacer5);
+    border-radius: 2.4rem;
+    line-height: 1.6;
+}
+
+.policy-secrch .select-field > .btn-area [class*="btn-type"] i {
+    width: 2rem;
+    height: 2rem;
+    vertical-align: middle;
+}
+
+.policy-secrch .select-field > .btn-area [class*="btn-type"] i::after {
+    min-width: 2rem;
+}
+
+.policy-secrch .select-field > .btn-area .btn-type01 i,
+.policy-secrch .select-field > .btn-area .btn-type04 i {
+    filter: brightness(0) invert(1);
+}
+
+.policy-secrch .check-outline label {
+    line-height: 1.4;
+    font-size: 1.5rem;
+}
+
+.policy-part .part-list {
+    /* 정책분야 선택 */
+    max-width: 81rem;
+    display: grid;
+    justify-content: space-between;
+    align-items: start;
+    justify-items: center;
+    column-gap: var(--spacer1);
+    row-gap: var(--spacer4);
+    margin: 0 auto 4rem;
+    grid-template-columns: repeat(6, 1fr);
+}
+
+.part-list > li {
+    display: flex;
+    flex-direction: column;
+    width: 9rem;
+    position: relative;
+}
+
+.part-list > li .imgs {
+    width: 100%;
+    height: 9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: var(--spacer3);
+    text-align: center;
+    font-size: 1.7rem;
+    border: 1px solid transparent;
+    background-color: #F2F4FA;
+    border-radius: 2rem;
+}
+
+.part-list > li input[type="checkbox"] {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    clip: rect(0, 0, 0, 0);
+    overflow: hidden;
+}
+
+.part-list > li label {
+    display: inline-block;
+    width: 100%;
+    font-size: 1.8rem;
+    font-weight: 500;
+    text-align: center;
+    cursor: pointer;
+}
+
+.part-list > li input[type="checkbox"]:focus ~ label {
+    outline: 2px dashed var(--secondary40);
+}
+
+.part-list > li input[type="checkbox"]:checked ~ label {
+    color: #4683f8;
+}
+
+.part-list > li:has(input[type="checkbox"]:checked) .imgs {
+    background-color: #fff;
+    box-shadow: 3px 5.196px 8px 0px rgba(0, 0, 0, 0.09);
+    border-color: #4683f8;
+}
+
+.part-list > li input[type="checkbox"]:checked ~ label .txt::before {
+    display: inline-flex;
+    width: 1.6rem;
+    height: 1.6rem;
+    background: url(../../images/common/icon/ico_check_fill.svg) no-repeat center;
+    filter: brightness(0) saturate(100%) invert(43%) sepia(56%) saturate(832%) hue-rotate(184deg) brightness(103%) contrast(95%);
+    margin: 0;
+    margin-right: 0.2rem;
+    content: "";
+}
+
+.policy-personal .row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacer3) var(--spacer4);
+}
+
+.policy-personal .row:not(:first-child) {
+    margin-top: var(--spacer6);
+    padding-top: var(--spacer6);
+    border-top: 1px dashed #D8D8D8;
+}
+
+.policy-personal .row.single {
+    display: flex;
+    gap: 0;
+}
+
+.policy-personal .col {
+    display: inline-flex;
+    align-items: center;
+    gap: 0;
+    justify-content: flex-start;
+}
+
+.policy-personal .col-gap {
+    gap: var(--spacer5);
+}
+
+.policy-personal .col-gap > span {
+    display: flex;
+    align-items: center;
+    gap: var(--spacer2);
+}
+
+.policy-personal .col-gap .tit {
+    width: auto;
+}
+
+.policy-personal .tit {
+    display: block;
+    width: 8rem;
+    font-weight: 700;
+}
+
+.policy-personal .txt {
+    display: flex;
+    gap: var(--spacer1);
+    align-items: center;
+    width: calc(100% - 8rem);
+}
+
+.policy-personal ._userStdg .col-sm-6 {
+    width: 65%;
+}
+
+.policy-personal .btn-localChoice {
+    min-width: auto;
+    padding: var(--spacer1) var(--spacer4);
+    line-height: 1.6;
+}
+
+.policy-personal input {
+    min-width: auto;
+}
+
+/* 20251120 */
+.region-filter {
+    margin-bottom: 2rem;
+    display: flex;
+    gap: 0.6rem;
+    align-items: stretch;
+    background-color: #F2F4FA;
+    padding: var(--spacer8) var(--spacer7);
+    border-radius: 2rem;
+}
+
+.region-filter .check-outline label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 1rem;
+    width: 100%;
+    text-align: center;
+    padding: var(--spacer1);
+    color: #6B6B6B;
+    cursor: pointer;
+}
+
+.region-filter .check-outline [type="radio"]:checked + label,
+.region-filter .check-outline [type="checkbox"]:checked + label {
+    color: #fff;
+    background-color: #1D56BC;
+    border-color: #1D56BC;
+}
+
+.region-filter .check-outline [type="radio"]:checked + label::before,
+.region-filter .check-outline [type="checkbox"]:checked + label::before {
+    background: url('../../images/common/icon/ico_check_fill.svg') no-repeat center;
+    margin: 0;
+    margin-right: 0.2rem;
+    filter: brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(261deg) brightness(106%) contrast(101%);
+}
+
+.region-filter ul:nth-child(1) {
+    width: 9rem;
+}
+
+.region-filter ul:nth-child(1) > li {
+    width: 100%;
+}
+
+.region-filter ul:nth-child(1) > li label {
+    height: 100%;
+}
+
+.region-filter ul:nth-child(2) {
+    width: calc(100% - 9.6rem);
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(75px, 1fr));
+    gap: 0.6rem;
+}
+
+/* //20251120 */
+
+.local-choice {
+    /* 상세검색- 지역선택 */
+    align-items: flex-start;
+    gap: var(--spacer4);
+    margin-bottom: var(--spacer8);
+}
+
+.local-choice .box {
+    width: calc(50% - .8rem);
+    padding: 1.8rem 1rem 1.8rem 2.8rem;
+    background-color: #F8F8F8;
+    border-radius: 1.2rem;
+    overflow: hidden;
+}
+
+.local-choice .area-list {
+    height: 29.6rem;
+    padding-right: 1.3rem;
+    overflow-y: scroll;
+}
+
+.local-choice .area-list li:not(:first-child) {
+    margin-top: var(--spacer4);
+}
+
+.local-choice .box:last-child .area-list > li {
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    margin-right: 0;
+    padding: 0.85rem 0;
+}
+
+.local-choice .checks input[type="checkbox"] + label,
+.local-choice .checks input[type="checkbox"] + label {
+    display: block;
+    width: 100%;
+    margin: 0 -2rem 0 0;
+    padding: 0 2.8rem 0 0;
+    line-height: 1.2;
+}
+
+.local-choice .checks input[type="checkbox"] {
+    margin-right: 0;
+}
+
+.local-choice .checks input[type="checkbox"] + label::before,
+.local-choice .checks input[type="checkbox"] + label::after {
+    top: 0;
+    left: auto;
+    right: 0;
+}
+
+.local-choice .area-list button {
+    display: block;
+    width: 100%;
+    padding: .9rem 0;
+    border-radius: 0.8rem;
+    text-align: center;
+    line-height: 1.141;
+}
+
+.local-choice .area-list button.active {
+    background-color: #E4E4E4;
+}
+
+.area-list::-webkit-scrollbar-thumb {
+    background-color: #D9D9D9 !important;
+}
+
+.choice-list {
+    align-content: flex-start;
+    gap: var(--spacer2);
+    height: 12rem;
+    overflow-y: auto;
+}
+
+.choice-list > span {
+    display: block;
+    padding: var(--spacer1) var(--spacer3);
+    border: 1px solid var(--gray40);
+    border-radius: 10rem;
+    line-height: 1.467;
+    font-size: 1.5rem;
+}
+
+.select-area .btn-area > [class*="btn-"] {
+    padding: var(--spacer2) var(--spacer5);
+    line-height: 1.47;
+}
+
+.select-area [class*="btn-"] .ico-refresh {
+    margin-top: -0.2rem;
+    margin-right: var(--spacer1);
+}
+
+/* 마이꾸러미 검색 */
+.package-search > .row {
+    justify-content: flex-start;
+}
+
+.package-search .col {
+    gap: 0;
+}
+
+.package-search .label {
+    width: 12.6rem;
+    margin-right: 0;
+}
+
+.package-search .label + .col-sm-12 {
+    width: calc(100% - 12.6rem);
+}
+
+.package-search .row:nth-child(2) {
+    justify-content: space-between;
+}
+
+.search-config {
+    /* 통합검색 - 검색정보 */
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacer10);
+    padding-bottom: var(--spacer10);
+    border-bottom: 1px solid var(--gray40);
+    line-height: 1;
+}
+
+.search-info {
+    font-size: 2.1rem;
+    font-weight: 700;
+}
+
+.search-info .keyword {
+    color: var(--primary60);
+}
+
+.search-config .sort-label {
+    margin-right: var(--spacer2);
+}
+
+.search-config .search-sort > li:not(:first-child) {
+    margin-left: var(--spacer4);
+}
+
+.search-config .search-sort li:not(:first-child):before {
+    height: 2rem;
+    margin-right: var(--spacer4);
+}
+
+/* 청년정책 통합검색 - 선택해 찾고싶은 정책을 조회해보세요. */
+.policy-Inquiry {
+    position: relative;
+    margin-bottom: var(--spacer16);
+    background-color: #F2F4FA;
+    padding: var(--spacer8) var(--spacer7);
+    border-radius: 1.2rem;
+}
+
+.policy-Inquiry .subject {
+    margin-bottom: var(--spacer5);
+    padding: var(--spacer3) 0 var(--spacer8);
+    border-bottom: dashed 1px var(--gray30);
+    line-height: 1.2;
+}
+
+.policy-Inquiry .btn-area {
+    position: absolute;
+    top: var(--spacer8);
+    right: var(--spacer8);
+    display: flex;
+    flex-flow: row wrap;
+    gap: var(--spacer1);
+    margin-top: 0;
+}
+
+.policy-Inquiry .btn-area [class*="btn-type"] {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: auto;
+    width: 3.5rem;
+    height: 3.5rem;
+    padding: 0;
+    border-radius: 100%;
+}
+
+.policy-Inquiry .btn-area [class*="btn-type"] i {
+    width: 2rem;
+    height: 2rem;
+}
+
+.policy-Inquiry .btn-area .btn-type04 i {
+    filter: brightness(0) invert(1);
+}
+
+.policy-Inquiry .tag {
+}
+
+.policy-Inquiry .tag input[type="checkbox"]:checked + label::before {
+    display: none;
+}
+
+.policy-Inquiry .tag input[type="checkbox"]:checked + label {
+    border-width: .2rem;
+}
+
+.clipping-count {
+    /* 스크랩한 정책 */
+    margin-bottom: var(--spacer10);
+    text-align: right;
+}
+
+.clipping-count .line {
+    display: inline-block;
+    padding: var(--spacer3);
+    background-color: var(--white);
+    border: 0.1rem solid var(--gray40);
+    border-radius: 1.2rem;
+    color: var(--gray80);
+    line-height: 1;
+}
+
+.clipping-count .line i {
+    display: inline-block;
+    width: 2rem;
+    height: 2rem;
+    margin-top: -0.2rem;
+    vertical-align: middle;
+}
+
+.clipping-count .line i::after {
+    width: 100%;
+    height: 100%;
+}
+
+.clipping-count .point02 {
+    display: inline-block;
+    margin-left: var(--spacer3);
+}
+
+/* 신청자격검증 레이어 팝업 */
+.qual-verification {
+    width: 56rem;
+}
+
+.qual-verification .subject-policy {
+    color: #182F99;
+    font-size: 1.9rem;
+    font-weight: 700;
+}
+
+.qual-verification .table-wrap {
+    margin-bottom: var(--spacer6);
+}
+
+.qual-verification td .checks label {
+    line-height: 1.2;
+}
+
+.qual-verification .time-info,
+.qual-verification .policy-name {
+    margin-bottom: var(--spacer6);
+    color: #1D1D1D;
+}
+
+.qual-verification .time-info {
+    font-weight: 700;
+}
+
+.qual-verification .graybox {
+    margin-bottom: var(--spacer6);
+    padding: var(--spacer5);
+    background-color: #F3F3F6;
+    border-radius: 0.8rem;
+    color: var(--gray90);
+    font-size: 1.5rem;
+}
+
+.qual-verification .lstyle-dot > li::before {
+    top: .9rem;
+    width: .3rem;
+    height: .3rem;
+}
+
+.qual-verification .basic-txt {
+    color: #555;
+    font-size: 1.5rem;
+}
+
+.qual-verification [class*="btn-type"] {
+    border-radius: 0.8rem;
+}
+
+.qual-verification [class*="btn-state"] {
+    font-size: 1.5rem;
+}
+
+.policy-loding .txt-center {
+    /* 신청자격검증 조회 로딩*/
+    margin-bottom: var(--spacer6);
+}
+
+.policy-loding .icon-verification {
+    display: block;
+    margin-bottom: var(--spacer8);
+    padding: var(--spacer5) 0;
+    text-align: center;
+    line-height: 0;
+}
+
+.board-pager + .graybox {
+    margin-top: var(--spacer16);
+}
+
+/* 청년공간 */
+.facility-list {
+    display: flex;
+    flex-flow: row wrap;
+    align-items: center;
+    margin-bottom: var(--spacer6);
+    text-align: center;
+    overflow: hidden;
+}
+
+.facility-list > li {
+    width: 25%;
+    padding: 2.4rem 0
+}
+
+.facility-list .icon {
+    display: block;
+    margin: 0 auto var(--spacer3);
+    line-height: 0;
+}
+
+.facility-list .tit {
+    display: block;
+}
+
+.facility-list .count {
+    display: block;
+}
+
+.kakao-map {
+    border: 1px solid var(--gray30);
+    border-radius: 1.2rem;
+}
+
+.kakao-map .root_daum_roughmap {
+    width: 100%;
+    height: 49.4rem;
+}
+
+.center-address {
+    padding: var(--spacer10);
+}
+
+.center-address i {
+    vertical-align: middle;
+}
+
+.center-address .btn-type02 {
+    width: 8.8rem;
+}
+
+.modal_popup .photo-place {
+    width: 68rem;
+}
+
+.photo-place .tit {
+    display: block;
+    margin-top: var(--spacer4);
+}
+
+.photo-place .slide-thumb .imgbox {
+    width: 100%;
+    height: 45rem;
+}
+
+.modal-conts [class*="swiper-button-"],
+.modal-conts .bx-controls-direction a {
+    width: 4.8rem;
+    height: 4.8rem;
+}
+
+.modal-conts [class*="swiper-button-"]::after,
+.modal-conts .bx-controls-direction a i {
+    width: 2.8rem;
+    height: 2.8rem;
+}
+
+.modal-conts .swiper-button-prev,
+.modal-conts .bx-controls-direction .bx-prev {
+    left: -2.4rem;
+    margin-top: -2.4rem;
+}
+
+.modal-conts .swiper-button-next,
+.modal-conts .bx-controls-direction .bx-next {
+    right: -2.4rem;
+    margin-top: -2.4rem;
+}
+
+.modal-conts .bx-pager,
+.custom-pager {
+    margin-top: var(--spacer6);
+    padding: var(--spacer2);
+    line-height: 1.43;
+    text-align: center;
+}
+
+.custom-pager .current,
+.custom-pager .swiper-pagination-current {
+    color: var(--secondary);
+}
+
+.custom-pager .swiper-pagination-current {
+    font-weight: 700;
+}
+
+/* 청년신문고 */
+.youth-newspaper .line {
+    margin-bottom: var(--spacer10);
+    padding-bottom: var(--spacer10);
+    border-bottom: 1px dashed var(--gray30);
+}
+
+.youth-newspaper .check-list {
+    margin-top: var(--spacer4);
+}
+
+.youth-newspaper .form-entry > li:not(:last-child) .check-list {
+    margin-bottom: var(--spacer10);
+}
+
+/* 마이꾸러미 */
+.package-info .lstyle-normal > li {
+    padding-left: var(--spacer7);
+}
+
+.package-info .lstyle-normal > li::before {
+    display: block;
+    top: 0.5rem;
+    left: 0;
+    width: 2rem;
+    height: 2rem;
+    background-image: url(../../images/common/icon/ico_info_fill_20.svg);
+}
+
+.package-info .point02 {
+    display: block;
+    color: #003675;
+}
+
+.package-info .caution {
+    margin-top: var(--spacer4);
+}
+
+.mydata {
+    margin-top: var(--spacer10);
+    border-bottom: 1px solid #E4E7EB;
+    border-radius: 1.2rem 1.2rem 0 0;
+    font-size: 1.5rem;
+    overflow: hidden;
+}
+
+.mydata > table {
+    width: 100%;
+    margin: 0;
+    border-top: none;
+}
+
+.mydata th {
+    padding: 1rem;
+}
+
+.mydata td {
+    padding: .8rem 1rem;
+    border-top: 1px solid #E4E7EB;
+    border-bottom: none;
+}
+
+.mydata > table > thead > tr > th {
+    background-color: #1d1d1d;
+    color: #fff;
+}
+
+.mydata > table > thead > tr > th:first-child {
+    border-radius: 1.2rem 0 0 0;
+}
+
+.mydata > table > thead > tr > th:last-child {
+    border-radius: 0 1.2rem 0 0;
+}
+
+.mydata [class*="btn-state"].small {
+    padding-top: 0.2rem;
+    padding-bottom: 0.2rem;
+    line-height: 1.2;
+}
+
+.mydata td > .btn-type03 {
+    width: 2.4rem;
+    height: 2.4rem;
+    padding: 0;
+}
+
+.mydata .btn-type03 > .svg-icon {
+    display: flex;
+    align-items: center;
+    align-content: center;
+    margin: auto;
+    width: 1.2rem;
+    height: 1.2rem;
+}
+
+.mydata td > .btn-type03.active {
+    background-color: var(--gray90);
+}
+
+.mydata td > .btn-type03.active .svg-icon {
+    transform: rotateX(180deg);
+}
+
+.mydata td > .btn-type03.active .svg-icon::after {
+    filter: brightness(0) invert(1);
+}
+
+.mydata .relate-info > td {
+    padding: 0;
+    border-top: none;
+}
+
+.mydata .graybox {
+    display: none;
+    margin-bottom: var(--spacer3);
+    padding: var(--spacer10);
+    background-color: #F7F7F7;
+    border-radius: 0 0 1.2rem 1.2rem;
+}
+
+.mydata .relate-info.active .graybox {
+    display: block;
+}
+
+.mydata .caution {
+    margin-top: var(--spacer4);
+    background-color: #fff;
+}
+
+.mydata .caution i {
+    top: .3rem;
+}
+
+.package-agree {
+    margin-top: var(--spacer10);
+}
+
+.package-agree [class*="btn-state"] {
+    min-width: auto;
+}
+
+.package-agree .svg-icon {
+    width: 2rem;
+    height: 2rem;
+}
+
+/* 청년정책 비교 */
+.policy-current {
+    position: relative;
+    margin-bottom: 5.5rem;
+}
+
+.policy-current .title-area {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    column-gap: var(--spacer4);
+    row-gap: var(--spacer2);
+    max-width: calc(100% - 15rem);
+    margin-bottom: var(--spacer7);
+}
+
+.policy-current .depth1-title02 {
+    margin: 0;
+}
+
+.policy-comparison {
+    position: relative;
+}
+
+.policy-comparison .comparison-area {
+    display: flex;
+    gap: 2rem;
+}
+
+.policy-comparison .compare-boxes {
+    flex: 1 1 45%;
+    border: 1px solid #CFDFFF;
+    background-color: #ECF2FE;
+    border-radius: 1rem;
+    padding: var(--spacer6) var(--spacer4);
+}
+
+.policy-comparison .compare-item {
+    display: none;
+}
+
+.policy-comparison .compare-item.active {
+    display: block;
+}
+
+.policy-comparison .compare-tit {
+    font-size: 2rem;
+    color: #003675;
+    font-weight: 700;
+    position: relative;
+    padding-right: 2rem;
+}
+
+.policy-comparison .compare-tit:after {
+    width: 10px;
+    height: 6px;
+    background: url("../../images/common/icon/icon_arrow_bot_fill_Dblue.png") no-repeat center/cover;
+    display: inline-block;
+    position: absolute;
+    right: 0;
+    top: 10px;
+    transform: rotate(-90deg);
+    content: "";
+}
+
+.policy-comparison .compare-tit .fw-black {
+    font-weight: 900;
+}
+
+.policy-comparison .compare-desc {
+    font-size: 1.5rem;
+    color: #5D5D5D;
+}
+
+.policy-comparison .compare-item {
+    position: relative;
+    max-width: 285px;
+    margin: var(--spacer5) auto 0;
+    background-color: #fff;
+    border: 0.1rem solid #D9D9D9;
+    border-radius: 1.2rem;
+    padding: var(--spacer6) var(--spacer4);
+    box-shadow: 0 0 20px rgba(88, 88, 88, 0.24);
+}
+
+.compare-item > .board-list.type2 {
+    flex-direction: column;
+    margin: 0;
+}
+
+.compare-item .compare_delete {
+    position: absolute;
+    top: 2rem;
+    right: 2rem;
+    width: 2rem;
+    height: 2rem;
+    background: url(../../images/common/icon/ico_close_20.svg) no-repeat center center;
+}
+.policy-comparison .btn-area{margin-top:var(--spacer8);}
+.policy-comparison .btn_compare {
+    padding: var(--spacer2) var(--spacer3);
+    background-color: #003675;
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.5rem;
+    border-radius: 0.8rem;
+}
+
+.compare-input {
+    width: 10rem;
+    background-color: #F1F1F1;
+    padding: var(--spacer1) var(--spacer2);
+    font-size: 1.4rem;
+    border-radius: 0.3rem;
+    margin-bottom: var(--spacer2);
+}
+
+.compare-input input[type="checkbox"] {
+    width: 1.7rem;
+    height: 1.7rem;
+    border: 1px solid #C4C4C4;
+    appearance: auto;
+    -webkit-appearance: auto;
+}

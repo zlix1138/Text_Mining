@@ -1,0 +1,214 @@
+const YTHIPbiz_rules = function() {
+    /**
+     * 검증 규칙을 정의한 객체
+     * 필드별로 검증 규칙과 에러 메시지를 설정
+     * @type {Object}
+     * @private
+     */
+    const RULES = {
+        MEMBER: {
+            userId: { // 사용자 ID 검증
+                rules: [
+                    { test: (value) => !!value, message: "아이디를 입력해주세요." }, // 값이 존재하는지 확인
+                    { test: (value) => value.length >= 5 && value.length <= 24, message: "아이디는 5~24자로 입력하세요." }, // 길이 검증
+                    { test: (value) => /^(?=.*[a-z])[a-z0-9]+$/.test(value), message: "영문(소문자) 또는 영문(소문자)와 숫자 조합하여 입력하세요." }, // 형식 검증
+                ],
+            },
+
+            isIdDuplicate: { // 아이디 중복 체크 검증
+                rules: [
+                    {
+                        test: (value) => value === false, // 값이 false여야 통과
+                        message: "아이디 중복확인은 필수 항목입니다.",
+                    },
+                ],
+                focusable: false, // focus 불가능 설정
+
+            },
+            isCnslrAliasNmDuplicate: { // 아이디 중복 체크 검증
+                rules: [
+                    {
+                        test: (value) => value === false, // 값이 false여야 통과
+                        message: "상담사 별칭 중복확인을 해주세요.",
+                    },
+                ],
+                focusable: false, // focus 불가능 설정
+
+            },
+            userPswdNm: { // 비밀번호 검증
+                rules: [
+                    { test: (value) => !!value, message: "비밀번호를 입력해주세요." }, // 값이 존재하는지 확인
+                    { test: (value) => /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&^~])[A-Za-z\d@$!%*#?&^~]{9,24}$/.test(value), message: "비밀번호는 9~24자의 문자, 숫자, 특수문자를 포함해야 합니다." }, // 형식 검증
+                ],
+            },
+            existingUserPswdNm: { // 기존비밀번호
+                rules: [
+                    { test: (value) => !!value, message: "비밀번호를 입력해주세요." }, // 값이 존재하는지 확인
+                    { test: (value) => /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&^~])[A-Za-z\d@$!%*#?&^~]{9,24}$/.test(value), message: "비밀번호는 9~24자의 문자, 숫자, 특수문자를 포함해야 합니다." }, // 형식 검증
+                ],
+            },
+            userPswdNmConfirm: { // 비밀번호 확인 검증
+                rules: [
+                    { test: (value, formData) => !!value, message: "비밀번호 확인을 확인해 주세요." }, // 값이 존재하는지 확인
+                    { test: (value, formData) => value === formData.userPswdNm, message: "비밀번호 확인이 비밀번호와 일치하지 않습니다." }, // 비밀번호와 동일한지 확인
+                ],
+            },
+            // emailId: { // 이메일 ID 검증
+            //     rules: [
+            //         { test: (value) => !!value, message: "이메일은 필수 입력 항목입니다." },
+            //         {
+            //             test: (value) => /^[a-zA-Z0-9][a-zA-Z0-9._%+-]*$/.test(value),
+            //             message: "이메일 ID 형식을 확인해 주세요."
+            //         },
+            //         {
+            //             test: (value) => !/\.{2,}/.test(value),
+            //             message: "이메일 ID에 연속된 점(.)을 사용할 수 없습니다."
+            //         }
+            //     ]
+            // },
+            // emailDomain: { // 이메일 도메인 검증
+            //     rules: [
+            //         { test: (value) => !!value, message: "이메일은 필수 입력 항목입니다." }, // 값이 존재하는지 확인
+            //         { test: (value) => /^[a-z0-9.-]+\.[a-z]{2,}$/.test(value), message: "도메인 형식을 확인해 주세요." },
+            //         { test: (value) => !/^\.|\.$/.test(value), message: "도메인은 .으로 시작하거나 끝날 수 없습니다." }
+            //     ],
+            // },
+            // userEmlAddr: { // 이메일 전체 주소 검증
+            //     rules: [
+            //         { test: (value) => !!value, message: "이메일은 필수 입력 항목입니다." }, // 값이 존재하는지 확인
+            //         {
+            //             test: (value) => /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(value),
+            //             message: "이메일 형식을 확인해 주세요."
+            //         }, // 이메일 형식 검증
+            //         {
+            //             test: (value) => value.length <= 320,
+            //             message: "이메일은 320자를 초과할 수 없습니다."
+            //         } // 길이 검증
+            //     ],
+            // },
+
+            userGndrCd: { // 성별 선택 검증
+                rules: [
+                    { test: (value) => !!value, message: "성별은 필수 항목입니다.." },
+                ],
+            },
+            ltrRcptnYn: { // 휴대전화수신
+                rules: [
+                    {
+                        test: (value) => value === "Y", // 값이 false여야 통과
+                        message: "휴대전화 수신동의는 필수 항목입니다.",
+                    },
+                ],
+            },
+            requiredAgree: { // 필수동의커스텀
+                rules: [
+                    { test: (value) => value === "Y", message: "필수 입력 항목입니다." },
+                ],
+            },
+            withdrawalAgree: { // 필수동의커스텀
+                rules: [
+                    { test: (value) => value === "Y", message: "필수 입력 항목입니다." },
+                ],
+            },
+            userNm: { // 필수동의커스텀
+                rules: [
+                    { test: (value) => !!value, message: "성명은 필수 입력 항목입니다." },
+                ],
+            },
+            // userMblTelno: { // 필수동의커스텀
+            //     rules: [
+            //         { test: (value) => !!value, message: "필수 입력 항목을 확인해주세요." },
+            //     ],
+            // },
+            mbrWhdwlRsnCd: { // 회원탈퇴사유코드
+                rules: [
+                    { test: (value) => !!value, message: "회원탈퇴사유는 필수 항목입니다." },
+                ],
+            },
+            mbrWhdwlDtlCn: { // 회원탈퇴사유상세내용
+                rules: [
+                    { test: (value) => !!value, message: "상세사유는 필수 입력값입니다." }, // 값이 존재하는지 확인
+                    { test: (value) => value.length >= 10, message: "상세사유는 최소 10자 이상이어야 합니다." },
+                    { test: (value) => value.length <= 1000, message: "상세사유는 최대 1000자 이내여야 합니다." },
+                ],
+            },
+            userInstTelno: { // 내선번호
+                rules: [
+                    { test: (value) => value.length >= 9, message: "내선번호는 최소 9자 이상이어야 합니다." },
+                ],
+            },
+            userBrdt: { // 회원탈퇴사유상세내용
+                rules: [
+                    { test: (value) => !!value, message: "생년월일은 필수 입력 항목입니다." },
+                ],
+            },
+
+            dscsnFlds: { // 카카오톡 상담 id
+                rules: [
+                    { test: (value) => !!value, message: "상담분야는 필수 입력 항목입니다." },
+                ],
+            },
+            katalkCnslrId: { // 카카오톡 상담 id
+                rules: [
+                    { test: (value) => !!value, message: "카카오톡 상담ID는 필수 입력 항목입니다." },
+                    {
+                        test: (value) => !/\s/.test(value),
+                        message: "공백은 입력할 수 없습니다.",
+                    },
+                ],
+            },
+            cnslrAliasNm: { // 상담사 별칭
+                rules: [
+                    {
+                        // 한글, 영문, 숫자만 입력 가능
+                        test: (value) => /^[가-힣a-zA-Z0-9]+$/.test(value),
+                        message: "한글, 영문, 숫자만 입력 가능합니다.",
+                    },
+                    {
+                        // 길이 제한: 최대 40자
+                        test: (value) => value.length <= 40,
+                        message: "최대 40자까지 입력 가능합니다.",
+                    },
+                    { test: (value) => !!value, message: "상담사 별칭은 필수 입력 항목입니다." },
+                    {
+                        test: (value) => !/\s/.test(value),
+                        message: "공백은 입력할 수 없습니다.",
+                    },
+                ],
+            },
+
+            userExplnCn: { // 카카오톡 상담 id
+                rules: [
+                    { test: (value) => !!value, message: "소개글은 필수 입력 항목입니다." },
+                ],
+            },
+            userInstCd: { // 카카오톡 상담 id
+                rules: [
+                    { test: (value) => !!value, message: "소속기관은 필수 입력 항목입니다." },
+                ],
+            },
+            discussionField: { // 배열 검증
+                rules: [
+                    {
+                        test: (value) => value && value.length > 0,
+                        message: "하나 이상의 항목을 선택해야 합니다.",
+                    },
+                ],
+            },
+            checkBoxName: { // 배열 검증
+                rules: [
+                    {
+                        test: (value) => value && value.length > 0,
+                        message: "하나 이상의 항목을 선택해야 합니다.",
+                    },
+                ],
+            },
+
+        },
+    }
+
+
+    return {
+        RULES : RULES
+    };
+}();

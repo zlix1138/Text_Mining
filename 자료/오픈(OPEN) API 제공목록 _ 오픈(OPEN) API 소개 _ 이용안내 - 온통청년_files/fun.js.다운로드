@@ -1,0 +1,515 @@
+window.autoResize = function (textarea) {
+    // textarea 요소의 유효성 검사
+    if (!textarea || !textarea.nodeType || textarea.tagName !== 'TEXTAREA') {
+        console.warn('autoResize: 전달된 요소가 유효한 textarea가 아닙니다');
+        return;
+    }
+
+    // sendMessagea 요소 가져오기 (writing 클래스 추가/제거용)
+    const sendMessageEl = document.getElementById('sendMessagea');
+    if (!sendMessageEl) {
+        console.warn('autoResize: id가 sendMessagea인 요소를 찾을 수 없습니다');
+    }
+
+    // 1. writing 클래스 추가/제거 처리
+    const isEmpty = textarea.value.trim().length === 0;
+    if (sendMessageEl) {
+        if (!isEmpty) {
+            sendMessageEl.classList.add('writing');
+        } else {
+            sendMessageEl.classList.remove('writing');
+        }
+    }
+
+    // 2. 높이 계산 로직 최적화: 1줄을 초과한 경우에만 높이 증가
+    if (isEmpty) {
+        textarea.style.removeProperty('height');
+        textarea.style.overflow = 'hidden';
+    } else {
+        const computedStyle = getComputedStyle(textarea);
+
+        // line-height 파싱 (NaN 예외 처리 포함)
+        let lineHeight = parseInt(computedStyle.lineHeight);
+        if (isNaN(lineHeight)) {
+            lineHeight = parseInt(computedStyle.fontSize) || 22;
+            console.warn('autoResize: line-height를 가져올 수 없어 font-size를 기본값으로 사용합니다');
+        }
+
+        const maxHeight = lineHeight * 10; // 최대 높이 제한 (10줄)
+
+        // [핵심 최적화 1] 숨겨진 테스트 요소를 생성하여 실제로 1줄을 초과하는지 정확히 판단
+        const testDiv = document.createElement('div');
+
+        // textarea와 동일한 주요 스타일을 복사 (너비, 폰트, 줄간격 등 동일하게 유지)
+        testDiv.style.position = 'absolute';
+        testDiv.style.visibility = 'hidden';
+        testDiv.style.whiteSpace = 'pre-wrap'; // 줄바꿈 및 공백 유지
+        testDiv.style.wordWrap = 'break-word'; // 자동 줄바꿈
+        testDiv.style.width = computedStyle.width;
+        testDiv.style.fontSize = computedStyle.fontSize;
+        testDiv.style.fontFamily = computedStyle.fontFamily;
+        testDiv.style.lineHeight = computedStyle.lineHeight;
+        testDiv.style.padding = computedStyle.padding;
+        testDiv.style.boxSizing = computedStyle.boxSizing;
+
+        // 현재 textarea의 텍스트 내용을 복사
+        testDiv.textContent = textarea.value;
+        document.body.appendChild(testDiv);
+
+        // [핵심 최적화 2] 테스트 요소의 높이를 측정하여 1줄 초과 여부 판단
+        const testDivHeight = testDiv.offsetHeight;
+        const paddingTop = parseInt(computedStyle.paddingTop) || 0;
+        const paddingBottom = parseInt(computedStyle.paddingBottom) || 0;
+        const singleLineTotalHeight = paddingTop + paddingBottom + lineHeight;
+
+        // 테스트 요소 제거
+        document.body.removeChild(testDiv);
+
+        // [핵심 최적화 3] 테스트 높이가 1줄 전체 높이보다 클 때만 다중 줄 처리
+        let finalHeight;
+        if (testDivHeight <= singleLineTotalHeight) {
+            // 엄격하게 1줄 높이 유지
+            finalHeight = lineHeight;
+        } else {
+            // 1줄을 초과하면 실제 콘텐츠 높이 사용
+            textarea.style.height = '0px';
+            textarea.style.height = 'auto';
+            const contentHeight = textarea.scrollHeight - paddingTop - paddingBottom;
+            finalHeight = contentHeight;
+        }
+
+        // 최대 높이 제한 적용
+        if (finalHeight <= maxHeight) {
+            textarea.style.height = (finalHeight + paddingTop + paddingBottom) + 'px';
+            textarea.style.overflow = 'hidden';
+        } else {
+            textarea.style.height = maxHeight + 'px';
+            textarea.style.overflow = 'auto';
+        }
+    }
+
+    // 3. 글자 수 제한 경고 로직 (기존 로직 유지)
+    const maxLengthAttr = textarea.getAttribute('maxlength');
+    if (!maxLengthAttr) {
+        console.debug('autoResize: textarea에 maxlength 속성이 설정되어 있지 않습니다');
+        return;
+    }
+
+    const maxLength = parseInt(maxLengthAttr);
+    if (isNaN(maxLength)) {
+        console.warn(`autoResize: maxlength 속성값 "${maxLengthAttr}"가 유효한 숫자가 아닙니다`);
+        return;
+    }
+
+    const currentLength = textarea.value.length;
+    const warningElement = document.getElementById('charLimitWarning');
+    if (!warningElement) {
+        console.warn('autoResize: id가 charLimitWarning인 경고 요소를 찾을 수 없습니다');
+        return;
+    }
+
+    // 기존 타이머가 있으면 제거
+    if (window.charLimitTimer) {
+        clearTimeout(window.charLimitTimer);
+    }
+
+    // 글자 수 초과 경고 처리
+    if (currentLength >= maxLength) {
+        const maxLengthFormatted = Number(maxLength).toLocaleString();
+        warningElement.textContent = `⚠ 입력 가능한 최대 글자 수 ${maxLengthFormatted}개를 초과했습니다. `;
+        warningElement.style.opacity = '1';
+        warningElement.style.transition = 'opacity 0.3s';
+
+        window.charLimitTimer = setTimeout(() => {
+            warningElement.style.opacity = '0';
+        }, 3000);
+    } else {
+        warningElement.style.opacity = '0';
+    }
+};
+
+// -------------- 사용 예시 --------------
+const initTextareaAutoResize = function() {
+    const textareaEl = document.querySelector('textarea');
+    if (textareaEl) {
+        // 기존에 바인딩된 이벤트 제거 (중복 방지)
+        textareaEl.removeEventListener('input', () => autoResize(textareaEl));
+
+        // input 이벤트 재바인딩
+        textareaEl.addEventListener('input', function() {
+            autoResize(this);
+        });
+
+        // 초기 로딩 시 한 번 실행
+        autoResize(textareaEl);
+    }
+};
+
+// DOM이 완전히 로드된 이후 한 번만 초기화
+document.addEventListener('DOMContentLoaded', initTextareaAutoResize);
+
+const sourceClick = (event) => {
+	const isValidUrl = (url) => {
+		try {
+			new URL(url);
+			return true;
+		} catch (e) {
+			return false;
+		}   
+	}
+	const isFile = (path) => {
+		const pattern = /\.[a-zA-Z0-9]+$/;
+		return pattern.test(path);    
+	}
+	var tt=$(event.target).text();
+	tt=tt.replace(/^\[(.*?)\]$/, '$1').trim(); 
+	if (isValidUrl(tt)) {  
+		$(".sourceLink3").css({ display: "flex" });  
+		$(".sourceLinkName strong").html('');  
+		tt = tt.replace(/^FILE:\s*/, '');  
+		$(".sourceLinkY3").attr("href", tt);
+	} else if (isFile (tt)) {
+		$(".sourceLink2").css({ display: "flex" });  
+		$(".sourceLinkName strong").html('');
+		$(".sourceLinkY2").attr("tt",tt);
+		//$(".sourceLinkY2").attr("href","#m");
+		//tt = tt.replace(/^FILE:\s*/, '');
+		//$(".sourceLinkY2").attr("href",down_url + tt +"?mb_id="+mb_id+"&mb_name="+mb_name);
+	} else {  
+		$(".sourceLink").css({ display: "flex" });  
+		var currentPath = window.location.href;  
+		var lastSlashIndex = currentPath.lastIndexOf('/');  
+		var basePath = currentPath.substring(0, lastSlashIndex);  
+		$(".sourceLinkName strong").html('');  
+		$(".sourceLinkY").attr("href", "#m");  
+		$(".sourceLinkY").attr("href", basePath + "/text.htm" + "?mb_id=" + mb_id + "&ssn=" + tt);  
+		tt = tt.replace(/^FILE:\s*/, '');  
+	}	
+};
+$(document).on('click', '.sourceLinkN, .sourceLinkY, .sourceLinkY2, .sourceLinkY3', function() {
+	$(".sourceLink").css({display:"none"});
+	$(".sourceLink2").css({display:"none"});
+	$(".sourceLink3").css({display:"none"});
+});
+
+const copyCode = (event) => {
+	event.preventDefault();
+	const preContent = event.target.closest("pre").querySelector('code').textContent;
+	const tempInput = document.createElement('textarea');
+	document.body.appendChild(tempInput);
+	tempInput.value = preContent;
+	tempInput.select();
+	const successful = document.execCommand('copy');
+	if (!successful) {
+		alert('복사 실패');
+	}
+	document.body.removeChild(tempInput);
+};
+$(document).on('click', '.copydiv', function() {
+    handleBotMessageCopy($(this).parent(".message.bot"));
+});
+$(document).on('click', '.copydiv1', function() {
+    handleBotMessageCopy($(this).parent().parent().parent(".message.bot"));
+});
+$(document).on('click', '.copydiv2', function() {
+    handleBotMessageCopy($(this).parent().parent().siblings(".message.bot"));
+});
+
+
+
+// 원본 버튼 복사 함수 (완전히 유지, 최소한의 최적화만 수행)
+function handleBotMessageCopy($botMessage) {
+    $botMessage.find('ol').each(function() {
+        var $ol = $(this);
+        $ol.find(".hidNunber").remove();
+        $ol.children('li').each(function(index) {
+            $(this).prepend("<i class='hidNunber'>" + (index + 1) + ".</i>");
+        });
+    });
+
+    $botMessage.find('ul').each(function() {
+        var $ul = $(this);
+        $ul.find(".iCon").remove();
+        $ul.children('li').each(function() {
+            $(this).prepend("<i class='iCon'>&#8226;&nbsp;</i>");
+        });
+    });
+
+    var $tempContainer = $('<div contenteditable="true" style="position:absolute; top:-9999px; left:-9999px; width:1px; height:1px; overflow:hidden;"></div>');
+    var $clonedContent = $botMessage.clone();
+    
+    // 모든 요소 배경색 제거
+    $clonedContent.find('*').addBack().each(function() {
+        $(this).css({
+            'background': '',
+            'background-color': '',
+            'background-image': ''
+        });
+        this.style.backgroundColor = 'transparent';
+    });
+
+    $clonedContent.find('.no-copy, .copydiv, .ai-model-alls, .times, .advs').remove();
+    
+    // ===== 新增：仅修复 marker 和文本之间的换行，不删除任何内容 =====
+    $clonedContent.find('.hidNunber, .iCon').each(function() {
+        // 强制 marker 行内显示，杜绝换行
+        $(this).css({
+            'display': 'inline-block',
+            'white-space': 'nowrap',
+            'margin-right': '4px' // 保留少量间距，视觉更舒服
+        });
+        // 清理 marker 后面紧跟的换行/空白，避免分离
+        var nextNode = this.nextSibling;
+        if (nextNode && nextNode.nodeType === 3) {
+            nextNode.textContent = nextNode.textContent.replace(/^\n+/g, '').replace(/^\s+/g, ' ');
+        }
+    });
+
+    $clonedContent.find('*').addBack().contents().each(function() {
+        if (this.nodeType === 3) { 
+            var text = this.textContent;
+            // 新增：只删除 marker 后面的多余换行，不碰其他换行
+            text = text.replace(/([•0-9]+\.)\s*\n+/g, '$1 ');
+            text = text.replace(/\n{2,}/g, '\n').trim();
+            this.textContent = text;
+        }
+    });
+
+    $tempContainer.append($clonedContent);
+    $('body').append($tempContainer);
+    
+    try {
+        var range = document.createRange();
+        range.selectNodeContents($tempContainer[0]);
+        var selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+        
+        document.execCommand('copy');
+    } catch (err) {
+        console.error('복사 중 오류가 발생했습니다:', err);
+        alert('답변 복사에 실패했습니다.');
+    } finally {
+        window.getSelection().removeAllRanges();
+        $tempContainer.remove();
+    }
+}// 원본 버튼 복사 함수 (완전히 유지, 최소한의 최적화만 수행)
+function handleBotMessageCopy($botMessage) {
+    $botMessage.find('ol').each(function() {
+        var $ol = $(this);
+        $ol.find(".hidNunber").remove();
+        $ol.children('li').each(function(index) {
+            $(this).prepend("<i class='hidNunber'>" + (index + 1) + ".</i>");
+        });
+    });
+
+    $botMessage.find('ul').each(function() {
+        var $ul = $(this);
+        $ul.find(".iCon").remove();
+        $ul.children('li').each(function() {
+            $(this).prepend("<i class='iCon'>&#8226;&nbsp;</i>");
+        });
+    });
+
+    var $tempContainer = $('<div contenteditable="true" style="position:absolute; top:-9999px; left:-9999px; width:1px; height:1px; overflow:hidden;"></div>');
+    var $clonedContent = $botMessage.clone();
+    
+    // 모든 요소 배경색 제거
+    $clonedContent.find('*').addBack().each(function() {
+        $(this).css({
+            'background': '',
+            'background-color': '',
+            'background-image': ''
+        });
+        this.style.backgroundColor = 'transparent';
+    });
+
+    $clonedContent.find('.no-copy, .copydiv, .ai-model-alls, .times, .advs').remove();
+    
+    // ===== 新增：仅修复 marker 和文本之间的换行，不删除任何内容 =====
+    $clonedContent.find('.hidNunber, .iCon').each(function() {
+        // 强制 marker 行内显示，杜绝换行
+        $(this).css({
+            'display': 'inline-block',
+            'white-space': 'nowrap',
+            'margin-right': '4px' // 保留少量间距，视觉更舒服
+        });
+        // 清理 marker 后面紧跟的换行/空白，避免分离
+        var nextNode = this.nextSibling;
+        if (nextNode && nextNode.nodeType === 3) {
+            nextNode.textContent = nextNode.textContent.replace(/^\n+/g, '').replace(/^\s+/g, ' ');
+        }
+    });
+
+    $clonedContent.find('*').addBack().contents().each(function() {
+        if (this.nodeType === 3) { 
+            var text = this.textContent;
+            // 新增：只删除 marker 后面的多余换行，不碰其他换行
+            text = text.replace(/([•0-9]+\.)\s*\n+/g, '$1 ');
+            text = text.replace(/\n{2,}/g, '\n').trim();
+            this.textContent = text;
+        }
+    });
+
+    $tempContainer.append($clonedContent);
+    $('body').append($tempContainer);
+    
+    try {
+        var range = document.createRange();
+        range.selectNodeContents($tempContainer[0]);
+        var selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+        
+        document.execCommand('copy');
+    } catch (err) {
+        console.error('복사 중 오류가 발생했습니다:', err);
+        alert('답변 복사에 실패했습니다.');
+    } finally {
+        window.getSelection().removeAllRanges();
+        $tempContainer.remove();
+    }
+}
+
+$(document).keydown(function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'c' && window.getSelection().toString()) {
+		// 焦点在 textarea 里，直接走浏览器默认复制，不执行自定义逻辑
+		const activeEl = document.activeElement;
+		if (activeEl.tagName === 'TEXTAREA') {
+			return;
+		}
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        var selection = window.getSelection();
+        var range = selection.getRangeAt(0);
+        var clonedContent = range.cloneContents();
+        var $temp = $('<div style="position:absolute; top:-9999px;"></div>');
+        $temp.append(clonedContent);
+        
+        // ===== 核心修复：第一步先全量删除所有已有 marker（杜绝重复）=====
+        // 无论 marker 在 ul/ol 内还是单独 li 内，先删干净
+        $temp.find('.iCon, .hidNunber').remove();
+
+        // ===== 原有 marker 生成逻辑（保留，此时无重复）=====
+        // 1. 处理有ul/ol的情况
+        $temp.find('ol').each(function() {
+            var $ol = $(this);
+            $ol.children('li').each(function(index) {
+                $(this).prepend("<i class='hidNunber'>" + (index + 1) + ".</i>");
+            });
+        });
+        $temp.find('ul').each(function() {
+            var $ul = $(this);
+            $ul.children('li').each(function() {
+                $(this).prepend("<i class='iCon'>&#8226;&nbsp;</i>");
+            });
+        });
+
+        // 2. 处理单独li的情况
+        $temp.find('li').each(function() {
+            if (!$(this).find('.iCon').length && !$(this).find('.hidNunber').length) {
+                var $parent = $(this).parent();
+                if ($parent.is('ol') || $parent.hasClass('addquestionLong') && $parent[0].tagName === 'OL') {
+                    $(this).prepend("<i class='hidNunber'>1.</i>");
+                } else {
+                    $(this).prepend("<i class='iCon'>&#8226;&nbsp;</i>");
+                }
+            }
+        });
+
+        // ===== 原有格式处理逻辑（全保留）=====
+        $temp.find('*').addBack().each(function() {
+            this.style.backgroundColor = 'transparent';
+            this.style.background = 'none';
+            $(this).css('background-color', '');
+        });
+        $temp.find('.iCon, .hidNunber').each(function() {
+            var iconHtml = $(this).html().replace(/\n+/g, '').replace(/\s+/g, ' ');
+            $(this).html(iconHtml);
+            $(this).css('display', 'inline');
+            if (this.nextSibling) {
+                if (this.nextSibling.nodeType === 3) {
+                    this.nextSibling.textContent = this.nextSibling.textContent.replace(/^\n+/g, '');
+                } else if (this.nextSibling.nodeType === 1) {
+                    $(this.nextSibling).css('display', 'inline');
+                }
+            }
+        });
+        $temp.find('*').addBack().contents().each(function() {
+            if (this.nodeType === 3) {
+                this.textContent = this.textContent.replace(/\n{2,}/g, '\n').trim();
+            }
+        });
+
+        // ===== 复制逻辑（全保留）=====
+        $('body').append($temp);
+        var copyRange = document.createRange();
+        copyRange.selectNodeContents($temp[0]);
+        selection.removeAllRanges();
+        selection.addRange(copyRange);
+        var copySuccess = document.execCommand('copy');
+        
+        if (!copySuccess) {
+            var finalText = $temp.text().replace(/•\s*\n+/g, '• ').replace(/\n{2,}/g, '\n').trim();
+            var $textarea = $('<textarea style="position:absolute; top:-9999px;"></textarea>');
+            $textarea.val(finalText);
+            $('body').append($textarea);
+            $textarea[0].select();
+            document.execCommand('copy');
+            $textarea.remove();
+        }
+
+        $temp.remove();
+        selection.removeAllRanges();
+        selection.addRange(range);
+    }
+});
+
+
+
+
+
+
+document.addEventListener('DOMContentLoaded', function() {
+	const closeCurre = document.getElementById('closeCurrentButton');
+	if (closeCurre) {
+		closeCurre.addEventListener('click', function() {
+			fetch('remove_active_user.php', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					mb_id,
+					chat_bot_id,
+				})
+			});
+				
+			if (window.history.length > 1) {
+				// 사용자가 직접 페이지를 열었다면 이전 페이지로 돌아가기
+				window.close();
+			} else {
+				// 스크립트에 의해 열린 창은 닫기 시도
+				window.close();
+			}
+		});
+	}
+});
+
+const sourceDownload = (event) => {
+	event.preventDefault();
+	const tt = $(".sourceLinkY2").attr("tt");
+	// down
+	const currentUrl = window.location.href;
+	const urlObj = new URL(currentUrl);
+	const baseUrl = `${urlObj.protocol}//${urlObj.host}`;
+	const downloadUrl = baseUrl + down_url + tt;
+	const link = document.createElement('a');
+	link.href = downloadUrl;
+	link.download = tt; 
+	document.body.appendChild(link);
+	link.click();
+	document.body.removeChild(link);
+};

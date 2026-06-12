@@ -1,0 +1,2036 @@
+let YTHIPcomm = function(){
+
+    let _GLOBAL_CONST = {
+        //clientIpAddr : "127.0.0.1",
+        isMaskingYn : "Y"
+        , isLoadingBar : true
+    };
+
+    const _API_FILE_URL  = "";  // 파일 URL
+
+    const _API_FRT_URL   = "";  // 사용자 FrontEnd URL
+
+    const _API_COM_URL   = "";  // 공통 BackEnd URL
+    const _API_CMU_URL   = "";  // 커뮤니티 BackEnd URL
+    const _API_LINK_URL  = "";  // 연계 BackEnd URL
+    const _API_YRM_URL   = "";  // 청년정책등록관리 BackEnd URL
+    const _API_BFHD_URL  = "";  // 청년정책사전검증 BackEnd URL
+    const _API_APLY_URL  = "";  // 청년정책신청 BackEnd URL
+    const _API_DSCSN_URL = "";  // 청년정책상담관리 BackEnd URL
+    const _API_SPCE_URL  = "";  // 청년공간 BackEnd URL
+    const _API_AUTH_URL  = "";  // 청년정책 인증 BackEnd URL
+
+    const _KEY_API_KAKAO = ""; // 카카오 키
+
+    const _REQUIRED_ROLES  = [];  // 청년정책 인증 BackEnd URL
+    const _CURR_MENU  = "";  // 청년정책 인증 BackEnd URL
+
+    const _BBS_URL = {
+        B01 : { LIST : "/bbs01List", VIEW : "/bbs01View" }, // 공지사항형
+        B02 : { LIST : "/bbs02List", VIEW : "/bbs02View" }, // 일반형
+        B03 : { LIST : "/bbs03List", VIEW : "/bbs03View" }, // 포토형
+        B04 : { LIST : "/bbs04List", VIEW : "/bbs04View" }, // 사용자형
+    }
+    // 주석처리
+    /*
+    let _loadingHtml = $('<div class="modal_popup ce_modal_pop modal_xs body_loading_box show remove" id="body_loading_box" data-ncount="1"><div class="circle"></div></div>');
+    let _indicator = function(flag,isNotOverflowHidden){
+        let $loadingBox = $(".body_loading_box");
+        if(flag){
+            if($loadingBox.get(0)){
+                $loadingBox.data("ncount", $loadingBox.data("ncount")+1);
+            }else{
+                if($("title",document).text().indexOf("오류 메세지") > -1) return;
+                $("body").prepend(_loadingHtml.clone());
+                if(!isNotOverflowHidden && !$("body").hasClass("modal_open")){
+                    bodyScroll(true, $("body").width());
+                    $("body").addClass("modal_open");
+                }
+                $(".dimed", $(".modal_popup.show:not(.body_loading_box)", "body")).remove();
+            }
+        }else{
+            if($loadingBox.get(0)){
+                let $ncount = $loadingBox.data("ncount");
+                if($ncount > 1){
+                    $loadingBox.data("ncount", $ncount-1);
+                }else{
+                    YTHIPcomm.popup.layerClose($loadingBox,true);
+                }
+            }
+        }
+    };
+     */
+
+    let _loadingbarCount = 0;
+    let _loadingHtml = $('<div id="loading-start" class="_loadingBar"><span><img src="/images/common/loading/loading.gif" alt="Loading..."></span></div>');
+    let _indicator = function(flag){
+        if(YTHIPcomm.GLOBAL_CONST.isLoadingBar) {
+            let $loadingBox = $("div._loadingBar");
+            if (flag) {
+                _loadingbarCount++;
+                if ($loadingBox.length == 0) $("body").prepend(_loadingHtml.clone());
+            } else {
+                _loadingbarCount--;
+                if (_loadingbarCount == 0) $loadingBox.remove();
+            }
+            if(_loadingbarCount < 0) _loadingbarCount = 0;
+        }
+    }
+
+    let _myDataLoadingbarCount = 0;
+    //let _myDataLoadingHtml = $('<div id="loading-start"><span><img src="/images/common/loading/loading.gif" alt="Loading..."></span></div>');
+    let myDataLoadingHtml = '';
+    myDataLoadingHtml += '<div id="myDataLoadingbar" class="_myDataLoadingBar modal_popup show" style="z-index: 999 !important;">';
+    myDataLoadingHtml += '    <div class="popup_inner">';
+    //myDataLoadingHtml += '    <div id="loading-start" class="_myDataLoadingBar"><span>';
+    myDataLoadingHtml += '        <div class="policy-loding">';
+    myDataLoadingHtml += '            <h2 class="modal-title">신청자격검증 조회</h2>';
+    myDataLoadingHtml += '            <div class="modal-conts">';
+    myDataLoadingHtml += '                <i class="icon-verification" aria-hidden="true"><img src="../../../images/mps/sub/icon_verification.png" alt=""></i>';
+    myDataLoadingHtml += '                <p class="txt-bold txt-center chgMsg">마이꾸러미 정보를 연계해 신청자격을 조회하고 있어요!</p>';
+    myDataLoadingHtml += '            </div>';
+    myDataLoadingHtml += '        </div>';
+    //myDataLoadingHtml += '    </span></div>';
+    myDataLoadingHtml += '    </div>';
+    myDataLoadingHtml += '</div>';
+    let $myDataLoadingHtml = $(myDataLoadingHtml);
+    let _myDataIndicator = function(flag){
+        let $myDataLoadingBox = $("div._myDataLoadingBar");
+        if(flag){
+            _myDataLoadingbarCount++;
+            if($myDataLoadingBox.length == 0) $("body").prepend($myDataLoadingHtml.clone());
+
+        let messageIndex = 0;  // 메시지 인덱스
+
+        setTimeout(function() {
+            let intervalId = setInterval(function() {
+                if ($(".chgMsg").length > 0) {
+                    // 메시지를 부드럽게 변경
+                    $(".chgMsg").fadeOut(500, function() { // 500ms 동안 서서히 사라지게 함
+                        switch(messageIndex) {
+                            case 0:
+                                $(".chgMsg").html("실시간으로 정보를 가져오고 있어요. 잠시만 기다려주세요.");
+                                break;
+                            case 1:
+                                $(".chgMsg").html("창을 이동하시면 신청자격검증 조회에 오류가 발생할 수 있습니다.<br>조회가 완료될 때까지 창을 닫거나 이동하지 말아 주세요.");
+                                break;
+                            case 2:
+                                $(".chgMsg").html("마이꾸러미 정보를 연계해 신청자격을 조회하고 있어요!");
+                            break;
+                        }
+                        messageIndex++; // 인덱스를 증가시켜 메시지를 순차적으로 변경
+
+                        // 메시지를 변경한 후 다시 부드럽게 나타나게 함
+                        $(".chgMsg").fadeIn(500); // 500ms 동안 서서히 나타나게 함
+                    });
+
+                    if (messageIndex > 2) {
+                        messageIndex = 0;
+                    }
+                } else {
+                    clearInterval(intervalId); // chgMsg 요소가 없으면 interval 종료
+                }
+            }, 2500);
+        }, 1000); // 1000 밀리초 = 1초
+
+        }else{
+            _myDataLoadingbarCount--;
+            if(_myDataLoadingbarCount == 0) $myDataLoadingBox.remove();
+        }
+    }
+    /**
+     Function        : YTHIPcomm.ajax
+     Description    : jquery ajax custom
+     Parameter        :
+     - url : was url
+     - bizParam : "form id" or "form 객체" or "div id" or "div 객체" or "json 객체", 객체의 자식들에 대해서 vaildation체크를 한다. 단 "json 객체"제외.
+     - successCallBack : 통신 성공시 실행할 function
+     - errorCallBack : 통신 실패시 실행할 function
+     - opt : jquery ajax 사용자 option. 기본 option : {"type":"post", "dataType" : "json", "cache":false, "contentType":"application/x-www-form-urlencoded; charset=UTF-8"}
+     - dataType : jquery ajax dataType설정["html","json", "script"]. 기본 dataType은 "json"이다.
+     Returns        :
+     Notes        : form tag 내의 모든 input, textarea, select 의 모든 값을 전달한다. input, textarea, select에 name을 꼭 지정해야 합니다.
+     */
+    let _ajax = function(url, bizParam, successCallBack, errorCallBack, opt, dataType){
+        //YTHIPutil.log(">>>>> =============== AJAX START ===============");
+        //YTHIPutil.log(">>>>> ============================================");
+        YTHIPcomm.indicator(true);
+        let headers = {};
+        YTHIPbiz_auth.auth.addAuthorizationHeader(headers);
+
+        setTimeout(function() {
+            if(opt !== "html" && $.type(bizParam) === 'string' && YTHIPutil.isEmpty(bizParam)) bizParam = {};
+            try {
+                let $ajaxParam = null;
+                if (bizParam) {
+                    let _bizParam = null;
+                    if ($.type(bizParam) == "string") {
+                        if (!($.type(opt) == "object" && opt["stringYn"] == "Y")) {
+                            try {
+                                _bizParam = $("#" + bizParam);
+                            } catch (e1) {
+                                console && YTHIPutil.log(e1);
+                            }
+                        }
+                    } else {
+                        _bizParam = $(bizParam);
+                    }
+
+                    if (_bizParam && _bizParam["prop"] && (_bizParam["prop"]("tagName") == "FORM" || _bizParam["prop"]("tagName") == "DIV")) {
+                        if (!YTHIPcomm.validate.check(bizParam)) {
+                            setTimeout(function () {
+                                YTHIPcomm.indicator(false);
+                            }, 20);
+                            return "ERROR:validate check";
+                        }
+                        let $locationForm = _bizParam;
+                        $ajaxParam = $locationForm.toJson();
+                    } else {
+                        $ajaxParam = bizParam;
+                    }
+                }
+
+                if ($.type(opt) === "string" && _isDataType(opt)) {
+                    dataType = opt;
+                    opt = null;
+                }
+                if ($.type(errorCallBack) === "string" && _isDataType(errorCallBack)) {
+                    dataType = errorCallBack;
+                    errorCallBack = null;
+                }
+                if ($.type(errorCallBack) !== "function" && $.type(errorCallBack) === "object" && !opt) {
+                    opt = errorCallBack;
+                    errorCallBack = null;
+                }
+
+                if(dataType !== "file" && opt != null && opt.type.toUpperCase() === "GET") {
+                    bizParam.isMaskingYn = YTHIPcomm.GLOBAL_CONST.isMaskingYn;
+                }
+
+                //if(dataType != "html") YTHIPutil.log("AJAX : [" + opt.type + "] " + url);
+                let _opt = {
+                    "url": url,
+                    "headers": headers,
+                    "type": "post",
+                    "dataType": "json",
+                    "async" : false,
+                    "cache": false,
+                    "xhrFields": {
+                        withCredentials: true  // ✅ 브라우저가 자동으로 `HttpOnly` 쿠키 포함
+                    },
+                    "contentType": "application/json",
+                    "data": (opt != null && opt.type === "GET") ? $ajaxParam : JSON.stringify($ajaxParam),
+                    "success": function (response) {
+                        YTHIPcomm.GLOBAL_CONST.isLoadingBar = true;
+                        //if(dataType != "html") YTHIPutil.log("AJAX DONE : " + response.resultCode + ", " + response.resultMessage);
+                        YTHIPcomm.indicator(false);
+                        try {
+                            //if(LOGIN_YN == "Y") YTHIPcomm.sessionTimer.extend("AJAX");
+                            //response && YTHIPutil.log(JSON.stringify(response));
+                            if (dataType !== "html" && response){
+                                //console.log('AJAX : [' + opt.type.toUpperCase() + '] ' + url, response);
+                                if (response["resultCode"] != undefined && response["resultCode"] != 200) {
+                                    if (errorCallBack && $.type(errorCallBack) == "function") {
+                                        response["responseText"] = response["errorMessage"];
+                                        YTHIPcomm.alert({title:"통신오류", msg:"데이터 조회 중 에러가 발생했습니다.", submsg:"에러코드 [" + response.resultCode + "]\n메시지 [" + response.resultMessage + "]"}, null, errorCallBack(response, response["errorCode"]));
+                                    }else{
+                                        YTHIPcomm.alert({title:"통신오류", msg:"데이터 조회 중 에러가 발생했습니다.", submsg:"에러코드 [" + response.resultCode + "]\n메시지 [" + response.resultMessage + "]"});
+                                    }
+                                    return;
+                                }
+                                if (response["results"] != undefined && response["results"]["common"]["errorCode"] != 0) {
+                                    let tmpMessage = "데이터 조회 중 에러가 발생했습니다.";
+                                    if(response["results"]["common"]["errorCode"] === "E0015"){
+                                        tmpMessage = "검색 결과가 너무 많습니다. 상세주소로 검색해주세요.";
+                                    }
+                                    if (errorCallBack && $.type(errorCallBack) == "function") {
+                                        response["responseText"] = response["results"]["common"]["errorMessage"];
+                                        YTHIPcomm.alert({title:"통신오류", msg:tmpMessage, submsg:"에러코드 [" + response["results"]["common"]["errorCode"] + "]\n메시지 [" + response["results"]["common"]["errorMessage"] + "]"}, null, errorCallBack(response, response["errorCode"]));
+                                    }else{
+                                        YTHIPcomm.alert({title:"통신오류", msg:tmpMessage, submsg:"에러코드 [" + response["results"]["common"]["errorCode"] + "]\n메시지 [" + response["results"]["common"]["errorMessage"] + "]"});
+                                    }
+                                    return;
+                                }
+                            }
+
+                            //successCallBack && successCallBack(($.type(response) === "string" && _opt.url.indexOf(YTHIPcomm.API_FRT_URL) !== -1 && dataType != "html")? JSON.parse(response):response);
+                            successCallBack && successCallBack(response);
+                        } catch (e) {
+                            console && YTHIPutil.log(e);
+                        }
+                    },
+                    "error": function (xhr, textStatus, errorThrown) {
+                        YTHIPcomm.GLOBAL_CONST.isLoadingBar = true;
+                        YTHIPcomm.indicator(false);
+                        // console && console.error("%c[AJAX ERROR] : %c" + xhr.statusText, "color:yellow; background:#292b2a", "color:red; background:#292b2a");
+                        // YTHIPcomm.alert({title:"통신오류", msg:"통신이 원활하지 않습니다.\n잠시 후 다시 시도하시기 바랍니다."});
+                        console.warn('통신 오류로 인한 서비스 호출 실패');
+
+                        //console && console.log("%cajax Error : " + JSON.stringify({"xhr": xhr, "textStatus": textStatus, "errorThrown": errorThrown}), "color:red; background:#292b2a");
+                        if($.type(errorCallBack) === "function") {
+                            YTHIPcomm.indicator(false);
+                            //YTHIPcomm.alert({title:"통신오류", msg:"통신이 원활하지 않습니다.\n잠시 후 다시 시도하시기 바랍니다."}, null, errorCallBack());
+                        }else{
+                            //YTHIPcomm.alert({title:"통신오류", msg:"통신이 원활하지 않습니다.\n잠시 후 다시 시도하시기 바랍니다."});
+                        }
+
+                    }
+                };
+                if (opt) _opt = $.extend(_opt, opt);
+
+                if(dataType === "file"){
+                    _opt["contentType"] = false;
+                    _opt["processData"] = false;
+                    _opt["data"] = bizParam;
+                }
+
+                if(dataType === "html"){
+                    _opt["dataType"] = dataType;
+                    _opt["type"] = "GET";
+                }
+
+                // 프론트서버 경유 API 일경우 String으로 받도록 처리
+                //if(_opt.url.indexOf(YTHIPcomm.API_FRT_URL) !== -1){
+                //    _opt["dataType"] = "text";
+                //}
+                //if (dataType) _opt["dataType"] = dataType;
+                //if (oriDataType) _opt["type"] = "GET"; // 이건 작동여부에 따라 삭제해야 할 수도..
+                $.ajax(_opt);
+            } catch (e) {
+                YTHIPcomm.indicator(false);
+                // console && console.error("%c[AJAX Exception] : %c" + e, "color:yellow; background:#292b2a", "color:red; background:#292b2a");
+                // YTHIPcomm.alert({title:"통신오류", msg:"통신이 원활하지 않습니다.", submsg:"잠시 후 다시 시도하시기 바랍니다."});
+                console.warn('통신 오류로 인한 서비스 호출 실패');
+
+
+                if ($.type(errorCallBack) === "function"){
+                    YTHIPcomm.indicator(false);
+                    //YTHIPcomm.alert({title:"통신오류", msg:"통신이 원활하지 않습니다.", submsg:"잠시 후 다시 시도하시기 바랍니다."}, null, errorCallBack());
+                } else{
+                    //YTHIPcomm.alert({title:"통신오류", msg:"통신이 원활하지 않습니다.", submsg:"잠시 후 다시 시도하시기 바랍니다."});
+                }
+
+            }
+        }, 0);
+    };
+    // const _fetchPromise = (type, url, params) => {
+    //     const currentTime = new Date().toISOString(); // 호출 시간 기록
+    //     console.log(`[${currentTime}] fetchPromise called for URL: ${url}`);
+    //     return new Promise((resolve, reject) => {
+    //         const options = {
+    //             method: type,
+    //             headers: { "Content-Type": "application/json" },
+    //             body: type !== "GET" ? JSON.stringify(params) : undefined,
+    //         };
+    //
+    //         fetch(url, options)
+    //             .then((response) => {
+    //                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    //                 return response.json();
+    //             })
+    //             .then((data) => resolve(data))
+    //             .catch((error) => reject(error));
+    //     });
+    // };
+
+
+    let _promise = (type, url, bizParam) => {
+        return new Promise((resolve, reject) => {
+            YTHIPcomm.indicator(true);
+
+            let headers = {};
+            YTHIPbiz_auth.auth.addAuthorizationHeader(headers);
+
+            let dataType = type.toUpperCase();
+            type = (type.toUpperCase() === "FILE")? "POST":type.toUpperCase();
+
+            setTimeout(function(){
+                //YTHIPutil.log(">>>>> ==== PROMISE AJAX START ====");
+                if($.type(bizParam) === 'string' && YTHIPutil.isEmpty(bizParam)) bizParam = {};
+                try {
+                    if(dataType !== "FILE" && bizParam != null && type === "GET") {
+                        bizParam.isMaskingYn = YTHIPcomm.GLOBAL_CONST.isMaskingYn;
+                    }
+
+                    let _opt ={
+                        "url": url,
+                        "headers": headers,
+                        "type": type,
+                        "dataType": "json",
+                        "async" : false,
+                        "cache": false,
+                        "xhrFields": {
+                            withCredentials: true  // ✅ 브라우저가 자동으로 `HttpOnly` 쿠키 포함
+                        },
+                        "contentType": "application/json",
+                        "data": (type != null && type === "GET") ? bizParam : JSON.stringify(bizParam),
+                        "success": (response) => {
+                            YTHIPcomm.GLOBAL_CONST.isLoadingBar = true;
+                            YTHIPcomm.indicator(false);
+                            try {
+                                //if(LOGIN_YN == "Y") YTHIPcomm.sessionTimer.extend("AJAX");
+                                //response && YTHIPutil.log(JSON.stringify(response));
+                                if (response){
+                                    //console.log('AJAX PROMISE : [' + type.toUpperCase() + '] ' + url, response);
+                                    if (response["resultCode"] != undefined && response["resultCode"] != 200) {
+                                        YTHIPcomm.alert({title:"통신오류", msg:"데이터 조회 중 에러가 발생했습니다.", submsg:"에러코드 [" + response.resultCode + "]\n메시지 [" + response.resultMessage + "]"});
+                                        reject(response);
+                                        return;
+                                    }else{
+                                        resolve(response);
+                                    }
+                                }
+                            } catch (e) {
+                                console && YTHIPutil.log(e);
+                            }
+                        },
+                        "error": (xhr, textStatus, errorThrown) => {
+                            YTHIPcomm.GLOBAL_CONST.isLoadingBar = true;
+                            YTHIPcomm.indicator(false);
+                            // console && console.error("%c[AJAX PROMISE ERROR] : %c" + xhr.statusText, "color:yellow; background:#292b2a", "color:red; background:#292b2a");
+                            console.warn('통신 오류가 발생했습니다.');
+                            //YTHIPcomm.alert({title:"통신오류", msg:"통신이 원활하지 않습니다.", submsg:"잠시 후 다시 시도하시기 바랍니다."});
+                            reject(new Error(xhr.statusText));
+
+                        }
+                    };
+
+                    if(dataType === "FILE"){
+                        _opt["contentType"] = false;
+                        _opt["processData"] = false;
+                        _opt["data"] = bizParam;
+                    }
+
+                    $.ajax(_opt);
+                } catch (e) {
+                    YTHIPcomm.indicator(false);
+                    // console && console.error("%c[AJAX PROMISE Exception] : %c" + e, "color:yellow; background:#292b2a", "color:red; background:#292b2a");
+                    console.warn('통신 오류가 발생헀습니다.');
+                    //YTHIPcomm.alert({title:"통신오류", msg:"통신이 원활하지 않습니다.", submsg:"잠시 후 다시 시도하시기 바랍니다."});
+                    reject(new Error(xhr.statusText));
+                }
+            }, 500);
+        });
+    }
+
+
+    /** ajax type 체크 */
+    let _isDataType = function(_dataType){
+        switch (_dataType) {
+            case "html":
+            case "json":
+            case "script":
+            case "file":
+                return true;
+                break;
+        }
+        return false;
+    };
+
+    let _appendHidden = function(form, name, value, isArray, type) {
+        if (typeof form != 'object' && form.indexOf('#') == -1)
+            form = '#' + form;
+
+        if (isArray == undefined || isArray == false) {
+            if ($(form).find('[name=' + name + ']').val()) {
+                $(form).find('[name=' + name + ']').val(value);
+                return $(form).find('[name=' + name + ']');
+            }
+            $(form).find('[name=' + name + ']').remove();
+        }
+        if (type == undefined)
+            type = 'hidden';
+
+        let input = $("<input />");
+        input.attr("name", name).attr("type", type).attr("value", value);
+
+        $(form).append(input);
+
+        return $(input);
+    };
+
+    let _jsonObjToForm = function(jsonObj, formId){
+        let $tempForm = null;
+        if(!formId){
+            formId = "_formTemp_";
+        }
+        $tempForm = $("#"+formId);
+        if($tempForm.length > 0){
+            $tempForm.remove();
+        }
+        $tempForm =  $('<form method="post"></form>');
+        $tempForm.attr("id", formId).attr("name", formId);
+        $("body").append($tempForm);
+        $.each(jsonObj, function(_key, _val){
+            _appendHidden($tempForm, _key, _val);
+        });
+        return $tempForm;
+    };
+
+    /**
+     Function    : YTHIPcomm.timer();
+     Description    : 타이머 적용함수
+     Parameter    :     - paramSelecter     : 타이머 표시를 해줄 요소
+     - paramTimeRange     : 타이머 시간 범위 (필수)
+     - paramCallback     : 초마다 반환받을 callback
+     - paramSecondSize     : 타이머 표시를 해줄 요소
+     Examples    :
+     // <input type="text" id="timer"/>
+     - YTHIPcomm.timer($("#timer"),"03:00",function(result){});
+     - YTHIPcomm.timer("03:00",function(result){});        // 3분 타이머 적용
+     - YTHIPcomm.timer(60, function(result){});            // 1분20초 타이머 적용
+     Returns        : -
+     Notes        :
+     - 특정 요소를 지정해주면 해당 요소에 타이머 값을 적용할수 있음
+     - callback에 타이머 상태 값들을 JSON형태로 반환함.
+     - result인자에 결과 값
+     {
+     "timerResult"    : false,    //타이머가 종료될 경우 true 반환
+     "timerSelecter"    : $("#timer"),
+     "timeNum"        : "03:00"
+     }
+     */
+    let _timer = function(paramSelecter, paramTimeRange, paramCallback, paramSecondSize,timerTarget){
+        let selecter    = paramSelecter;
+        let timeRange    = paramTimeRange;
+        let secondSize    = paramSecondSize ? paramSecondSize : 1;
+        let callback    = paramCallback;
+        let timeStamp   = Math.floor(Date.now() / 1000);
+        let timerTg     = "ssesionTimer";
+        if( timerTarget ){
+            timerTg = timerTarget;
+        }
+        if( window[timerTg] ){
+            clearInterval(window[timerTg]);
+        }
+        _setTimerHtml(selecter, timeRange);
+        window[timerTg] = setInterval(function(){
+            let timerSeconds     = 0;
+            let timerMinutes     = 0;
+            let timerHours     = 0;
+            let selecValue     = "";
+            let selecValArray = [];
+            let timeSeconds    = 0;
+            if( $(selecter).length > 0 ){
+                if( $(selecter).prop("tagName") == "INPUT" ){
+                    selecValue = $(selecter).val();
+                }else{
+                    selecValue = $(selecter).html();
+                }
+            }
+            selecValArray = selecValue.split(":");
+            if( selecValArray.length == 3 ){
+                timerHours         = selecValArray[0];
+                timerMinutes     = selecValArray[1];
+                timerSeconds     = selecValArray[2];
+            }else if( selecValArray.length == 2 ){
+                timerMinutes     = selecValArray[0];
+                timerSeconds     = selecValArray[1];
+            }else if( selecValArray.length == 1 ){
+                timerSeconds     = selecValArray[0];
+            }
+            if( ((timerHours+timerMinutes+timerSeconds)*1) == 0 ){
+                clearInterval(window[timerTg]);
+                if( callback ){
+                    callback({
+                        "timerResult"    : true,
+                        "timerSelecter"    : selecter,
+                        "timeNum"        : _timeArray([timerHours*1,timerMinutes*1,timerSeconds*1])
+                    });
+                }
+            }else{
+                timeSeconds  = Number(timerHours * 3600) + Number(timerMinutes * 60) + Number(timerSeconds);
+                timeSeconds  = timeSeconds - (Math.floor(Date.now() / 1000) - timeStamp);
+                timeSeconds  = (timeSeconds > 0) ? timeSeconds : 0;
+                timeStamp    = Math.floor(Date.now() / 1000);
+                _setTimerHtml(selecter, timeSeconds);
+
+                timerHours   = parseInt(timeSeconds / 3600);
+                timerMinutes = parseInt((timeSeconds % 3600) / 60);
+                timerSeconds = parseInt(timeSeconds % 60);
+
+                if( callback ){
+                    callback({
+                        "timerResult"    : false,
+                        "timerSelecter"    : selecter,
+                        "timeNum"        : _timeArray([timerHours*1,timerMinutes*1,timerSeconds*1]),
+                        "timeSeconds"    : timeSeconds
+                    });
+                }
+            }
+        },1000);
+        $(selecter).closest(".modal_popup").data("timer", timerTg);
+    };
+
+    /*
+    Function    : YTHIPcomm.sessionStorage();
+    Description    : 세션 Storage 함수
+            YTHIPcomm.sessionStorage
+              - set(key,val);
+              - get(key);
+              - remove(key);
+    Parameter    :
+            - [string] key
+              - [string] val
+    Examples    : -
+    Returns        : - [string]
+    Notes        :
+          - val에 number타입에 값을 저장시켜도 반환시에는 string 타입에 값을 반환한다.
+    */
+    let _sessionStorage = function(){
+        let _set = function(key,val){
+            if ( "string" === typeof(val) ){
+                sessionStorage.setItem("YTHIP_"+key,val);
+            } else {
+                sessionStorage.setItem("YTHIP_"+key,JSON.stringify(val));
+            }
+        }
+
+        let _get = function(key){
+            if(!_has(key)){
+                return false;
+            } else {
+                return sessionStorage.getItem("YTHIP_"+key);
+            };
+        }
+
+        let _remove = function(key){
+            let returnVal = sessionStorage.getItem("YTHIP_"+key);
+            sessionStorage.removeItem("YTHIP_"+key)
+            return returnVal;
+        }
+
+        let _has = function(key){
+            if(("sessionStorage" in window) && window["sessionStorage"] !== null){
+
+            } else {
+                alert({title:"알림", msg:"현재 브라우저는 Session storage를 지원하지 않습니다."});
+                return false;
+            }
+
+            if(window.sessionStorage["YTHIP_"+key+""] === undefined){
+                return false;
+            } else {
+                return true;
+            }
+        }
+
+        return {
+            set     : _set,
+            get     : _get,
+            remove     : _remove,
+            has        : _has
+        }
+    }();
+
+
+    /*
+    Function    : YTHIPcomm.localStorage();
+    Description    : 세션 Storage 함수
+            YTHIPcomm.localStorage
+              - set(key,val);
+              - get(key);
+              - remove(key);
+    Parameter    :
+            - [string] key
+              - [string] val
+    Examples    : -
+    Returns        : - [string]
+    Notes        :
+          - val에 number타입에 값을 저장시켜도 반환시에는 string 타입에 값을 반환한다.
+    */
+    let _localStorage = function(){
+        let _set = function(key,val){
+            if ( "string" === typeof(val) ){
+                localStorage.setItem("YTHIP_"+key,val);
+            } else {
+                localStorage.setItem("YTHIP_"+key,JSON.stringify(val));
+            }
+        }
+
+        let _get = function(key){
+            if(!_has(key)){
+                return false;
+            } else {
+                return localStorage.getItem("YTHIP_"+key);
+                /*
+                let val = localStorage.getItem("YTHIP_"+key)
+                if( (val.substring(0,1) == "{"||val.substring(0,1) == "[")
+                    && (val.substring(val.length-1,val.length) == "}" || val.substring(val.length-1,val.length) == "]") ){
+                    return JSON.parse(val);
+                }else{
+                    return val
+                }
+                 */
+            };
+        }
+
+        let _remove = function(key){
+            let returnVal = localStorage.getItem("YTHIP_"+key);
+            localStorage.removeItem("YTHIP_"+key)
+            return returnVal;
+        }
+
+        let _has = function(key){
+            if(("localStorage" in window) && window["localStorage"] !== null){
+                //return true;
+            } else {
+                alert({title:"알림", msg:"현재 브라우저는 local storage를 지원하지 않습니다."});
+                return false;
+            }
+
+            if(window.localStorage["YTHIP_"+key] === undefined){
+                return false;
+            } else {
+                return true;
+            }
+        };
+
+        return {
+            set     : _set,
+            get     : _get,
+            remove     : _remove,
+            has        : _has
+        }
+    }();
+
+    let _log = (YTHIPutil && YTHIPutil["log"]) || function(){
+        let argElmt = _log.arguments;
+        if(argElmt){
+            for (let i = 0, j = argElmt.length; i < j; i++) {
+                YTHIPutil.log(argElmt[i]);
+            }
+        }
+    };
+
+
+    /**
+    Function    :
+        YTHIPcomm.cookie.set; 쿠키 셋팅
+        YTHIPcomm.cookie.get; 쿠키 반환
+        YTHIPcomm.cookie.del; 쿠키 삭제
+    Parameter    : - key : 쿠키명
+     - val : 쿠키값
+     - expdays :쿠키기간
+    Examples    :
+         - 쿠키 셋팅 : YTHIPcomm.cookie.set(key, val, expdays);
+         - 쿠키 반환 : YTHIPcomm.cookie.get(key);
+         - 쿠키 삭제 : YTHIPcomm.cookie.del(key);
+    Returns    : -
+    Notes        : - 쿠키설정
+    */
+    let _cookie = function(){
+
+        let __set = function(key, val, expdays){
+            let todayDate = new Date();
+            if(expdays != '0') {
+                todayDate.setDate( todayDate.getDate() + expdays );
+                document.cookie = key + "=" + escape( val ) + "; path=/; expires=" + todayDate.toGMTString() + ";"
+            } else {
+                todayDate.setDate( todayDate.getDate());
+                document.cookie = key + "=" + escape( val ) + "; path=/;";
+            }
+        }
+
+        let __get = function(key){
+            let nameOfCookie = key + "=";
+            let x = 0;
+            while ( x <= document.cookie.length ){
+                let y = (x+nameOfCookie.length);
+                if ( document.cookie.substring( x, y ) == nameOfCookie ){
+                    if ( (endOfCookie=document.cookie.indexOf( ";", y )) == -1 )
+                        endOfCookie = document.cookie.length;
+                    return unescape( document.cookie.substring( y, endOfCookie ) );
+                }
+                x = document.cookie.indexOf( " ", x ) + 1;
+                if ( x == 0 )
+                    break;
+            }
+            return "";
+        }
+
+        let __del = function(key){
+            let todayDate = new Date();
+            todayDate.setDate( todayDate.getDate() );
+            document.cookie = key + "=; path=/; expires=" + todayDate + ";"
+        }
+
+        return {
+            set : __set
+            , get : __get
+            , del : __del
+        }
+    }();
+
+    /**
+     Function    : YTHIPcomm.href
+     Parameter    : - url : 이동할 페이지 주소, isAddHistory 주소 히스토리에 기록을 남길지 여부
+     Examples    : - 로그아웃 : YTHIPcomm.href("/AAAAAA0000.do");
+     Notes        : - 페이지 이동
+
+    let _href = function(url, isAddHistory){
+        YTHIPcomm.indicator(true);
+        setTimeout(YTHIPcomm.indicator, 5000);
+        if(isAddHistory){
+            location.href = url;
+        }else{
+            location.replace(url);
+        }
+    };
+     */
+
+    /**
+     Function    : YTHIPcomm.loadScript
+     Parameter    : - url : 스크립트 경로
+     - callbackFn : 콜백함수
+     Examples    : - YTHIPcomm.loadScript(url, callbackFn);
+     Returns    : -
+     Notes        : - 스크립트를 로드한다.
+     */
+    let _loadScript = function(url, callbackFn) {
+        if($('[src^="'+ url +'"]').length == 0) {
+            let scriptElem = document.createElement('script');
+            scriptElem.type="text/javascript";
+            scriptElem.src = url + '?dt=' + YTHIPutil.date.getTodayDate(false);
+            (document.querySelector('body') || document.querySelector('head')).appendChild(scriptElem);
+            scriptElem.onerror = function(){
+                alert({title:"오류", msg:url + "로딩 오류"});
+            };
+            scriptElem.onload = function(){
+                if($.type(callbackFn) == "function") {
+                    callbackFn();
+                }
+            };
+        } else {
+            if($.type(callbackFn) == "function") {
+                callbackFn();
+            }
+        }
+    };
+
+
+    let _pagination = function(){
+
+        let ___pagingObj = {
+            pageSize : 10     // 한 페이지에 나타낼 데이터 수
+            , pageCount : 10       // 한 화면에 나타낼 페이지 수
+            , prev : 0             // 이전 페이지 값
+            , next : 0             // 다음 페이지 값
+            , windowWidth : 780    // 모바일 / PC 확인을 위한 window size
+        }
+
+        /**
+         * 페이징 처리
+         * @param target = 처리한 페이징 내용을 넣을 대상
+         * @param paging = 조회된 페이징 정보
+         * @param callJsFn = 페이징 이동시 사용될 함수명
+         */
+        let __fn = function(target, paging, callJsFn){
+            window['fnAjaxCallPaging' + target] = callJsFn;
+            if(!YTHIPutil.isEmpty(paging.pageSize)) ___pagingObj.pageSize = paging.pageSize;
+
+            let windowSize = window.innerWidth; // PC / 모바일 구분을 위한 윈도우 사이즈 측정
+
+            if(windowSize >= ___pagingObj.windowWidth) YTHIPcomm.pagination.pc(target, paging); // PC 페이징 처리
+            else YTHIPcomm.pagination.mb(target, paging);  // MOBILE 페이징 처리
+            //else YTHIPcomm.pagination.mbMore(target, paging);  // MOBILE 더보기 처리
+
+            // 페이징 클릭 이벤트
+            $(target).find('a').on('click',function(){
+                let thisId = $(this).attr('id');
+
+                if(thisId === 'viewMore'){ // 모바일 더보기
+                    let page = $(this).data("page");
+                    window['fnAjaxCallPaging' + target](page);
+                } else {    // PC 페이징
+                    let page = $(this).data("page");
+
+                    let totalPage = Math.ceil(paging.totCount/___pagingObj.pageSize);
+                    if(page === "first") page = 1;
+                    if(page === "prev") page = (paging.pageNum < ___pagingObj.pageCount)? 1: parseInt(paging.pageNum) - parseInt(___pagingObj.pageCount);
+                    if(page === "next") page = (parseInt(paging.pageNum) + parseInt(___pagingObj.pageCount) >= totalPage)? totalPage: parseInt(paging.pageNum) + parseInt(___pagingObj.pageCount);
+                    if(page === "last") page = totalPage;
+
+                    window['fnAjaxCallPaging' + target](page);
+                }
+            });
+        };
+
+        //let __pc = function(target, totalDataCnt, currentPage){
+        let __pc = function(target, paging){
+            //YTHIPcomm.log(">>> PC Paging");
+            ___pagingObj.pageCount = (YTHIPutil.isEmpty(paging.pageCount))? 10:paging.pageCount;
+            //curPageId = currentPage>1?Math.round((currentPage/___pagingObj.pageSize))+1:currentPage;
+            let curPageNum = paging.pageNum;
+
+            // 총 페이지 수
+            //let totalPage = Math.ceil(_pagging.totCount/___pagingObj.pageSize);
+            let totalPage = Math.ceil(paging.totCount/___pagingObj.pageSize);
+            //YTHIPutil.log("curPageNum : " + curPageNum);
+            //YTHIPutil.log("totalPage : " + totalPage);
+
+            let renderPagingHtml = "";
+            if(curPageNum > ___pagingObj.pageCount) {
+                renderPagingHtml += '<a href="javascript:void(0);" class="page-navi first" id="first" data-page="first">처음</a>';
+                renderPagingHtml += '<a href="javascript:void(0);" class="page-navi prev" id="prev" data-page="prev">이전</a>';
+            }
+
+            renderPagingHtml += '<div class="page-links">';
+            let start = Math.floor((curPageNum - 1) / ___pagingObj.pageCount) * ___pagingObj.pageCount + 1;
+            for (const end = start + ___pagingObj.pageCount; start < end && start <= totalPage; start++) {
+                renderPagingHtml += '<a href="javascript:void(0);" data-page="' + start + '" class="page-link ' + (start == curPageNum ? 'active' : '') + '">' + start + '</a>';
+            }
+            renderPagingHtml += (renderPagingHtml === "<span>")? '<a href="javascript:void(0);" data-page="1" class="page-link active">1</a>' : '';
+            renderPagingHtml += '</div>';
+
+            if (totalPage > ___pagingObj.pageCount && Math.floor((curPageNum - 1) / ___pagingObj.pageCount) * ___pagingObj.pageCount + ___pagingObj.pageCount + 1 <= totalPage) {
+                renderPagingHtml += '<a href="javascript:void(0);" class="page-navi next" id="next" data-page="next">다음</a>';
+                renderPagingHtml += '<a href="javascript:void(0);" class="page-navi last" id="last" data-page="last">마지막</a>';
+            }
+            $(target).html(renderPagingHtml);
+
+            /*
+            // 총건수 및 현재 페이지
+            if($("p.articles").length != 0){
+                let str = '';
+                str += '<span class="total">전체 <span class="txt-bold">' + paging.totCount + '</span>건 </span> ';
+                str += '현재 페이지 <span class="txt-bold total_page">' + paging.pageNum + '</span>/' + Math.ceil(paging.totCount/paging.pageSize);
+                $("p.articles").html(str);
+            }
+             */
+        };
+
+        //let __mb = function(target, totalDataCnt, currentPage){
+        let __mb = function(target, paging){
+            //YTHIPcomm.log(">>> Mobile Paging");
+            ___pagingObj.pageCount = (YTHIPutil.isEmpty(paging.pageCount))? 5:paging.pageCount;
+
+            //curPageId = currentPage>1?Math.round((currentPage/___pagingObj.pageSize))+1:currentPage;
+            let curPageNum = paging.pageNum;
+
+            // 총 페이지 수
+            //let totalPage = Math.ceil(_pagging.totCount/___pagingObj.pageSize);
+            let totalPage = Math.ceil(paging.totCount/___pagingObj.pageSize);
+            //YTHIPutil.log("curPageNum : " + curPageNum);
+            //YTHIPutil.log("totalPage : " + totalPage);
+
+            let renderPagingHtml = "";
+            if(curPageNum > ___pagingObj.pageCount) {
+                //renderPagingHtml += '<a href="javascript:void(0);" class="page-navi first" id="first" data-page="first">처음</a>';
+                renderPagingHtml += '<a href="javascript:void(0);" class="page-navi prev" id="prev" data-page="prev">이전</a>';
+            }
+
+            renderPagingHtml += '<div class="page-links">';
+            let start = Math.floor((curPageNum - 1) / ___pagingObj.pageCount) * ___pagingObj.pageCount + 1;
+            for (const end = start + ___pagingObj.pageCount; start < end && start <= totalPage; start++) {
+                renderPagingHtml += '<a href="javascript:void(0);" data-page="' + start + '" class="page-link ' + (start == curPageNum ? 'active' : '') + '">' + start + '</a>';
+            }
+            renderPagingHtml += (renderPagingHtml === "<span>")? '<a href="javascript:void(0);" data-page="1" class="page-link active">1</a>' : '';
+            renderPagingHtml += '</div>';
+
+            if (totalPage > ___pagingObj.pageCount && Math.floor((curPageNum - 1) / ___pagingObj.pageCount) * ___pagingObj.pageCount + ___pagingObj.pageCount + 1 <= totalPage) {
+                renderPagingHtml += '<a href="javascript:void(0);" class="page-navi next" id="next" data-page="next">다음</a>';
+                //renderPagingHtml += '<a href="javascript:void(0);" class="page-navi last" id="last" data-page="last">마지막</a>';
+            }
+            $(target).html(renderPagingHtml);
+
+            /*
+            // 총건수 및 현재 페이지
+            if($("p.articles").length != 0){
+                let str = '';
+                str += '<span class="total">전체 <span class="txt-bold">' + paging.totCount + '</span>건 </span> ';
+                str += '현재 페이지 <span class="txt-bold total_page">' + paging.pageNum + '</span>/' + Math.ceil(paging.totCount/paging.pageSize);
+                $("p.articles").html(str);
+            }
+             */
+        };
+
+        //let __mb = function(target, totalDataCnt, currentPage){
+        let __mbMore = function(target, paging){
+            YTHIPcomm.log(">>> Mobile Paging");
+            // 스크롤 세팅
+            moreScrollTop = document.documentElement.scrollTop;
+
+            // 현재 페이지 num 처리 ( 1, 2, 3, 4.... )
+            currentPage = paging.pageNum;
+
+            // 마지막 페이지 번호
+            let lastPage = paging.totCount % ___pagingObj.pageSize === 0 ? Math.floor(paging.totCount / ___pagingObj.pageSize) : Math.floor(paging.totCount / ___pagingObj.pageSize) + 1;
+
+            let nextPage = (currentPage < lastPage) ? currentPage+1 : 0;
+            if(nextPage > 0) {
+                let renderPagingHtml = '<a href="javascript:void(0);" style="width:100%" class="viewMore" id="viewMore" data-page="' + nextPage + '"><span>더보기</span></a>';
+                // 페이지 목록 생성
+                $(target).html(renderPagingHtml);
+            }
+
+            // 데이터 없을 경우와 마지막 페이지일 경우 페이징 삭제 처리
+            if(paging.totCount > 0 && lastPage !== currentPage) $(target).show();
+            else $(target).hide();
+        };
+
+        return {
+            fn : __fn
+            , pc : __pc
+            , mb : __mb
+            , mbMore : __mbMore
+        }
+    }();
+
+    let _pagination2 = function(){
+
+        let ___pagingObj = {
+            pageSize : 10     // 한 페이지에 나타낼 데이터 수
+            , pageLRCount : 2 // 현재 페이지 좌우로 보여질 페이지 수
+            , windowWidth : 780    // 모바일 / PC 확인을 위한 window size
+        }
+
+        /**
+         * 페이징 처리
+         * @param target = 처리한 페이징 내용을 넣을 대상
+         * @param paging = 조회된 페이징 정보
+         * @param callJsFn = 페이징 이동시 사용될 함수명
+         */
+        let __fn = function(target, paging, callJsFn){
+            window['fnAjaxCallPaging' + target] = callJsFn;
+            if(!YTHIPutil.isEmpty(paging.pageSize)) ___pagingObj.pageSize = paging.pageSize;
+
+            let windowSize = window.innerWidth; // PC / 모바일 구분을 위한 윈도우 사이즈 측정
+
+            if(windowSize >= ___pagingObj.windowWidth) __pc(target, paging); // PC 페이징 처리
+            else __mb(target, paging);  // MOBILE 페이징 처리
+            //else YTHIPcomm.pagination.mbMore(target, paging);  // MOBILE 더보기 처리
+
+            // 페이징 클릭 이벤트
+            $(target).find('a').on('click',function(){
+                let thisId = $(this).attr('id');
+
+                if(thisId === 'viewMore'){ // 모바일 더보기
+                    let page = $(this).data("page");
+                    window['fnAjaxCallPaging' + target](page);
+                } else {    // PC 페이징
+                    let page = $(this).data("page");
+
+                    let totalPage = Math.ceil(paging.totCount/___pagingObj.pageSize);
+                    if(page === "prev") page = (paging.pageNum-1 < 1)? 1: parseInt(paging.pageNum)-1;
+                    if(page === "next") page = (paging.pageNum+1 > totalPage)? totalPage: parseInt(paging.pageNum)+1;
+
+                    window['fnAjaxCallPaging' + target](page);
+                }
+            });
+        };
+
+        //let __pc = function(target, totalDataCnt, currentPage){
+        let __pc = function(target, paging){
+
+            // 현재 페이지번호
+            const curPageNum = parseInt(paging.pageNum);
+
+            // 총 페이지 수
+            let totalPage = Math.ceil(paging.totCount/___pagingObj.pageSize);
+
+            let renderPagingHtml = "";
+            renderPagingHtml += '<a href="javascript:;" class="page-navi prev" id="prev" data-page="prev">이전</a>';
+
+            let start = (curPageNum < ((___pagingObj.pageLRCount*2)+1))? 1:curPageNum - ___pagingObj.pageLRCount;
+            if(start > totalPage-(___pagingObj.pageLRCount*2)) start = totalPage-(___pagingObj.pageLRCount*2);
+            if(start < 1) start = 1;
+
+            let end = (curPageNum < ((___pagingObj.pageLRCount*2)+1))? ((___pagingObj.pageLRCount*2)+1):curPageNum + ___pagingObj.pageLRCount;
+            if(end > totalPage) end = totalPage;
+
+            renderPagingHtml += '<div class="page-links">';
+            renderPagingHtml += '<a href="javascript:;" data-page="1" class="page-link ' + (1 === curPageNum ? 'active' : '')  + '"' + (1 === curPageNum ? ' aria-current="page"' : '' ) + '>' + 1 + '</a>';
+
+            if(start > 2) renderPagingHtml += '...';
+
+            for (let i = start; i <= end; i++) {
+                //console.log(i + ' : ' + curPageNum);
+                //if(i !== 1 && i !== totalPage) {
+                if(i !== 1 && i !== totalPage && i >= start && i <= end) {
+                    renderPagingHtml += '<a href="javascript:void(0);" data-page="' + i + '" class="page-link ' + (i === curPageNum ? 'active' : '') + '"' + (i === curPageNum ? ' aria-current="page"' : '' ) + '>' + i + '</a>';
+                }
+            }
+
+            if(end <= totalPage-2)  renderPagingHtml += '...';
+
+            if(totalPage > 1){
+                renderPagingHtml += '<a href="javascript:;" data-page="' + totalPage + '" class="page-link ' + (totalPage === curPageNum ? 'active' : '') + '"' + (totalPage === curPageNum ? ' aria-current="page"' : '' ) + '>' + totalPage + '</a>';
+            }
+
+            renderPagingHtml += '</div>';
+
+            renderPagingHtml += '<a href="javascript:void(0);" class="page-navi next" id="next" data-page="next">다음</a>';
+            $(target).html(renderPagingHtml);
+
+            /*
+            // 총건수 및 현재 페이지
+            if($("p.articles").length != 0){
+                let str = '';
+                str += '<span class="total">전체 <span class="txt-bold">' + paging.totCount + '</span>건 </span> ';
+                str += '현재 페이지 <span class="txt-bold total_page">' + paging.pageNum + '</span>/' + Math.ceil(paging.totCount/paging.pageSize);
+                $("p.articles").html(str);
+            }
+             */
+        };
+
+        //let __mb = function(target, totalDataCnt, currentPage){
+        let __mb = function(target, paging){
+
+            // 페이지수를 별도로 지정한 경우
+            ___pagingObj.pageLRCount = 1;
+
+            // 현재 페이지번호
+            const curPageNum = parseInt(paging.pageNum);
+
+            // 총 페이지 수
+            let totalPage = Math.ceil(paging.totCount/___pagingObj.pageSize);
+
+            let renderPagingHtml = "";
+            renderPagingHtml += '<a href="javascript:;" class="page-navi prev" id="prev" data-page="prev">이전</a>';
+
+            let start = (curPageNum < ((___pagingObj.pageLRCount*2)+1))? 1:curPageNum - ___pagingObj.pageLRCount;
+            if(start > totalPage-(___pagingObj.pageLRCount*2)) start = totalPage-(___pagingObj.pageLRCount*2);
+            if(start < 1) start = 1;
+
+            let end = (curPageNum < ((___pagingObj.pageLRCount*2)+1))? ((___pagingObj.pageLRCount*2)+1):curPageNum + ___pagingObj.pageLRCount;
+            if(end > totalPage) end = totalPage;
+
+            renderPagingHtml += '<div class="page-links">';
+            renderPagingHtml += '<a href="javascript:;" data-page="1" class="page-link ' + (1 === curPageNum ? 'active' : '') + '"' + (1 === curPageNum ? ' aria-current="page"' : '' ) + '>1</a>';
+
+            if(start > 2) renderPagingHtml += '...';
+
+            for (let i = start; i <= end; i++) {
+                //console.log(i + ' : ' + curPageNum);
+                //if(i !== 1 && i !== totalPage) {
+                if(i !== 1 && i !== totalPage && i >= start && i <= end) {
+                    renderPagingHtml += '<a href="javascript:void(0);" data-page="' + i + '" class="page-link ' + (i === curPageNum ? 'active' : '')+ '"' + (i === curPageNum ? ' aria-current="page"' : '' ) + '>' + i + '</a>';
+                }
+            }
+
+            if(end <= totalPage-2)  renderPagingHtml += '...';
+
+            if(totalPage > 1){
+                renderPagingHtml += '<a href="javascript:;" data-page="' + totalPage + '" class="page-link ' + (totalPage === curPageNum ? 'active' : '') + '"' + (totalPage === curPageNum ? ' aria-current="page"' : '' ) + '>' + totalPage + '</a>';
+            }
+
+            renderPagingHtml += '</div>';
+
+            renderPagingHtml += '<a href="javascript:void(0);" class="page-navi next" id="next" data-page="next">다음</a>';
+            $(target).html(renderPagingHtml);
+
+            /*
+            // 총건수 및 현재 페이지
+            if($("p.articles").length != 0){
+                let str = '';
+                str += '<span class="total">전체 <span class="txt-bold">' + paging.totCount + '</span>건 </span> ';
+                str += '현재 페이지 <span class="txt-bold total_page">' + paging.pageNum + '</span>/' + Math.ceil(paging.totCount/paging.pageSize);
+                $("p.articles").html(str);
+            }
+             */
+        };
+
+        //let __mb = function(target, totalDataCnt, currentPage){
+        let __mbMore = function(target, paging){
+            YTHIPcomm.log(">>> Mobile Paging");
+            // 스크롤 세팅
+            moreScrollTop = document.documentElement.scrollTop;
+
+            // 현재 페이지 num 처리 ( 1, 2, 3, 4.... )
+            currentPage = paging.pageNum;
+
+            // 마지막 페이지 번호
+            let lastPage = paging.totCount % ___pagingObj.pageSize === 0 ? Math.floor(paging.totCount / ___pagingObj.pageSize) : Math.floor(paging.totCount / ___pagingObj.pageSize) + 1;
+
+            let nextPage = (currentPage < lastPage) ? currentPage+1 : 0;
+            if(nextPage > 0) {
+                let renderPagingHtml = '<a href="javascript:void(0);" style="width:100%" class="viewMore" id="viewMore" data-page="' + nextPage + '"><span>더보기</span></a>';
+                // 페이지 목록 생성
+                $(target).html(renderPagingHtml);
+            }
+
+            // 데이터 없을 경우와 마지막 페이지일 경우 페이징 삭제 처리
+            if(paging.totCount > 0 && lastPage !== currentPage) $(target).show();
+            else $(target).hide();
+        };
+
+        return {
+            fn : __fn
+            , pc : __pc
+            , mb : __mb
+            , mbMore : __mbMore
+        }
+    }();
+
+    if($.type(top["bodyScroll"]) != "function"){
+        top["bodyScroll"] = function(_status, _orgWidth) {
+            let $fixedModal = $('body');
+            if (_status) {
+                $fixedModal.addClass('modal_open');
+                let scrollbarWidth = $('body').width() - _orgWidth;
+                if (scrollbarWidth > 0) {
+                    $fixedModal.css({'margin-right': scrollbarWidth});
+                    $('.fixed-header #header').css({'right': scrollbarWidth});
+                }
+            } else {
+                $fixedModal.removeClass('modal_open');
+                $fixedModal.css({'margin-right': ''});
+                $('.fixed-header #header').css({'right': ''});
+            }
+        };
+    }
+
+    /*
+    let _popup2 = function(){
+
+        let _layerOpen = function(htmlURL, options){
+            if(options == null) options = {};
+            let _opener = $(this);
+            let _opt = {
+                "id" : ""
+                ,"showFooter" : "N"
+                ,"bizParam" : ""
+                ,"show" : "Y"
+                ,"autoBtnEvent" : "Y"
+                ,"popupJsUrl" : ""
+                ,"closeBtn" : "Y"
+                ,"prdCd" : ""
+                ,"eventId" : ""
+                ,"call_opener" : _opener
+            };
+            if(options) $.extend(_opt, options);
+            if(htmlURL){
+                if ($.type(htmlURL) == "object" && $(htmlURL).prop("tagName") == "A") {
+                    if(!_opt["call_opener"]) _opt["call_opener"] = $(htmlURL);
+                    htmlURL = $(htmlURL).attr("href");
+                }
+                if(!htmlURL) return false;
+                if($.type(top["sendDHTMLLog"]) == "function"){
+                    setTimeout(function(){
+                        top["sendDHTMLLog"](htmlURL.substring(htmlURL.lastIndexOf("/")+1, htmlURL.lastIndexOf(".")), _opt["prdCd"], _opt["eventId"]);
+                    }, 8);
+                }
+
+                _isError = YTHIPcomm.ajax(YTHIPcomm.API_MNG_URL + htmlURL, _opt["bizParam"],function(response) {
+                    if(!response || $.type(response) == "string") {
+                        if(!$.trim(response)){
+                            YTHIPcomm.alert({title:"오류", msg:"수신 데이터 없음"},null,null,"에러");
+                            return;
+                        }else if (response.indexOf("<html") > -1) { //팝업 html이 아닌 페이지 html이 넘어 올 경우 처리
+                            response = response.substring(response.indexOf("<body>") + "<body>".length, response.indexOf("</body>"));
+                            //console.log(response);
+                            let _responseBodyHtml = $(response);
+
+                            if (_responseBodyHtml.get(0)) {
+                                _responseBodyHtml.each(function (_i, _o) {
+                                    let $o = $(_o);
+                                    if ($o.prop("tagName") == "DIV") {
+                                        if ($o.attr("id") == "error") {
+                                            $("div.shadow_box", $o).css({"margin": "0"});
+                                            response = $o.removeClass("cont_body").addClass("main_cont").prop("outerHTML");
+                                            $popup.removeClass("modal_xxl").removeClass("modal_xl").addClass("modal_lg");
+                                            return false;
+                                        } else {
+                                            let $error = $("#error", $o);
+                                            if ($error.get(0)) {
+                                                $("div.shadow_box", $error).css("margin-top", "0");
+                                                response = $error.prop("outerHTML");
+                                                $popup.removeClass("modal_xxl").removeClass("modal_xl").addClass("modal_lg");
+                                                return false;
+                                            }
+                                        }
+                                    }
+                                });
+                            }
+
+                            $("div#body").append(_responseBodyHtml);
+                            $("html").addClass("layerpop-active");
+                            $("div#codeMgr").addClass("active");
+                        }
+                    }
+                }, function(xhr, textStatus, errorThrown){
+                    //YTHIPcomm.alert({title:(xhr && xhr["responseText"]) || textStatus || "통신에러", msg:"오류"}, _opener,null,"에러");
+                    $("html").removeClass("layerpop-active");
+                }, "html");
+            }
+        }
+
+        return {
+            layerOpen : _layerOpen
+        }
+    }();
+     */
+
+    /*========================================================================
+      * function     : YTHIPcomm.popup
+      * description     : 팝업/레이어팝업 - 시작
+      *========================================================================*/
+    let _popup = function(){
+        /**
+         * Function        : YTHIPcomm.popup.layerOpen();
+         * Description    : 레이어팝업 생성
+         * Parameter    : - [object] options
+         *                     {
+         *                         "id"            : 레이어 팝업 아이디 [default : popupLayer + 자동증가된 숫자]
+         *                         "title"            : 레이어 팝업 제목
+         *                         "className"        : 레이어 팝업 클래스
+         *                         "modalType"        : 레이어 팝업 가로크기 400, 600, 750, 800, 880, 1100, 1200 [default : alert] .modal_alert(600)
+         *                                           .modal_xs(400), .modal_sm(600), .modal_md(750), .modal_lg(800), .modal_xl(880), .modal_1100(1100), .modal_xxl(1200)
+         *                         "showFooter"    : 레이어 풋터 표출 여부 [default : N]
+         *                         "bizParam"        : was에 팝업 레이어 요청할때 보낼 param [form 아이디 or json object]
+         *                         "show"            : 레이어 팝업 표출 여부, 생성과 동시에 표출을 원하지 않으면 "N" 표출을 원하는 시점에 YTHIPcomm.popup.layerShow(레이어object)하면 표출됨 [default : Y]
+         *                         "autoBtnEvent"    : 모든 btn_group 안에 있는 button에 클릭 이벤트를 자동으로 생성한다. [default : Y]
+         *                                           각각의 버튼에 "data-call_back_fn" 속성으로 function을 연결하면 클릭시 자동으로 function을 호출한다.
+         *                                           또한 class 속성에 "auto_close"를 포함하면 자동으로 레이어 팝업이 닫힌다.
+         *                         "closeBtn"        : 레이어 팝업 닫기 버튼을 자동으로 생성한다. [default : Y]
+         *                         "eventId"        : 이벤트ID [sendDHTMLLog에 셋팅할 이벤트ID]
+         *                     }
+         *                  - [object] opener        : 레이어 팝업이 닫히고 focus를 줄 대상의 id나 객체
+         *                  - [string or A tag] htmlURL    : 레이어 팝업의 내용을 호출할 was url or href에 주소를 넣은 A tag, A tag를 인자로 넘길경우 opener를 지정하지 않으면 레이어 팝업이 닫힐경우 A tag로 포커스를 준다.
+         *                  - [string] jsURL        : 스크립트 url
+         * Examples        : - YTHIPcomm.popup.layerOpen({"msg":"처리되었습니다.","title":"안내","showFooter":"Y"},"userid","/CECMSM0002.do","/resources/js/biz/ce/cm/sm/CECMSM0002.js")
+         * Returns        : - 레이어 팝업 오픈전 bizParam이 form이면 valdate를 실행하여 필터에 걸리면 false를 return하고 정상적이면 popup레이어를 생성하여 객체를 return한다. [boolean or popup object]
+         *
+         * Function        : YTHIPcomm.popup.layerShow();
+         * Description    : 레이어팝업 화면에 표출
+         * Parameter    : - [object] 생성된 레이어팝업 or [string] 생성된 레이어팝업 id
+         *
+         * Function        : YTHIPcomm.popup.layerClose();
+         * Description    : 레이어팝업 제거
+         * Parameter    : - [object] 생성된 레이어팝업 or [string] 생성된 레이어팝업 id
+         *
+         * Function        : YTHIPcomm.popup.openWindow(_obj, popName, w, h);
+         * Description    : 윈도위 팝업
+         * Parameter    : - [string or object] url or href에 url을 넣은 a tag
+         *                  - [string] 팝업 이름
+         *                  - [int] 가로 사이즈
+         *                  - [int] 새로 사이즈
+         */
+        let _layerHandler = {
+            "layerId" : 1
+            ,"getPopup" : function(options){
+                if(!options["id"]) options["id"] = "popupLayer"+(this.layerId++);
+                let $obj = $('<div class="modal_popup hide remove" id="'+options["id"]+'" name="'+options["id"]+'" data-popup="'+options["id"]+'"><div class="popup_inner"></div></div>');
+                let $inner = $(".popup_inner",$obj);
+
+                if($.trim(options["modalType"]) == "1" || $.trim(options["modalType"]) == "2"){
+                    $obj.addClass("alert-area");
+                    $("html").addClass("alert-layerpop");
+                }else{
+                    //options["className"] = "modal_popup";
+                    $.trim(options["modalType"]) && $obj.addClass($.trim(options["modalType"]));
+                    $("html").addClass("layerpop-active");
+                }
+
+                /*
+                if(options["title"]){
+                    if(options["title"].indexOf("<") > -1){
+                        $inner.append(options["title"])
+                    }else{
+                        $inner.append('<div class="popup_header"></div>');
+                    }
+                }
+                */
+                if(options["className"]) $inner.addClass(options["className"]);
+                //if(options["showFooter"] != "N") $inner.append('<div class="popup_footer"><p>All rights Reserved</p></div>');
+                $obj.data("option_data",options);
+                if(options["msg"]){
+                    this.setMessage($obj,options);
+                }
+                return $obj;
+            }
+            ,"setMessage" : function(popup, options, message){
+                let tg = null;
+                if($.type(popup) == "object"){
+                    tg = popup;
+                }else{
+                    tg = $("#"+popup);
+                }
+                if(tg){
+                    let $inner = $(".popup_inner",tg);
+                    let _message = message || options["msg"];
+                    if(_message){
+//                    _message = YTHIPutil.entityToChar(_message);
+                        let $message = $(_message);
+                        if($message["hasClass"] && $message.hasClass("popup_inner")) {
+                            $inner = tg.html(_message).find(".popup_inner");
+                        } else {
+                            $inner.append(_message);
+                        }
+                        //$inner.css("color", "black"); // async 영역에서 글자가 흰색으로 됨... ??
+                        if(options["autoBtnEvent"] == "Y"){
+                            $($inner).YTHIPon("click",".btn_group button",function(e){
+                                let $this = $(this);
+                                let $thisPopup = $this.closest("div.modal_popup");
+                                $this.data("call_back_fn") && ($this.data("call_back_fn"))($thisPopup.data("option_data"));
+                                $this.hasClass("auto_close") && YTHIPcomm.popup.layerClose($thisPopup);
+                            });
+                        }
+                    }
+                }
+            }
+        };
+
+        let _layerOpen = function(htmlURL, options, _opener, callbackFn){
+            if($.type(_opener) === "function") {
+                callbackFn = _opener;
+                _opener = null;
+            }
+
+            if(options == null) options = {};
+            //let _opener = $(this);
+            //YTHIPutil.log(">>>>> =============== POPUP OPEN START ================");
+            let _opt = {
+                "id" : ""
+                ,"showFooter" : "N"
+                ,"bizParam" : ""
+                ,"show" : "Y"
+                ,"autoBtnEvent" : "Y"
+                ,"popupJsUrl" : ""
+                ,"closeBtn" : "Y"
+                ,"prdCd" : ""
+                ,"eventId" : ""
+                ,"call_opener" : _opener
+            };
+            if (callbackFn) options["callbackFn"] = callbackFn; // 콜백 저장
+
+            if(options) $.extend(_opt, options);
+            let $popup = _layerHandler.getPopup(_opt);
+            if(htmlURL){
+                if ($.type(htmlURL) == "object" && $(htmlURL).prop("tagName") == "A") {
+                    if(!_opt["call_opener"]) _opt["call_opener"] = $(htmlURL);
+                    htmlURL = $(htmlURL).attr("href");
+                }
+                if(!htmlURL) return false;
+                if($.type(top["sendDHTMLLog"]) == "function"){
+                    setTimeout(function(){
+                        top["sendDHTMLLog"](htmlURL.substring(htmlURL.lastIndexOf("/")+1, htmlURL.lastIndexOf(".")), _opt["prdCd"], _opt["eventId"]);
+                    }, 8);
+                }
+
+                _isError = YTHIPcomm.ajax(htmlURL, _opt["bizParam"], function(response){
+                    //YTHIPutil.log(">>>>> =============== 수신 ================" + response);
+                    if(!response || $.type(response) == "string"){
+                        if(!$.trim(response)){
+                            YTHIPcomm.alert({title:"오류", msg:"수신 데이터 없음"},null,null,"에러");
+                            return;
+                        }else if(response.indexOf("<html") > -1){//팝업 html이 아닌 페이지 html이 넘어 올 경우 처리
+                            response = response.substring(response.indexOf("<body>")+"<body>".length, response.indexOf("</body>"));
+                            let _responseBodyHtml = $(response);
+                            if(_responseBodyHtml.get(0)){
+                                _responseBodyHtml.each(function(_i, _o){
+                                    let $o = $(_o);
+                                    if($o.prop("tagName") == "DIV"){
+                                        if($o.attr("id") == "error"){
+                                            $("div.shadow_box",$o).css({"margin":"0"});
+                                            response = $o.removeClass("cont_body").addClass("main_cont").prop("outerHTML");
+                                            $popup.removeClass("modal_xxl").removeClass("modal_xl").addClass("modal_lg");
+                                            return false;
+                                        }else{
+                                            let $error = $("#error", $o);
+                                            if($error.get(0)){
+                                                $("div.shadow_box",$error).css("margin-top", "0");
+                                                response = $error.prop("outerHTML");
+                                                $popup.removeClass("modal_xxl").removeClass("modal_xl").addClass("modal_lg");
+                                                return false;
+                                            }
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    }
+                    if(YTHIPutil.isEmpty(_opener) || YTHIPutil.isEmpty(_opener.get(0).tagName)) $popup.appendTo("body");
+                    else $popup.insertAfter(_opener);
+                    _layerHandler.setMessage($popup,_opt,response);
+                    if($popup.find(".popup_body").length != 0 && $popup.find(".popup_body").data("perryn") != "" && $popup.find(".popup_body").data("perryn")){
+                        let strErrMsg = "ERROR : " + $popup.find(".popup_body").data("perrmsg") + " [" + $popup.find(".popup_body").data("perrcd") + "]";
+                        YTHIPcomm.alert({title:"오류", msg:strErrMsg}, null, function(){YTHIPcomm.popup.layerClose($popup);}, "");
+                        return;
+                    }
+                    if(_opt["show"] == "Y") _layerShow($popup, _opener, callbackFn);
+                }, function(xhr, textStatus, errorThrown){
+                    //YTHIPcomm.alert({title:(xhr && xhr["responseText"]) || textStatus || "통신에러", msg:"오류"}, _opener,null,"에러");
+                    $("html").removeClass("layerpop-active");
+                }, "html");
+            }else {
+                if(YTHIPutil.isEmpty(_opener) || YTHIPutil.isEmpty(_opener.get(0).tagName)) $popup.appendTo("body");
+                else $popup.insertAfter(_opener);
+                if (_opt["show"] == "Y") _layerShow($popup);
+            }
+            return $popup;
+        };
+
+        let _tLayerZint = -1;
+        let _aLayerZint = -1;
+        let _cLayerZint = -1;
+        let _nLayerZint = -1;
+        let _layerShow = function(_target, _opener, callbackFn){
+            if(!_target){
+                YTHIPcomm.alert({title:"알림", msg:"YTHIPcomm.popup.layerOpen\n (options,opener,htmlURL,jsURL)\n 선실행필요."});
+                return false;
+            }
+            let tg = null;
+            if($.type(_target) == "object"){
+                _target = $(_target);
+                if(_target.hasClass("modal_popup")){
+                    tg = _target;
+                }else{
+                    tg = _target.closest("div.modal_popup");
+                }
+            }else{
+                tg = $(".modal_popup#"+_target);
+            }
+            if (tg.get(0)) {
+                tg.removeClass('dim_hide');
+                let _options = YTHIPcomm.popup.optionData(tg) || {};
+                let $inner = $(".popup_inner", tg);
+                if(_opener) _optionData(tg)["call_opener"] = _opener;
+                if(!$("body").hasClass("modal_open")){
+                    bodyScroll(true, $("body").width());
+                    $("body").addClass("modal_open");
+                }
+
+                /*
+                setTimeout(function () {
+                    if(_options["zindex"]) tg.css("z-index", _options["zindex"]);
+                    if(tg.hasClass("body_loading_box")){
+                        $(".dimed", $(".modal_popup.show:not(.body_loading_box)", "body")).remove();
+                    }else if(!$(".modal_popup.body_loading_box", "body").get(0)){
+                        let $modalPopup = $(".modal_popup.show:not(.body_loading_box)", "body");
+                        if($modalPopup.get(0)) {
+                            let $layerPopup = $modalPopup.sort(function(_prev,_curr){return Number($(_prev).css("z-index")) - Number($(_curr).css("z-index"))});
+                            $(".dimed", $layerPopup).remove();
+                            $($layerPopup).last().children("div.popup_inner").before('<div class="dimed"></div>');
+                        }
+                    }
+                    $inner.focus();
+                    if ($('.popup_body', tg).hasScrollBarY()) {
+                        $('.popup_body', tg).attr('tabindex', '0');
+                    }
+                    tg.scrollTop(0);
+                }, 100);
+                 */
+                if(!tg.data("is_popup_re_show")){
+                    /*
+                    tg.data("is_popup_re_show", "Y");
+                    // js 파일 로드
+                    let _jsSrc = _options["popupJsUrl"];
+                    if(_jsSrc){
+                        if($.type(_jsSrc) == "string"){
+                            if(_jsSrc.toLowerCase().indexOf(".js") > -1){
+                                tg.append('<script src="'+_jsSrc+'"></script>');
+                            }else{
+                                tg.append('<script>(function(){'+_jsSrc+'})();</script>');
+                            }
+                        }else if($.type(_jsSrc) == "function"){
+                            _jsSrc.call(tg);
+                        }
+                    } else if($.fn.isFirstInit > 2 && !$("script", tg).get(0)){
+                        // 자바스크립트가 없는 경우 초기화 함수 실행
+                        tg.YTHIPinit(function(){
+                            return { "page" : tg }
+                        });
+                    }
+                    $inner.attr("tabindex", "0");
+                     */
+                    let _btnClosePopup = $("button.btn.btn_close_popup", tg);
+                    if(_btnClosePopup.get(0)){
+                        if(_options["closeBtn"] != "Y"){
+                            _btnClosePopup.hide();
+                        }
+                    }else{
+                        //_btnClosePopup = $('<button type="button" class="btn btn_close_popup btn-close"><i class="xi-close"></i><span class="sr-only">닫111기</span></button>');
+                        _btnClosePopup = $('<button type="button" class="btn btn_close_popup close-modal"><span class="sr-only">닫기</span></button>');
+                        if(_options["closeBtn"] != "Y"){
+                            _btnClosePopup.hide();
+                        }
+                        $("div", $inner).append(_btnClosePopup);
+                    }
+                    if($("button.btn.btn_close_popup", tg).css("display") == 'none'){
+                        $("button.btn.btn_close_popup", tg).after('<div tabindex="0" class="div_close_popup" />');
+                    }
+
+                    // 레이어팝업 닫기 버튼 이벤트
+                    tg.YTHIPon("click", ".btn_close_popup, .auto_close", function(e){
+                        e.stopPropagation();
+                        let $this = $(this);
+                        let $thisPopup = $this.closest("div.modal_popup");
+                        let callbackFn = $this.data("call_back_fn");
+                        YTHIPcomm.popup.layerClose($thisPopup);
+                        callbackFn && (callbackFn)($thisPopup.data("option_data"));
+                    });
+
+                    if(!YTHIPutil.isEmpty(callbackFn)) $("._btnConfirm", tg).data('callbackFn', callbackFn);
+                }
+                // z-index 조정
+                let _modalType = $.trim(_options["modalType"]);
+                if(_tLayerZint == -1){
+                    //YTHIPutil.log("_aLayerZint : " + _aLayerZint);
+                    let _tLayers = $(".modal_popup", "body").not("#body_loading_box");
+                    if(_tLayers.get(0)) {
+                        let _tLayerIndex = _tLayers.first().css("z-index");
+                        _tLayerZint = Number( (_tLayerIndex === "auto")? 100:_tLayers.first().css("z-index"));
+                    }
+                    //YTHIPutil.log("_tLayerZint : " + _tLayerZint);
+                }
+                /*
+                switch (_modalType) {
+                    case "1" :
+                    case "2" :
+                        if(_aLayerZint == -1){
+                            console.log("_aLayerZint : " + _aLayerZint);
+                            let _aLayers = $(".modal_popup.alert-area", "body");
+                            if(_aLayers.get(0)) {
+                                let _aLayerIndex = _aLayers.first().css("z-index");
+                                _aLayerZint = Number( (_aLayerIndex === "auto")? 100:_aLayers.first().css("z-index"));
+                            }
+                            console.log("_aLayerZint : " + _aLayerZint);
+                        }
+                        break;
+                        //if(_cLayerZint == -1){
+                        //    let _cLayers = $(".modal_popup.alert_area", "body");
+                        //    if(_cLayers.get(0))
+                        //        _cLayerZint = Number(_cLayers.first().css("z-index"));
+                        //}
+                        //break;
+                    default :
+                        if(_nLayerZint == -1){
+                            let _nLayers = $(".modal_popup", "body").not("#body_loading_box, .alert-area, .modal_confirm");
+                            if(_nLayers.get(0)){
+                                let _nLayerIndex = _nLayers.first().css("z-index");
+                                _nLayerZint = Number( (_nLayerIndex === "auto")? 100:_nLayers.first().css("z-index"));
+                            }
+                            console.log("_nLayerZint : " + _nLayerZint);
+                        }
+                        break;
+                }
+                 */
+                if($(".modal_popup.show", "body").not("#body_loading_box").length > 0) {
+                    let _tLayers = $(".modal_popup.show.alert-area", "body").not("#body_loading_box");
+                    if(_tLayers.get(0))
+                        tg.css("z-index", _tLayerZint + _tLayers.length);
+                    /*
+                    switch (_modalType) {
+                        case "1" :
+                        case "2" :
+                            let _aLayers = $(".modal_popup.show.alert-area", "body");
+                            if(_aLayers.get(0))
+                                tg.css("z-index", _aLayerZint + _aLayers.length);
+                            break;
+                            //let _cLayers = $(".modal_popup.show.modal_confirm", "body");
+                            //if(_cLayers.get(0))
+                            //    tg.css("z-index", _cLayerZint + _cLayers.length);
+                            //break;
+                        default :
+                            let _nLayers = $(".modal_popup.show", "body").not("#body_loading_box, .alert-area, .modal_confirm");
+                            if(_nLayers.get(0))
+                                tg.css("z-index", _aLayerZint + _nLayers.length);
+                            break;
+                    }
+                    */
+                }
+                // 에러메세지 초기화
+                $("[data-cefilter*='filter']", tg).each(function(){
+                    $(this).removeErrorMsg();
+                });
+
+                tg.addClass("show").removeClass("hide");
+                //$("div", $("div.popup_inner", tg)).eq(0).attr("tabIndex", 0).focus();
+                $("div.popup_inner", tg).eq(0).attr("tabIndex", 0).focus();
+                $("div.modal-conts", tg).eq(0).attr("tabIndex", 0).focus();
+
+                // _layerClose 가 실행되면서 닫히는 버그있어서 추가함
+                if($(".modal_popup").not(".alert-area").length < 1) $("html").removeClass("layerpop-active");
+                else $("html").addClass("layerpop-active");
+
+            }else{
+                YTHIPcomm.alert({title:"알림", msg:"YTHIPcomm.popup.layerOpen\n (options,opener,htmlURL,jsURL)\n 선실행필요."});
+            }
+        };
+
+        let _layerClose = function(_target, isIndicator, resultData = null){
+            //YTHIPutil.log("_layerClose target : " + _target.get(0).outerHTML);
+
+            let tg = null;
+            if(!_target) return false;
+            if($.type(_target) == "object"){
+                _target = $(_target);
+                if(_target.hasClass("modal_popup")){
+                    tg = _target;
+                }else{
+                    tg = _target.closest("div.modal_popup");
+                }
+            }else{
+                tg = $(".modal_popup#"+_target);
+            }
+
+            if(tg.get(0)){
+                if (tg.hasClass("show")) {
+                    let optionData = tg.data("option_data");
+
+                    //let callOpener = _optionData(tg, "call_opener");
+
+                    //clearInterval(top[tg.data("timer")]); // 타이머 제거
+                    if(tg.hasClass("remove")) {
+                        //if(!tg.hasClass("body_loading_box")) tg.removeE2eInputs();
+                        tg.remove();
+                    } else {
+                        $(".dimed", tg).remove();
+                        tg.addClass("hide").removeClass("show");
+                    }
+                    //if($("div.modal_popup", "body").length === 0){
+                    if(optionData.call_opener != null ) optionData.call_opener.focus();
+                    //}else{
+                    //    $("div", $("div.modal_popup > div.popup_inner", "body").last()).eq(0).focus();
+                    //}
+
+                    /*
+                    let $modalPopup = $(".modal_popup.show", "body").not("#body_loading_box");
+                    if($modalPopup.get(0)){
+                        let $layerPopup = $modalPopup.sort(function(_prev,_curr){return Number($(_prev).css("z-index")) - Number($(_curr).css("z-index"))});
+                        let $popup_inner = $($layerPopup).last().children("div.popup_inner");
+                        $popup_inner.before('<div class="dimed"></div>');
+                        if(!tg.hasClass("body_loading_box"))
+                            $popup_inner.focus();
+                    }
+                     */
+                    /*
+                    if(callOpener){
+                        if($.type(callOpener) == "string"){
+                            try {
+                                callOpener = $("#"+callOpener);
+                            }catch(e){callOpener = null;console && YTHIPutil.log(e);}
+                        }else{
+                            callOpener = $(callOpener);
+                        }
+                        if(callOpener && callOpener.get(0)){
+                            if($("#Tk_"+callOpener.attr("id")+"_checkbox_value").val() == "transkey"){
+                                callOpener.trigger("click");
+                            }else{
+                                callOpener.focus();
+                            }
+                            if(callOpener.prop("tagName") == "INPUT"){
+                                (callOpener.get(0)).scrollIntoView(false);
+                                window.scrollTo(0, (window.pageYOffset) +(window.innerHeight / 2));
+                            }
+                        }
+                    }else if(!$modalPopup.get(0)){
+                        $("body").focus();
+                    }
+                     */
+
+                    // 알럿창 배경 처리
+                    //YTHIPutil.log("modal_popup alert length : " + $(".modal_popup.alert-area").length);
+                    if($(".modal_popup.show.alert-area").length < 1) $("html").removeClass("alert-layerpop");
+                    else $("html").addClass("alert-layerpop");
+
+                    // 일반팝업창 배경 처리
+                    //YTHIPutil.log("modal_popup not alert length : " + $(".modal_popup").not(".alert-area").length);
+                    if($(".modal_popup.show").not(".alert-area").length < 1) $("html").removeClass("layerpop-active");
+                    else $("html").addClass("layerpop-active");
+
+
+                    //if (optionData && typeof optionData.callbackFn === "function") {
+					    //optionData.callbackFn(resultData); // result 값을 전달
+					//}
+                }else{
+                    // 아래 코드는 언제 실행되는지 모름.... 나중에 정리
+                    /*
+                    if(tg.parents(".modal_popup.show") < 1 ) tg.remove();
+                    else {
+                        tg.parents(".modal_popup.show").remove();
+                        $("html").removeClass("layerpop-active");
+                    }
+                     */
+                }
+
+                // 모든 modal_popup 이 없으면 스크롤 가능상태로 변경
+                //YTHIPutil.log("modal_popup length : " + $(".modal_popup").length);
+                if ($(".modal_popup").length < 1) {
+                    bodyScroll(false);
+                }
+            }else if(!isIndicator){
+                YTHIPcomm.alert({title:"알림", msg:"닫을 레이어를 올바로 지정해 주세요.", submsg:"YTHIPcomm.popup.layerClose(\"레이어ID\");\n or\n YTHIPcomm.popup.layerClose(target object)"});
+            }
+
+        };
+
+        let _optionData = function(_target, _key){
+            let tg = null;
+            if(!_target) return false;
+            if($.type(_target) == "object"){
+                _target = $(_target);
+                if(_target.hasClass("modal_popup")){
+                    tg = _target;
+                }else{
+                    tg = _target.closest("div.modal_popup");
+                }
+            }else{
+                tg = $(".modal_popup#"+_target);
+            }
+            if (tg.length > 0) {
+                let popupOptData = tg.data("option_data");
+                if(popupOptData){
+                    if(_key){
+                        return popupOptData[_key];
+                    }else{
+                        return popupOptData;
+                    }
+                }
+            }
+            return null;
+        };
+
+        /**
+         윈도우 팝업 오픈
+         url : [string or tag] url or a tag(href 참조함)
+         popName : [string] 팝업 이름
+         w : [int] 가로 사이즈
+         h : [int] 새로 사이즈
+         */
+        let _windowOpen = function(url, popName, w, h, bizParam) {
+            if(!url){
+                YTHIPcomm.alert({title:"알림", msg:"URL이 존재하지 않습니다."});
+                return;
+            };
+            let popW = w || 900;
+            let popH = h || 600;
+            let myUrl = url;
+            if($.type(url) == "object" && $(url).prop("tagName") == "A") {
+                myUrl = $(url).attr("href");
+            }
+            let _bizParam, $ajaxParam;
+            if(bizParam){
+                if($.type(bizParam) == "string"){
+                    _bizParam = $("#"+bizParam);
+                }else{
+                    _bizParam = $(bizParam);
+                }
+                if(_bizParam.prop("tagName") == "FORM" || _bizParam.prop("tagName") == "DIV"){
+                    if(!YTHIPcomm.validate.check(bizParam)){
+                        return true;
+                    }
+                    $ajaxParam = _bizParam.toGetParams();
+                }else{
+                    $ajaxParam = bizParam;
+                }
+            }
+            let left = window.screenX + (window.outerWidth - popW) / 2;
+            let top = window.screenY + (window.outerHeight - popH) / 2;
+            let options = "width=" + popW + ", height=" + popH + ", left=" + left + ", top=" + top + ", scrollbars=yes, location=no, menubar=no, toolbar=no, status=no";
+            let _wp =  false;
+            if(_bizParam && _bizParam.attr("method") == "post") {
+                _wp = window.open("", popName, options);
+                _bizParam.attr("target", popName);
+                _bizParam.attr("action", myUrl);
+                _bizParam.submit();
+            } else {
+                _wp = window.open(myUrl+($ajaxParam ? "?"+$ajaxParam : ""), popName, options);
+            }
+            return _wp;
+        };
+
+        return {
+            layerOpen        : _layerOpen,
+            layerShow        : _layerShow,
+            layerClose    : _layerClose,
+            optionData    : _optionData,
+            windowOpen     : _windowOpen
+        }
+    }();
+
+    /**
+     Function    : YTHIPcomm.alert();
+     Parameter    : - msg[String] 표출할 메세지  객체
+     - opener[Object] alert창이 닫힐때 포커스를 줄 대상.
+     - closeFn[Function] 확인 버튼이나 닫기 버튼을 누를때 실행할 함수
+     - title[Function] 표출할 제목
+     Examples    : - YTHIPcomm.alert("메세지");
+     Returns        : - [string]
+     Notes        :
+     */
+    let _alert = function(arrMsg, opener, closeFn, btnTitle){
+
+        let _msg = '';
+        _msg += '<div class="modal-content">';
+        _msg += '<h2 class="modal-title">' + ((YTHIPutil.isEmpty(arrMsg.title))? '안내':arrMsg.title) + '</h2>';
+        _msg += '<div class="modal-conts">';
+        _msg += '   <h3 class="conts-tit">';
+        if(!YTHIPutil.isEmpty(arrMsg.msg)) {
+            let msgArr = arrMsg.msg.split("\n");
+            for(let i=0;i<msgArr.length;i++){
+                if(i>0) _msg += '<br/>';
+                _msg += msgArr[i];
+            }
+        }
+        _msg += '   </h3>';
+        if(!YTHIPutil.isEmpty(arrMsg.submsg)) {
+            let submsgArr = arrMsg.submsg.split("\n");
+            for(let i=0;i<submsgArr.length;i++){
+                if(i>0) _msg += '<br/>';
+                _msg += submsgArr[i];
+            }
+        }
+        _msg += '</div>';
+        _msg += '<div class="btn-area txt-right"><button type="button" class="btnConf01 btn-type01 auto_close">' + (btnTitle || '확인') + '</button></div>';
+        //_msg += '<div class="btn-area txt-right"><span class="display-block"><button type="button" class="btn-type03 auto_close btnConf01">확인</button></span><span class="display-block"></span></div>';
+        //_msg += '<button type="button" class="btn btn_close_popup btn-close"><i class="xi-close"></i><span class="sr-only">닫기</span></button>';
+        _msg += '<button type="button" class="btn btn_close_popup close-modal"><span class="sr-only">닫기</span></button>';
+        _msg += '</div>';
+
+        let popup = _popup.layerOpen("", {"msg":_msg,"modalType":1,"title":"안내","showFooter":"N"}, opener);
+        if($.type(closeFn) == "function"){
+            $(".btnConf01",popup).data("call_back_fn",closeFn);
+            $(".btn_close_popup",popup).data("call_back_fn",closeFn);
+        }
+        
+        //세션 타임아웃 팝업 닫기 callback 실행 연결
+	    $(".btnConf01, .btn_close_popup", popup).off("click._alert").on("click._alert", function () {
+	        const cb = $(this).data("call_back_fn");
+	        if (typeof cb === "function") {
+	            cb();
+	        }
+	        _popup.layerClose(popup); // 팝업 닫기
+	    });
+
+    };
+
+    let _confirm = function(arrMsg, opener, yesFn, noFn, btnTitleY, btnTitleN, btnAddClassY, btnAddClassN){
+
+        let _msg = '';
+        _msg += '<div class="modal-content">';
+        _msg += '<h2 class="modal-title">' + ((YTHIPutil.isEmpty(arrMsg.title))? '안내':arrMsg.title) + '</h2>';
+        _msg += '<div class="modal-conts">';
+        _msg += '   <h3 class="conts-tit">';
+        if(!YTHIPutil.isEmpty(arrMsg.msg)) {
+            let msgArr = arrMsg.msg.split("\n");
+            for(let i=0;i<msgArr.length;i++){
+                if(i>0) _msg += '<br/>';
+                _msg += msgArr[i];
+            }
+        }
+        _msg += '   </h3>';
+        if(!YTHIPutil.isEmpty(arrMsg.submsg)) {
+            let submsgArr = arrMsg.submsg.split("\n");
+            for(let i=0;i<submsgArr.length;i++){
+                if(i>0) _msg += '<br/>';
+                _msg += submsgArr[i];
+            }
+        }
+        _msg += '</div>';
+        //_msg += '<div class="btn-area txt-right"><button type="button" class="btn-type03 auto_close btnConf02">'+(btnTitleN || '취소')+'</button> <button type="button" class="btn-type01 auto_close btnConf01">'+(btnTitleY || '확인')+'</button></div></div>';
+        _msg += '<div class="btn-area display-justify"><span class="display-block"><button type="button" class="btn-type03 auto_close btnConf02">'+(btnTitleN || '돌아가기')+'</button></span><span class="display-block"><button type="button" class="btn-type01 auto_close btnConf01">'+(btnTitleY || '확인')+'</button></span></div>';
+        //_msg += '<button type="button" class="btn btn_close_popup btn-close"><i class="xi-close"></i><span class="sr-only">닫기</span></button>';
+        _msg += '<button type="button" class="btn btn_close_popup close-modal"><span class="sr-only">닫기</span></button>';
+        _msg += '</div>';
+
+        let popup = _popup.layerOpen("", {"msg":_msg,"modalType":2,"title":"안내","showFooter":"N"}, opener);
+        let btnConf01 = $(".btnConf01",popup);
+        if($.type(yesFn) == "function"){
+            $(".btnConf01",popup).data("call_back_fn",yesFn);
+        }
+        if($.type(noFn) == "function"){
+            $(".btnConf02",popup).data("call_back_fn",noFn);
+            $(".btn_close_popup",popup).data("call_back_fn",noFn);
+        }
+    };
+
+    let _sortable = function(){
+
+        let _init = function(clsObject, callbackFn){
+            //console.log("YTHIPcomm.sortable.init");
+            var sortList = document.querySelector(clsObject);
+            if (sortList) {
+                Sortable.create(sortList, {
+                    animation: 150,
+                    handle: '.btn-handle',
+                    onEnd: function(e){
+                        //console.log("YTHIPcomm.sortable.init Callback");
+                        //console.dir(e);
+                        if($.type(callbackFn) === "function") callbackFn(e);
+                        //console.log($(e.target).attr("callbackFn"));
+                        //new Function('return '+$(e.target).attr("callbackFn")+'(\'' + $(e.target) + '\')')();  // 콜백 실행
+                    }
+                });
+            }
+        }
+
+        return {
+            init    : _init
+        }
+    }();
+
+    let _excel = function(){
+        let _tableDownload = function(filename, targetId){
+            let wb = XLSX.utils.table_to_book(document.getElementById(targetId), { sheet: '시트명', raw: true });
+            XLSX.writeFile(wb, (filename));
+        }
+
+        let _jsonDownload = function(filename, dataList){
+            const ws = XLSX.utils.json_to_sheet(dataList);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, '시트명');
+            XLSX.writeFile(wb, (filename));
+
+        }
+
+        return {
+            tableDownload : _tableDownload
+            , jsonDownload : _jsonDownload
+        }
+
+    }();
+
+    let _device = function(){
+        let _isMobile = function(){
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+
+        return {
+            isMobile : _isMobile
+        }
+    }();
+
+    return {
+        GLOBAL_CONST        : _GLOBAL_CONST
+        , API_FILE_URL      : _API_FILE_URL         // 파일 URL
+        , API_FRT_URL       : _API_FRT_URL          // 사용자 FrontEnd URL
+        , API_COM_URL       : _API_COM_URL          // 공통 BackEnd URL
+        , API_CMU_URL       : _API_CMU_URL          // 커뮤니티 BackEnd URL
+        , API_LINK_URL      : _API_LINK_URL         // 연계 BackEnd URL
+        , API_YRM_URL       : _API_YRM_URL          // 청년정책등록관리 BackEnd URL
+        , API_BFHD_URL      : _API_BFHD_URL         // 청년정책사전검증 BackEnd URL
+        , API_APLY_URL      : _API_APLY_URL         // 청년정책신청 BackEnd URL
+        , API_DSCSN_URL     : _API_DSCSN_URL        // 청년정책상담관리 BackEnd URL
+        , API_SPCE_URL      : _API_SPCE_URL         // 청년공간 BackEnd URL
+        , API_AUTH_URL      : _API_AUTH_URL         // 청년공간 BackEnd URL
+        , KEY_API_KAKAO     : _KEY_API_KAKAO         // 카카오키
+        , REQUIRED_ROLES      : _REQUIRED_ROLES         //
+        , CURR_MENU         : _CURR_MENU         //
+        , BBS_URL           : _BBS_URL              // 게시판 URL 정의
+        , indicator         : _indicator            // 로딩바
+        , myDataIndicator   : _myDataIndicator      // 로딩바
+        , ajax              : _ajax                 // AJAX
+        , promise           : _promise              // Promise 객체
+        , appendHidden      : _appendHidden         // 지정된 form에 히든필드 생성
+        , jsonObjToForm     : _jsonObjToForm        // json object를 form으로
+        , timer             : _timer                // 타이머
+        , sessStorage       : _sessionStorage       // 세션스토리지
+        , locStorage        : _localStorage         // 로컬스토리지
+        , log               : _log                  // console log
+        , cookie            : _cookie
+        //, href                : _href             // 페이지 이동
+        , loadScript        : _loadScript           // 스크립트 로드
+        , pagination2        : _pagination           // 페이징
+        , pagination        : _pagination2           // 페이징 (신규)
+        , popup             : _popup
+        //, popup2             : _popup2
+        , alert             : _alert                // alert 함수
+        , confirm           : _confirm              // confirm 함수
+        , sortable          : _sortable
+        , excel             : _excel
+        , device            : _device
+    };
+}();

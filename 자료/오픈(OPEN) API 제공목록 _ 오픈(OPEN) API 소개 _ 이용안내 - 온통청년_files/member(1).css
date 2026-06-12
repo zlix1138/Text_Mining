@@ -1,0 +1,109 @@
+@charset "utf-8";
+/*-------------------------------------------------
+member Style Sheet / Author : myeong-hee park
+-------------------------------------------------*/
+@media (max-width: 1024px) {
+.page-title-wrap {
+	gap: var(--spacer8);
+	}
+.certify-option > .display-flex,
+.certify-option.single {
+	flex-direction: column;
+	gap: var(--spacer8);
+    }
+.certify-option.single .certify-tit  > span {
+	display: inline;
+	}
+.certify-type {	
+	max-width: 100%;
+	}
+.grid-cont .whitebox {
+    padding: var(--spacer12);
+	}
+.grid-cont.login-area {
+    padding: var(--spacer8) var(--spacer10);
+    }
+.login-area .login-form {
+    padding: 0 var(--spacer8) 0 0;
+    }
+.login-area .login-info {
+    padding: var(--spacer6) 0 var(--spacer6) var(--spacer8);
+    }
+}
+@media (max-width: 870px) {
+.grid-cont {
+    flex-direction: column;
+	}
+.grid-cont.login-area,
+.login-area .whitebox {
+    padding: 0;
+    }
+.login-area .login-form {
+    border-right: none;
+    }
+.login-area .login-info {
+    margin-top: var(--spacer8);
+    padding-top: var(--spacer8);
+    border-top: 1px solid var(--gray30);
+    }
+.idpw-search .desc {
+    min-height: inherit;
+    }
+}
+@media (max-width: 680px) {
+.page-title-wrap {
+	gap: var(--spacer6);
+	margin-bottom: var(--spacer14);
+	}
+.page-title-wrap .h-tit {	
+	font-size: 3.2rem;
+	}
+.main-service .lstyle-dot > li {	
+	width: 100%;
+	}
+}
+@media (max-width: 576px) {
+.certify-type > li,
+.certify-type > .graybox  {
+	padding: var(--spacer6);
+	}
+.certify-type .type-tit {	
+	padding-left: var(--spacer11);
+    line-height: 1.6;
+	font-size: 2.1rem;
+	}
+.certify-type .bg-icon {	
+	top: var(--spacer6);
+	left: var(--spacer6);
+	}
+.certify-type > li::after {
+	top: var(--spacer7);
+	}
+.certify-type .certify-list {
+    grid-template-columns: 1fr 1fr;
+	}
+}
+@media (max-width: 480px) {
+.login-area .login-info {
+	padding: var(--spacer10) var(--spacer7);
+    }
+.login-info .tit {	
+    line-height: 1.2;
+	}
+.login-info .btn-txt {	
+	}
+.join-member {
+    width: 100%;
+    gap: var(--spacer2);
+    flex-direction: column;
+    align-items: flex-start;
+    }
+}
+@media (max-width: 340px) {
+.login-info .btn-txt {
+	align-items: flex-start;
+    }
+.login-info .svg-icon {	
+    margin-top: .2rem;
+	}
+}

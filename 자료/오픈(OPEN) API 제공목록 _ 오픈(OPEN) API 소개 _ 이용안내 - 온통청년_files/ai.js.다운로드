@@ -1,0 +1,180 @@
+$(document).ready(function(){
+
+	/*20240909 S*/
+	$(".all-table-style-uppop").on("click", function(){
+		$(".all-table-style-uppop").fadeOut("fast");
+	});
+	$(".n-a").on("click", function(){
+		$(".all-table-style-uppop").fadeOut("fast");
+	});
+	$(".atsu-con").on("click", function(e){
+		e.stopPropagation();
+	});
+	$(".all-table-style td .btns .cover").on("click", function(e){
+		$(".all-table-style-uppop").css({display:"flex"});
+	});
+	$(".all-table-style td .btns .relearn").on("click", function(){
+		if($(this).hasClass("on")){
+			$(this).parents("tr").find("input[type='text']").prop("disabled","disabled");
+			$(this).parents("tr").find("input[type='text']").removeClass("on");
+			$(this).removeClass("on");
+		}else{
+			$(this).parents("tr").find("input[type='text']").prop("disabled","");
+			$(this).parents("tr").find("input[type='text']").addClass("on");
+			$(this).addClass("on");
+		}
+	});
+
+
+	$(".searchBar a").on("click", function(){
+		$(".cj-popup").css({display:"flex"});
+	});
+	$(".cj-con").on("click", function(e){
+		e.stopPropagation();
+	});
+	$(".cj-popup").on("click", function(){
+		$(".cj-popup").fadeOut("fast");
+	});
+	$(".cj-con h3 a").on("click", function(){
+		$(".cj-popup").fadeOut("fast");
+	});
+
+
+	$('.tp .baBar > button,.tp .baBar > span > button, .tp .baBar a.close-this').hover(function(event) {
+		event.stopPropagation();
+		var altText = $(this).children("img").attr('alt');
+		//console.log(altText);
+		$('.tooltip').text(altText);
+		$('.tooltip').css({
+			display: 'block',
+			top: event.pageY - 30,
+			left: event.pageX - 15
+		});
+	}, function() {
+		$('.tooltip').hide();
+	});
+	$('.tooltip').hover(function(e) {e.stopPropagation();});
+	$('.preset-buttons').click(function(e) {e.stopPropagation();});
+
+	$("#refresh").on("click", function(){
+		location.reload();
+		$('#openWindow').load('left.htm');
+	});
+
+	$("#refreshLink").on("click", function(){
+		location.reload();
+	});
+        
+
+		$('#openWindow2').on('click', function() {  
+			checkPopup();
+			//localStorage.removeItem(pageId);
+
+            const popupId = 'sharedPopup';  
+            if (activePopup && !activePopup.closed) {
+
+				activePopup.focus();  
+				
+            } else {
+				var hh= screen.height * 0.8;
+				var wh=screen.width * 0.4;
+                activePopup = window.open('/chat_dev/chat.htm', popupId, 'width=' + wh + ',height=' + hh + '');
+                localStorage.setItem(pageId, popupId);  //!f5
+                
+                setTimeout(function() {  
+                    if (activePopup && !activePopup.closed) {  
+                        activePopup.focus();  
+                    }  
+                }, 100); 
+            }  
+        });  
+
+
+
+function initTextFitting() {
+  const container = document.querySelector('.photo');
+  const textElement = document.getElementById('syncedName');
+  const chatIcon = document.getElementById('chatIcon');
+
+  if (!container || !textElement) return;
+
+  const baseFontSize = 16;
+  let currentFontSize = baseFontSize;
+
+  function fitTextToContainer() {
+	
+    textElement.style.fontSize = `${baseFontSize}px`;
+
+    if (textElement.offsetHeight >= container.clientHeight) {
+
+      let testFontSize = baseFontSize;
+      while (testFontSize > 8) {
+        testFontSize -= 0.5;
+        textElement.style.fontSize = `${testFontSize}px`;
+        if (textElement.offsetHeight <= container.clientHeight) {
+          currentFontSize = testFontSize;
+          break;
+        }
+      }
+    } 
+    else {
+      let testFontSize = currentFontSize;
+      while (testFontSize <= baseFontSize) {
+        testFontSize += 0.5;
+        textElement.style.fontSize = `${testFontSize}px`;
+        if (textElement.offsetHeight > container.clientHeight) {
+          currentFontSize = testFontSize - 0.5;
+          textElement.style.fontSize = `${currentFontSize}px`;
+          break;
+        }
+        if (testFontSize >= baseFontSize) {
+          currentFontSize = baseFontSize;
+          textElement.style.fontSize = `${currentFontSize}px`;
+          break;
+        }
+      }
+    }
+  }
+
+  fitTextToContainer();
+
+  const observer = new MutationObserver(fitTextToContainer);
+  observer.observe(textElement, {
+    childList: true,   
+    characterData: true, 
+    subtree: true, 
+  });
+
+  window.addEventListener('resize', fitTextToContainer);
+  window.addEventListener('load', fitTextToContainer);
+
+document.getElementById('chatIcon')?.addEventListener('click', function() {
+  setTimeout(function() {
+    fitTextToContainer();
+  }, 100);
+});
+
+
+}
+
+document.addEventListener('DOMContentLoaded', initTextFitting);
+
+if (typeof MutationObserver !== 'undefined') {
+  const bodyObserver = new MutationObserver(function(mutations) {
+    const container = document.querySelector('.photo');
+    const textElement = document.getElementById('syncedName');
+    if (container && textElement) {
+      initTextFitting();
+      bodyObserver.disconnect(); 
+    }
+  });
+
+  bodyObserver.observe(document.body, {
+    childList: true,
+    subtree: true,
+  });
+}
+
+
+});
+

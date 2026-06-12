@@ -1,0 +1,545 @@
+@charset "utf-8";
+/*-------------------------------------------------
+member Style Sheet / Author : myeong-hee park
+-------------------------------------------------*/
+.login-type {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    flex-direction: column;
+    gap: var(--spacer10);
+    }
+.page-title-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacer10);
+    margin-bottom: var(--spacer15);
+    padding-bottom: var(--spacer15);
+    border-bottom: 1px solid var(--gray30);
+    }
+.page-title-wrap .h-tit {
+    font-size: 4rem;
+    }
+.page-title-wrap .h-tit .small-txt {
+    display: block;
+    font-size: 1.9rem;
+    }
+.page-title-wrap .desc {
+    color: var(--gray70);
+    font-size: 1.9rem;
+    }
+.whitebox + .certify-option.single {	
+    margin-top: var(--spacer10);
+	}
+/* 인증방식 선택 */
+.certify-option {
+    width: 100%;
+    }
+.certify-option.single {	
+	display: flex;
+    padding-top: var(--spacer6);
+	}
+.certify-option.single,
+.certify-option > .display-flex {
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-direction: row;
+    gap: var(--spacer10);
+    padding-top: var(--spacer6);
+    padding-bottom: var(--spacer6);
+    border-bottom: 1px solid var(--gray30);
+    }
+.certify-option > .display-flex:first-child {
+    padding-top: 0;
+    }
+.certify-tit {
+    color: var(--gray90);
+    font-size: 2.5rem;
+    font-weight: 700;
+    }
+.certify-type {/* 로그인 방식 선택 목록 */
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: var(--spacer4);
+    width: 100%;
+    max-width: 69.7rem;
+    }
+.certify-type > li,
+.certify-type > .graybox {
+     position: relative;
+     display: flex;
+     flex-direction: column;
+     padding: var(--spacer8) var(--spacer8) var(--spacer8) var(--spacer22);
+     background-color: var(--gray5);
+     border: 1px solid var(--gray20);
+     border-radius: 1.2rem;
+    }
+.certify-type .bg-icon,
+.certify-type > li::after {
+    position: absolute;
+    top: 3.2rem;
+    left: 3.2rem;
+    width: 3.2rem;
+    height: 3.2rem;
+    background-size: contain;
+    }
+.certify-type > li::after {
+    left: auto;
+    right: 3.2rem;
+    width: 2.4rem;
+    height: 2.4rem;
+    background-image: url(../../images/mps/member/ico_login_certify_go.svg);
+    content: "";
+    }
+.certify-type .mobile {
+    background-image: url(../../images/mps/member/ico_login_certify_type_01.svg);
+    }
+.certify-type .public {
+    background-image: url(../../images/mps/member/ico_login_certify_type_02.svg);
+    }
+.certify-type .simplicity {
+    background-image: url(../../images/mps/member/ico_login_certify_type_03.svg);
+    }
+.certify-type .id {
+    background-image: url(../../images/mps/member/ico_login_certify_type_05.svg);
+    }
+.certify-type .login-link {
+    display: block;
+    width: 100%;
+    }
+.certify-type .btn-area {	
+    margin-top: var(--spacer4);
+	}
+.certify-type .type-tit {
+    display: block;
+    margin-bottom: var(--spacer5);
+    color: var(--gray90);
+    line-height: 1;
+    font-size: 2.5rem;
+    font-weight: 700;
+    }
+.certify-type .type-desc {
+    padding-right: var(--spacer12);
+    color: var(--gray70);
+    }
+.certify-type .login-link + .btn-wrap {
+    margin-top: var(--spacer4);
+    }
+.disclosure-area {
+    }
+.disclosure-area .btn-expand {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--spacer1);
+    margin: var(--spacer6) 0;
+    }
+.disclosure-area .btn-expand i {
+    }
+.disclosure-area .expand-wrap {
+    display: flex;
+    justify-content: flex-start;
+    flex-direction: column;
+    gap: var(--spacer8);
+    padding: var(--spacer6);
+    background-color: #fff;
+    border-radius: .8rem;
+    }
+.certify-type .certify-item {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    flex-direction: column;
+    gap: var(--spacer6);
+    }
+.certify-type .expand-tit {
+    display: block;
+    font-weight: 700;
+    }
+.certify-type .certify-list {
+    display: grid;
+    width: 100%;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: var(--spacer4);
+    }
+.certify-type .certify-list > li {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-direction: row;
+    }
+.certify-type .certify-list .svg-icon {
+    margin-right: var(--spacer2);
+    }
+.certify-type .certify-list .ico-nonghyup::after {
+    background-image: url(../../images/mps/member/ico_login_certify_nonghyup.svg);
+    }
+.certify-type .certify-list .ico-kb::after {
+    background-image: url(../../images/mps/member/ico_login_certify_kb.svg);
+    }
+.certify-type .certify-list .ico-naver::after {
+    background-image: url(../../images/mps/member/ico_login_certify_naver.svg);
+    }
+.certify-type .certify-list .ico-banksalad::after {
+    background-image: url(../../images/mps/member/ico_login_certify_banksalad.svg);
+    }
+.certify-type .certify-list .ico-samsungpass::after {
+    background-image: url(../../images/mps/member/ico_login_certify_samsungpass.svg);
+    }
+.certify-type .certify-list .ico-shinhan::after {
+    background-image: url(../../images/mps/member/ico_login_certify_shinhan.svg);
+    }
+.certify-type .certify-list .ico-toss::after {
+    background-image: url(../../images/mps/member/ico_login_certify_toss.svg);
+    }
+.certify-type .certify-list .ico-payco::after {
+    background-image: url(../../images/mps/member/ico_login_certify_payco.svg);
+    }
+.certify-type .certify-list .ico-hana::after {
+    background-image: url(../../images/mps/member/ico_login_certify_hana.svg);
+    }
+.certify-type .certify-list .ico-driving::after {
+    background-image: url(../../images/mps/member/ico_login_certify_driving.svg);
+    }
+.certify-type .btn-txt {
+    color: var(--gray70);
+    }
+/* 가로 1:1 box 스타일 */
+.grid-cont {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    justify-content: space-between;
+	gap: var(--spacer8);
+	width: 100%;
+	}
+.grid-cont .whitebox {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    flex: 1;
+    padding: var(--spacer15) var(--spacer20);
+    }
+.grid-cont .section-tit {
+    margin-bottom: var(--spacer7);
+    font-size: 2.5rem;
+    line-height: 1;
+	}
+.grid-cont .form-group + .form-group {
+	margin-top: var(--spacer7);
+	}
+.grid-cont .form-tit {
+	display: block;
+	margin-bottom: var(--spacer2);
+	line-height: 1;
+	font-weight: 700;
+	} 
+.grid-cont .form-conts {
+    position: relative;
+	}
+.grid-cont .form-conts input {	
+    width: 100%;
+	height: 5.6rem;
+	}
+.grid-cont .form-check {
+	margin: var(--spacer8) 0;
+	line-height: 1; 
+	}
+.grid-cont .form-check label {
+    font-weight: 400;
+	}
+.grid-cont .btn-login {
+	width: 100%;
+	height: 5.6rem;
+    border-radius: 0.8rem;
+    font-size: 1.9rem;
+	}
+.grid-cont .form-check + .btn-type04 {	
+	margin-top: 0;
+	}
+/* 일반 로그인 방식 */
+.login-area {
+    gap: 0;
+    padding: 0 var(--spacer15) var(--spacer10) var(--spacer15);
+    border-bottom: 1px solid var(--gray30);
+    }
+.login-area .whitebox {
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    }
+.login-area .login-form {
+    padding-right: var(--spacer10);
+    border-right: 1px solid var(--gray30);
+	}
+.login-area .login-info {
+    padding: var(--spacer6) 0 var(--spacer6) var(--spacer10);
+	}
+.login-form .form-group {	
+    margin-bottom: 0;
+    padding: 0;
+    background-color: transparent;
+    border-radius: 0;
+	}
+.login-form .pw-input input {	
+    padding-right: var(--spacer10);
+	}
+.login-form .pw-visible {
+    position: absolute;
+    top: 50%;
+    right: 1.6rem;
+    height: 2.4rem;
+	transform: translateY(-50%);
+	}
+.login-form .link-group {	
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: row;
+	margin-top: var(--spacer6);
+	}
+.login-form .link-group > li {	
+    position: relative;
+	}
+.link-group > li:not(:first-child) {
+    position: relative;
+    margin-left: var(--spacer2);
+    padding-left: calc(var(--spacer2) + 0.1rem);
+	}
+.login-form .link-group > li::before {	
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 0.1rem;
+    height: 1.6rem;
+    background-color: var(--gray30);
+    transform: translateY(-50%);
+    content: "";
+	}
+.login-form .link-group > li:first-child::before {
+    display: none;
+    }
+/* 아이디 비밀번호 찾기 */
+.idpw-search .whitebox {
+	padding: var(--spacer16) var(--spacer20);
+	}
+.idpw-search .desc {
+	min-height: 10.2rem;
+	color: var(--gray70);
+	}
+.idpw-search .search-type {
+    display: flex; flex-flow: row wrap;
+    gap: var(--spacer4) var(--spacer8);
+	}
+.idpw-search .form-group + .btn-type04 {
+    width: 100%;
+    height: 5.6rem;
+    margin-top: var(--spacer8);
+    border-radius: 0.8rem;
+    font-size: 1.8rem;
+    }
+.idpw-search + .btn-area {
+    margin-top: var(--spacer10);
+	}
+/* 다른 방식을 찾고 계신가요 */
+.login-info {
+	display: flex;
+    flex-flow: column;
+	gap: var(--spacer7);
+	}
+.login-info .tit {
+	line-height: 1;
+	}
+.login-method {
+	display: flex;
+    flex-flow: column;
+	gap: var(--spacer4);
+	}
+.login-method a { 
+    padding: var(--spacer4);
+	border-radius: .8rem;
+	color: var(--gray90);
+    line-height: 1.158;
+	font-size: 1.9rem;
+	}
+.login-info .btn-txt {	
+	color: var(--gray70);
+	}	
+.login-info .svg-icon {
+    margin-top: -.2rem;
+	}
+.join-member {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-direction: row;
+    gap: var(--spacer4);
+    color: var(--gray90);
+    }
+
+/* 회원가입 이동 */
+.join-box {
+    width: 100%;
+    padding: var(--spacer6);
+    background-color: var(--gray5);
+    border: 1px solid var(--gray20);
+    border-radius: 0.6rem;
+    }
+.join-box .main-service {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacer3);
+    margin-top: var(--spacer4);
+    padding: var(--spacer8);
+    background-color: #fff;
+    border: 1px solid var(--gray20);
+    border-radius: 0.6rem;
+    }
+.join-box .section-tit {
+    margin-bottom: var(--spacer3);
+    color: #003675;
+    line-height: 1;
+    }
+.join-box .section-subtit {
+    line-height: 1;
+    }
+.main-service .lstyle-dot {
+    display: flex;
+    flex-flow: row wrap;
+    }
+.main-service .lstyle-dot > li {
+    width: calc(100% / 2);
+    }
+/* 도움 */
+.helper-box {
+    width: 100%;
+    padding: var(--spacer6);
+    background-color: var(--secondary5);
+    border: 1px solid var(--gray20);
+    border-radius: 0.6rem;
+    }
+.helper-box .helper-tit {
+    display: flex;
+    position: relative;
+    color: var(--secondary);
+    font-weight: 700;
+    }
+.helper-box .helper-tit::before {
+    width: 2rem;
+    height: 2rem;
+    margin-top: var(--spacer-default2);
+    margin-right: var(--spacer1);
+    content: "";
+    }
+.helper-box .helper-desc-wrap {
+    margin-top: var(--spacer5);
+    margin-left: var(--spacer6);
+    }
+/* 회원가입 완료 */
+.join-complete {	
+	padding: var(--spacer12) var(--spacer31);
+	}
+.success-msg {	
+	display: block;
+    text-align: center;
+	font-size: 2.5rem;
+	}
+.success-msg .svg-icon {
+	display: block;
+	width: 7.6rem;
+	height: 7.6rem;
+	margin: 0 auto var(--spacer4);
+	padding: var(--spacer5);
+	}
+.success-msg + .btn-area {	
+    margin-top: var(--spacer12);
+	}
+.whitebox + .member-form {	
+    margin-top: var(--spacer4);
+	}
+.member-form .form-entry > li:not(:first-child) {
+    padding-top: var(--spacer6);
+    border-top: dashed 1px var(--gray40);
+	}
+.member-form .detailed-input {
+    display: flex;
+    align-items: flex-start;
+	}
+.member-form .detailed-input.align-center {
+    align-items: center;
+    }
+.member-form .all-checks {	
+	display: block;
+    width: 12rem;
+    margin-right: var(--spacer8);
+    padding-right: var(--spacer8);
+	}
+.member-form .all-checks::after {	
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 1px;
+    height: 2rem;
+    background-color: var(--gray30);
+	content: '';
+	}
+.member-form .checks input[type="radio"] + label::before, 
+.member-form .checks input[type="checkbox"] + label::before,
+.member-form .checks input[type="checkbox"] + label::after {	
+    top: 0;
+	}
+.member-form .checks input[type="radio"] + label::after {	
+    top: 0.5rem;
+	}
+.member-form .check-inline {
+    align-items: center;
+    gap: var(--spacer2) var(--spacer5);
+	}
+.member-form .all-checks + .check-inline {
+    width: calc(100% - 15.2rem);
+    }
+.member-form .check-inline > li {
+    display: block;
+    margin-right: 0;
+	}
+.member-form .input-gap {
+    gap: var(--spacer1);
+    }
+/* 목적에 따른 로그인 */
+.login-purpose .whitebox {
+    padding: var(--spacer12);
+    }
+.login-purpose .btn-wrap {
+    margin-top: var(--spacer10);
+    }
+.login-purpose .btn-wrap [class*="btn-type"] {
+    width: 100%;
+    line-height: 1;
+    font-size: 1.9rem;
+    }
+.login-purpose .btn-wrap [class*="btn-type"]:not(:first-child) {
+    margin-top: var(--spacer3);
+    font-size: 1.5rem;
+    }
+.login-purpose .download-list{margin-top: var(--spacer6); font-size: 1.5rem;}
+.login-purpose .download-list .file-name{width: 100%; margin-bottom:2rem; min-height: 3.2rem;}
+.login-purpose .download-list .display-flex{gap:var(--spacer1) }
+.purpose-info {
+    margin-top: var(--spacer10);
+    padding: var(--spacer5);
+    color: var(--secondary);
+    text-align: center;
+    font-weight: 700;
+    }
+.purpose-info i {
+    vertical-align: text-top;
+    }
+
+
+
+
+
+
+

@@ -1,0 +1,177 @@
+const YTHIPbiz_instSearch = function () {
+
+    // 현재페이지 전역변수
+    let _currentPage = 1;
+    let _countPerPage = 5;
+
+    const _fn = function () {
+
+        /**
+         * @private
+         */
+        let _initPage = function ($page) {
+            $("._instTable").tableHeadFixer();
+
+            $("button._btnReset", $page).YTHIPon("click", function(){
+                $("input#full_nm", $page).val("");
+                $("input#org_cd", $page).val("");
+
+                //$("p.articles", $page).html('<span class="total">전체 <span class="txt-bold">0</span>건 </span> 현재 페이지 <span class="txt-bold">1</span>/0');
+                $("p.articles", $page).html('전체 <span class="txt-bold">0</span>건');
+                $("table._instTable > tbody, div._popInstPagging", $page).empty();
+                $("table._instTable > tbody", $page).append('<tr><td colSpan="8">데이터가 없습니다.</td></tr>');
+
+            });
+
+            $("input._btnSearch", $page).YTHIPon("click", function(){
+                if(YTHIPutil.isEmpty($("input#full_nm", $page).val()) && YTHIPutil.isEmpty($("input#org_cd", $page).val())) {
+                    YTHIPcomm.alert({title:"입력오류", msg:"기관명 또는 기관코드를 입력하세요."}, $(this), function(){
+                        $("input#full_nm", $page).focus();
+                    });
+                    return false;
+                }
+
+                YTHIPbiz_instSearch.fn.instQuickSearch($page);
+                //YTHIPbiz_instSearch.fn.ajaxInstSearchList(1, $page);
+            });
+
+
+            $("a._btnClose", $page).YTHIPon("click", function(){
+                YTHIPcomm.popup.layerClose($page);
+            });
+
+            $("a._btnConfirm", $page).YTHIPon("click", function(){
+                if ($("input:radio[name=instNo]:checked", $page).length < 1) {
+                    YTHIPcomm.alert({title:"알림", msg:"기관을 선택하세요"}, $(this));
+                    return false;
+                }
+
+                let item = $("input:radio[name=instNo]:checked", $page).parents("tr").data("item");
+                if(!YTHIPutil.isEmpty($(this).data("callbackFn"))){
+                    $(this).data("callbackFn")(item);
+                }else {
+                    callbackInstSearch(item);
+                }
+                YTHIPcomm.popup.layerClose($page);
+            });
+        }
+
+        const _ajaxInstSearchList = function (pageNum, $page) {
+            _currentPage = pageNum;
+
+            let param = '?full_nm=' + YTHIPutil.null2Space($("input#full_nm", $page).val());
+            param += '&org_cd=' + YTHIPutil.null2Space($("input#org_cd", $page).val());
+            param += '&pageNo=' + pageNum;
+            // YTHIPcomm.promise("GET", YTHIPcomm.API_COM_URL+"/sur/com/api/search/plcy" + param, {}).then(data =>{
+            YTHIPcomm.promise("GET", YTHIPcomm.API_FRT_URL + "/go/ythip/getInstCd" + param , {}).then( data => {
+                $("table._instTable > tbody", $page).empty();
+
+                if (data.StanOrgCd[1].row != null && data.StanOrgCd[1].row.length !== 0) {
+                    let pagging = {};
+                    pagging.totCount = data.StanOrgCd[0].head[0].totalCount;
+                    pagging.pageSize = data.StanOrgCd[0].head[1].numOfRows;
+                    pagging.pageNum = data.StanOrgCd[0].head[1].pageNo;
+                    pagging.pageCount = _countPerPage;
+                    YTHIPcomm.pagination.fn('._popInstPagging', pagging, _ajaxInstSearchList);
+
+                    if ($("p.articles", $page).length !== 0) {
+                        let str = '';
+                        str += '<span class="total">전체 <span class="txt-bold">' + pagging.totCount + '</span>건 </span> ';
+                        str += '현재 페이지 <span class="txt-bold total_page">' + pagging.pageNum + '</span>/' + Math.ceil(pagging.totCount / pagging.pageSize);
+                        $("p.articles", $page).html(str);
+                    }
+
+                    $.each(data.StanOrgCd[1].row, function (i, v) {
+                        //if(i !== 0) {
+                        let $tmpHtml = $('<tr></tr>');
+                        $tmpHtml.data("item", v);
+                        $tmpHtml.attr("data-orgcd", v.org_cd);
+                        $tmpHtml.append('<td><span class="checks check-line"><input type="radio" name="instNo" id="instNo_' + i + '" value="' + v.org_cd + '"><label for="instNo_' + i + '"><span class="sr-only">선택</span></label></span></td>');
+                        $tmpHtml.append('<td>' + (pagging.totCount - (((_currentPage - 1) * 10) + i)) + '</td>'); // 순서
+                        $tmpHtml.append('<td>' + v.org_cd + '</td>'); // 기관코드
+                        $tmpHtml.append('<td class="txt-left">' + v.full_nm + '</td>'); // 기관명전체
+                        $tmpHtml.append('<td class="txt-left">' + YTHIPutil.null2Space(v.typebig_nm) + '</td>'); // 기관대분류
+                        $tmpHtml.append('<td>' + YTHIPutil.null2Space(v.typemid_nm) + '</td>'); // 기관중분류
+                        $tmpHtml.append('<td class="txt-left">' + YTHIPutil.null2Space(v.typesml_nm) + '</td>'); // 기관소분류
+                        $tmpHtml.append('<td>' + YTHIPutil.null2Space(v.preorg_cd) + '</td>'); // 이전기관코드
+                        $("table._instTable > tbody", $page).append($tmpHtml);
+                        //}
+                    });
+                } else {
+                    $("p.articles", $page).html('<span class="total">전체 <span class="txt-bold">0</span>건 </span> 현재 페이지 <span class="txt-bold">1</span>/0');
+                    $("table._instTable > tbody, div._popInstPagging", $page).empty();
+                    $("table._instTable > tbody", $page).append('<tr><td colSpan="8">데이터가 없습니다.</td></tr>');
+                }
+            }).catch(()=>{
+                $("p.articles", $page).html('<span class="total">전체 <span class="txt-bold">0</span>건 </span> 현재 페이지 <span class="txt-bold">1</span>/0');
+                $("table._instTable > tbody, div._popInstPagging", $page).empty();
+                $("table._instTable > tbody", $page).append('<tr><td colSpan="8">데이터가 없습니다.</td></tr>');
+            });
+        }
+        const _instQuickSearch = function ($page) {
+            let param = '?full_nm=' + YTHIPutil.null2Space($("input#full_nm", $page).val());
+            param += '&org_cd=' + YTHIPutil.null2Space($("input#org_cd", $page).val());
+            param += '&numOfRows=1000';
+            param += '&pageNo=1';
+
+            // YTHIPcomm.promise("GET", YTHIPcomm.API_COM_URL+"/sur/com/api/search/plcy" + param, {})
+            YTHIPcomm.promise("GET", YTHIPcomm.API_FRT_URL + "/go/ythip/getInstQuickSearch" + param, {})
+                .then(data => {
+                    console.log(data);
+                    $("table._instTable > tbody", $page).empty();
+
+                    if (data.length > 0) {
+                        let pagging = {};
+                        pagging.totCount = data.length; // 전체 개수
+                        pagging.pageSize = 10; // 페이지당 개수
+                        pagging.pageNum = 1; // 현재 페이지
+                        pagging.pageCount = Math.ceil(pagging.totCount / pagging.pageSize);
+
+                        if ($("p.articles", $page).length !== 0) {
+                            let str = '';
+
+                            str += '전체 <span class="txt-bold">' + pagging.totCount + '</span>건';
+                            // str += '현재 페이지 <span class="txt-bold total_page">' + pagging.pageNum + '</span>/' + pagging.pageCount;
+                            $("p.articles", $page).html(str);
+                        }
+
+                        $.each(data, function (i, v) {
+                            let $tmpHtml = $('<tr></tr>');
+                            $tmpHtml.data("item", v);
+                            $tmpHtml.attr("data-orgcd", v.org_cd);
+                            $tmpHtml.append('<td><span class="checks check-line"><input type="radio" name="instNo" id="instNo_' + i + '" value="' + v.org_cd + '"><label for="instNo_' + i + '"><span class="sr-only">선택</span></label></span></td>');
+                            $tmpHtml.append('<td>' + (i + 1) + '</td>'); // 순서
+                            $tmpHtml.append('<td>' + v.org_cd + '</td>'); // 기관코드
+                            $tmpHtml.append('<td class="txt-left">' + v.full_nm + '</td>'); // 기관명전체
+                            $tmpHtml.append('<td class="txt-left">' + YTHIPutil.null2Space(v.typebig_nm) + '</td>'); // 기관대분류
+                            $tmpHtml.append('<td>' + YTHIPutil.null2Space(v.typemid_nm) + '</td>'); // 기관중분류
+                            $tmpHtml.append('<td class="txt-left">' + YTHIPutil.null2Space(v.typesml_nm) + '</td>'); // 기관소분류
+                            $tmpHtml.append('<td>' + YTHIPutil.null2Space(v.preorg_cd) + '</td>'); // 이전기관코드
+                            $("table._instTable > tbody", $page).append($tmpHtml);
+                        });
+                    } else {
+                        // $("p.articles", $page).html('<span class="total">전체 <span class="txt-bold">0</span>건 </span> 현재 페이지 <span class="txt-bold">1</span>/0');
+                        $("p.articles", $page).html('전체 <span class="txt-bold">0</span>건');
+                        $("table._instTable > tbody, div._popInstPagging", $page).empty();
+                        $("table._instTable > tbody", $page).append('<tr><td colSpan="8">데이터가 없습니다.</td></tr>');
+                    }
+
+                }).catch(() => {
+                // $("p.articles", $page).html('<span class="total">전체 <span class="txt-bold">0</span>건 </span> 현재 페이지 <span class="txt-bold">1</span>/0');
+                $("p.articles", $page).html('전체 <span class="txt-bold">0</span>건');
+                $("table._instTable > tbody, div._popInstPagging", $page).empty();
+                $("table._instTable > tbody", $page).append('<tr><td colSpan="8">데이터가 없습니다.</td></tr>');
+            });
+        };
+
+        return {
+            initPage: _initPage,
+            ajaxInstSearchList: _ajaxInstSearchList,
+            instQuickSearch: _instQuickSearch,
+        }
+    }();
+
+    return {
+        fn: _fn
+    }
+}();

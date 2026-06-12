@@ -1,0 +1,2310 @@
+@charset "utf-8";
+/*-------------------------------------------------
+sub respond Style / plani / Author : myeong-hee park
+-------------------------------------------------*/
+@media (min-width: 1400px) {
+    .pc-hide {
+        display: none;
+    }
+}
+
+@media (max-width: 1400px) {
+    .package-search .row:nth-child(2) {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacer4);
+    }
+    .similar-policy .item-share:before{right: 10rem;}
+}
+
+@media (max-width: 1300px) {
+    .policy-personal .txt {
+        flex-flow: row wrap;
+    }
+}
+
+@media (max-width: 1300px) and (min-width: 1150px) {
+    [class*="youthPolicy-write"] .txt.ministry {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacer2);
+    }
+
+    [class*="youthPolicy-write"] .txt.ministry > [class*="col-sm-"] + .checks {
+        width: 100%;
+    }
+}
+
+@media (max-width: 1280px) {
+    #side {
+        margin-right: var(--spacer10);
+    }
+
+    #side + #content {
+        width: calc(100% - 33.2rem);
+    }
+
+    .board-list.type2 > li,
+    .board-list.type3 > li,
+    .board-list.type4 > li {
+        padding: var(--spacer5);
+    }
+
+    .board-list.type3 .thumb {
+        display: block;
+        position: relative;
+        width: calc(100% + 4rem);
+        height: auto;
+        margin: -2rem -2rem var(--spacer6);
+    }
+
+    .board-list.type3 .right-object {
+        top: auto;
+        bottom: 13rem;
+    }
+
+    .board-list.type3.without-top .right-object {
+        bottom: 9.4rem;
+    }
+
+    .connection-section .desc {
+        line-height: 1.4;
+    }
+}
+
+@media (max-width: 1225px) and (min-width: 1145px) {
+    .mypolicy-search .check-outline label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 1240px) {
+    .commu-wrap .establishing-policy [class*="col-sm-"] {
+        padding: 3rem;
+        min-height: inherit;
+    }
+
+    .commit-org .g-wrap .group .cont {
+        padding: 2rem;
+    }
+
+    .commit-org .g-wrap .group + .group {
+        margin-left: 2rem;
+    }
+
+    .commit-org .g-wrap::before {
+        width: calc(50% + 1rem);
+    }
+}
+
+@media (max-width: 1180px) {
+    .system-wrap > ul {
+        padding: 2.2rem;
+    }
+
+    .system-wrap strong {
+        padding: 1.2rem 2.2rem;
+    }
+
+    .commit-org .g-wrap {
+        flex-direction: column;
+        margin-top: 3.5rem;
+    }
+
+    .commit-org .g-wrap .group {
+        width: 100%;
+    }
+
+    .commit-org .g-wrap .group + .group {
+        margin-left: 0;
+        margin-top: 3.5rem;
+    }
+
+    .commit-org .g-wrap::before {
+        display: none;
+    }
+
+    .commit-org .g-wrap::after {
+        display: none;
+    }
+
+    .commit-org .g-wrap .group::before {
+        height: 13.9rem;
+        top: -3.6rem;
+    }
+
+    .connection-section .display-justify {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .connection-section .display-justify p:first-child {
+        margin-bottom: var(--spacer2);
+    }
+
+    .connection-section .display-justify .btn-type03 {
+        width: auto;
+    }
+
+    [class*="youthPolicy-write"] .all-checks + .checks > li {
+        width: calc(33.33% - var(--spacer2));
+    }
+
+    .search-between {
+        gap: var(--spacer13);
+    }
+
+    #search-cont {
+        width: calc((100% - 24rem) - var(--spacer13));
+    }
+
+    #best-keyword {
+        width: 24rem;
+    }
+
+    .search-filter.basic-search .input-group {
+        flex-direction: column;
+        gap: var(--spacer2);
+    }
+}
+
+@media (max-width: 1150px) {
+    #body {
+        display: block;
+    }
+
+    #side {
+        display: none;
+    }
+
+    #side + #content {
+        width: 100%;
+    }
+
+    .search-between {
+        gap: var(--spacer10);
+    }
+
+    #search-cont,
+    #best-keyword {
+        width: 100%;
+    }
+
+    .board-list.type2 .thumb {
+        height: auto;
+    }
+}
+
+@media (max-width: 1100px) {
+    .system-wrap span {
+        margin-left: 0;
+    }
+
+    .table-wrap .tstyle-list.commit-tbl .lstyle-dot {
+        margin-top: var(--spacer2);
+    }
+
+    .table-wrap .tstyle-list.commit-tbl > tbody > tr > td:first-child {
+        display: none;
+    }
+
+    .table-wrap .tstyle-list.commit-tbl > tbody > tr > td {
+        display: block;
+        white-space: pre-wrap;
+        text-align: left;
+    }
+
+    .table-wrap .tstyle-list.commit-tbl > tbody > tr > td::before {
+        display: none;
+    }
+
+}
+
+@media (max-width: 1080px) {
+    .search-box .col > [class*="btn-"] {
+        min-width: auto;
+    }
+
+    [class*="youthPolicy-write"] > li > .txt.row {
+        flex-direction: column;
+        gap: var(--spacer2);
+    }
+
+    [class*="youthPolicy-write"] .multi-select .row .all-checks,
+    [class*="youthPolicy-write"] .multi-select .row .all-checks + .checks {
+        width: 100%;
+    }
+
+    [class*="youthPolicy-write"] .multi-select .row .all-checks::after {
+        display: none;
+    }
+
+    .tab-mutation .tab button {
+        font-size: 1.6rem;
+    }
+
+    .total-search .input-wrap {
+        padding-right: var(--spacer17);
+    }
+}
+
+@media (max-width: 920px) {
+    #content > .title-wrap {
+        margin-bottom: var(--spacer12);
+    }
+
+    .greeting_wrap {
+        padding: 4rem 3rem;
+    }
+
+    .greeting_wrap .tit {
+        flex-direction: column-reverse;
+        align-items: flex-start;
+    }
+
+    .greeting_wrap .tit strong {
+        margin-top: 1.5rem;
+    }
+
+    .counseling-info .info-area {
+        padding-left: var(--spacer15);
+        padding-right: var(--spacer15);
+    }
+
+    .counseling-info .desc {
+        position: relative;
+        width: 70%;
+        z-index: 1;
+    }
+
+    .counseling-info .character {
+        right: var(--spacer8);
+    }
+
+    .personal-info .desc {
+        padding-right: 0;
+    }
+
+    .personal-info .btn-link {
+        position: relative;
+        bottom: inherit;
+        right: inherit;
+        margin-top: var(--spacer5);
+    }
+
+    .search-between {
+        flex-direction: column;
+    }
+
+    .tab-mutation .tab {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        flex-direction: column;
+        padding: var(--krds-spacer-4);
+        background-color: #fff;
+        border: 0.1rem solid var(--gray30);
+        border-radius: .8rem;
+        z-index: 10;
+    }
+
+    .tab-mutation .tab > li:first-child button,
+    .tab-mutation .tab > li:last-child button {
+        border-radius: 0;
+    }
+
+    .tab-mutation .tab button {
+        padding: var(--spacer2) var(--spacer3);
+        background-color: transparent;
+        border: none;
+        text-align: left;
+    }
+
+    .tab-mutation .active button {
+        background-color: transparent;
+        color: var(--gray70);
+    }
+
+    .tab-mutation .tab button span {
+        display: inline-block;
+    }
+
+    .tab-mutation .tab button br {
+        display: none;
+    }
+
+    .tab-mutation .tab-btn {
+        display: flex;
+        background-color: var(--secondary);
+        border-color: transparent;
+        color: var(--white);
+    }
+
+    .tab-mutation.is-open .tab {
+        display: flex;
+    }
+
+}
+
+@media (max-width: 880px) {
+    .policy-personal .row {
+        flex-direction: column;
+    }
+
+    .policy-personal .row .col {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .policy-personal .tit {
+        width: 100%;
+        margin-bottom: var(--spacer1);
+    }
+
+    .policy-personal .tit br {
+        display: none;
+    }
+
+    .policy-personal .txt {
+        width: 100%;
+    }
+
+    .checks input[type="radio"] + label,
+    .checks input[type="checkbox"] + label {
+        margin-left: -2.5rem;
+    }
+
+    .checks.check-line input[type="radio"] + label,
+    .checks.check-line input[type="checkbox"] + label {
+        margin-left: 0;
+    }
+
+    .board-list.type2 > li,
+    .board-list.type3 > li,
+    .board-list.type4 > li {
+        width: calc(50% - var(--spacer5));
+    }
+
+    .reservation-time li {
+        width: calc(100% / 3);
+    }
+
+    .commit-org .group .cont {
+        padding: var(--spacer12) var(--spacer5) var(--spacer5);
+    }
+
+    .commit-org .group .cont > .list {
+        margin-right: 0;
+    }
+
+    .commit-org .group .cont > .list > li {
+        width: 100%;
+        margin-right: 0;
+    }
+
+    .eligibility-info {
+        flex-direction: column;
+        align-items: normal;
+    }
+
+    .agree-box {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacer2);
+    }
+
+    .counseling-info .counsel-link {
+        gap: var(--spacer8);
+    }
+
+    .counseling-info .desc br {
+        display: none;
+    }
+
+    .cont-info .display-justify {
+        flex-direction: column;
+    }
+
+    .cont-info .display-justify .desc {
+        width: 100%;
+    }
+
+    .mypage-header .gradient-bg {
+        width: 35%;
+        padding-left: var(--spacer7);
+        padding-right: var(--spacer7);
+    }
+
+    .mypage-header > .graybox {
+        width: calc(65% - var(--spacer4));
+        margin-left: var(--spacer4);
+    }
+
+    .mypersonal-data > li {
+        width: calc(50% - var(--spacer4));
+    }
+
+    .mypersonal-data > li .point02 {
+        padding: 0 var(--spacer2);
+        line-height: 1.3;
+    }
+
+    .mypolicy-search {
+        margin: -.4rem;
+    }
+
+    .mypolicy-search .section-tit {
+        margin-bottom: var(--spacer6);
+    }
+
+    .mypolicy-search .box-item {
+        padding: var(--spacer6) var(--spacer5);
+    }
+
+    .mypolicy-search .check-outline label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .form-entry .field-counseling li {
+        width: calc(33.33% - var(--spacer2));
+    }
+
+    .reservation-time02 > li {
+        width: calc(100% / 2);
+    }
+
+    [class*="youthPolicy-write"] .income-terms > li {
+        display: block;
+        width: 100%;
+        margin-bottom: var(--spacer2);
+    }
+
+    .mypost-area {
+        margin: var(--spacer14) 0 0;
+    }
+
+    .post-section {
+        width: 100%;
+        margin: var(--spacer2) 0;
+    }
+
+    .enquiry-list {
+        flex-direction: column;
+    }
+
+    .enquiry-list > li {
+        width: 100%;
+    }
+
+    .counsel-link ._pc {
+        display: none;
+    }
+
+    .counsel-link ._mobile {
+        display: block;
+    }
+
+    /* 202507 청년정책 개요 > 청년정책 현황 */
+    .tab-menu-type2 > li a {
+        font-size: 1.6rem;
+        padding: var(--spacer3) var(--spacer2);
+    }
+
+
+    .similar-policy .board-list.type2 > li{width: calc(33.33% - var(--spacer5));}
+
+}
+
+@media (max-width: 800px) {
+    .mypolicy-search .box-item {
+        width: calc(50% - var(--spacer4));
+    }
+
+    .mypolicy-search .check-outline label {
+        flex-flow: row wrap;
+    }
+
+    .mypolicy-search .long-item .check-outline > li {
+        width: calc(33.33% - var(--spacer2));
+    }
+
+    .mypolicy-search .long-item label {
+        min-height: 7.95rem;
+        font-size: 1.3rem;
+    }
+
+    .member-form .detailed-input {
+        flex-direction: column;
+        gap: var(--spacer2);
+    }
+
+    .member-form .detailed-input.align-center {
+        align-items: flex-start;
+    }
+
+    .member-form .all-checks {
+        width: 100%;
+        margin-right: 0;
+        padding-right: 0;
+    }
+
+    .member-form .all-checks::after {
+        display: none;
+    }
+
+    .member-form .all-checks + .check-inline {
+        width: 100%;
+    }
+
+    .member-form .check-inline > li {
+        width: calc(33.33% - 1.4rem);
+    }
+
+    .member-form .income-terms .check-inline > li {
+        width: 100%;
+    }
+
+    .board-view .view-top > .display-justify:first-child {
+        gap: var(--spacer2);
+        flex-direction: column;
+        align-items: normal;
+        margin-bottom: var(--spacer6);
+    }
+
+    .board-view .display-justify .state-info:last-child {
+        justify-content: flex-end;
+    }
+}
+
+@media (max-width: 768px) {
+
+    [class*="graybox"],
+    .whitebox {
+        padding: var(--spacer7) var(--spacer6);
+    }
+
+    .graybox02 {
+        padding: var(--spacer10) var(--spacer8);
+    }
+
+    .establishing-policy {
+        gap: var(--spacer3);
+        margin-top: var(--spacer8);
+        margin-bottom: var(--spacer8);
+    }
+
+    .establishing-policy [class*="col-sm-"] {
+        padding: var(--spacer8) var(--spacer9);
+    }
+
+    .career-wrap .graybox {
+        padding: var(--spacer12);
+    }
+
+    .career-list::after {
+        left: 22rem;
+    }
+
+    .career-list .year {
+        width: 22rem;
+    }
+
+    .career-list .desc {
+        padding-left: var(--spacer10);
+    }
+
+    .counseling-type {
+        gap: var(--spacer4);
+        grid-template-columns: 1fr 1fr 1fr
+    }
+
+    .counselPro-area nav {
+        width: 30%;
+        padding: var(--spacer6) var(--spacer5);
+    }
+
+    .counselor-profile {
+        width: 70%;
+        padding: var(--spacer8);
+    }
+
+    .inflow-path {
+        flex-direction: column;
+    }
+
+    .inflow-path > [class*="col-sm-"] {
+        width: 100%;
+    }
+
+
+    .policy-personal .row {
+        grid-template-columns: 1fr;
+    }
+
+    .policy-personal .row .col.col-gap {
+    }
+
+    .policy-personal .row .col.col-gap > span {
+        flex-flow: row wrap;
+        width: 100%;
+    }
+
+    .policy-personal .col-gap .tit {
+        width: 100%;
+    }
+
+    .policy-secrch .box-select,
+    .policy-secrch > .btn-type03 {
+        width: calc(33.33% - .3rem);
+    }
+
+    .mypage-header .gradient-bg {
+        width: 100%;
+        margin-bottom: var(--spacer4);
+        padding: var(--spacer7);
+    }
+
+    .mypage-header > .graybox {
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .my-personal .icon {
+        margin-bottom: var(--spacer6);
+    }
+
+    .my-personal .section-tit {
+        margin-bottom: var(--spacer3);
+    }
+
+    .my-personal .btn-type {
+        width: auto;
+        margin-top: var(--spacer6);
+    }
+
+    .my-package .section-tit br {
+        display: none;
+    }
+
+    .my-package::after {
+        left: auto;
+        right: -4rem;
+        width: 23.5rem;
+    }
+
+    .my-package .desc {
+        width: 80%;
+    }
+
+    .form-entry .whitebox.chk-area {
+        padding: var(--spacer5) var(--spacer8);
+    }
+
+    .form-entry .email-input input.col-sm-4 {
+        width: 50%;
+    }
+
+    .form-entry .email-input input.col-sm-3 {
+        width: 40%;
+    }
+
+    .face-talk .chk-area {
+        flex-flow: row wrap;
+        gap: 0;
+    }
+
+    .face-talk .checks {
+        width: 100%;
+    }
+
+    .search-box.reserve-search .row:nth-child(-n+2) .col {
+        width: 100%;
+    }
+
+    .search-box.reserve-search .col > input,
+    .search-box.reserve-search .col > select {
+        width: auto;
+    }
+
+    [class*="youthPolicy-write"] .txt.ministry {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacer2);
+    }
+
+    [class*="youthPolicy-write"] .txt.ministry > [class*="col-sm-"] + .checks {
+        width: 100%;
+    }
+
+    [class*="youthPolicy-write"] input[type="date"] {
+        width: 13rem;
+    }
+
+    [class*="youthPolicy-write"] .tit {
+        width: 13rem;
+    }
+
+    [class*="youthPolicy-write"] .txt {
+        width: calc(100% - 13rem);
+    }
+
+    [class*="youthPolicy-write"] .income-terms > li .display-inline:first-child {
+        width: 100%;
+        margin-bottom: var(--spacer2);
+    }
+
+    .area-setting > li {
+        gap: var(--spacer2);
+    }
+
+    .mypolicy-search .long-item label {
+        flex-direction: column;
+    }
+
+    .mypolicy-search .long-item input[type="checkbox"]:checked + label::before {
+        margin: 0.3rem auto 0.6rem;
+    }
+
+    .member-form .form-entry .col-sm-3 {
+        width: 20rem;
+    }
+
+    .swiper-area [class*="swiper-button-"] {
+        top: calc(50% - 4.5rem);
+        width: 4.5rem;
+        height: 4.5rem;
+    }
+
+    .tab-area.swiper-area [class*="swiper-button-"] {
+        top: 0;
+        width: 5.6rem;
+        height: 5.6rem;
+    }
+
+    .swiper-area .swiper-pagination {
+        margin-top: 0;
+    }
+
+    [class^="tooltip-box"] .tooltip-popover {
+        width: 37rem;
+        top: 172%;
+        left: -6.2rem;
+        padding: 1.5rem 1rem;
+    }
+
+    [class^="tooltip-box"] .tooltip-popover::before, [class^="tooltip-box"] .tooltip-popover::after {
+        left: 20%;
+        transform: rotate(45deg) translateX(-50%);
+        top: -0.2rem;
+    }
+
+    [class^="tooltip-box"] .tooltip-popover::after {
+        transform: rotate(0) translateX(-50%);
+        width: 5rem;
+        height: 1.5rem;
+        top: 0;
+    }
+    .tooltip-box02 .tooltip-popover{top:132%; left:0; width: 31rem; font-size:1.6rem;}
+    .cont-info.type2 .icon {
+        display: none;
+    }
+    /* 개인정보 처리방침 */
+    .privacy-labeling > li{width: calc(100% / 2 - var(--spacer2));}
+    .policy-index > li {width: 100%}
+    /* 개인정보 처리방침 팝업 */
+    .modal_popup .popup_inner > ._privacyPop{width: 90%;}
+    .modal_popup .popup_inner > ._privacyPop .modal-title-box{margin: 0 var(--spacer4) 0;}
+    .modal_popup .popup_inner > ._privacyPop .modal-conts{padding: 0 var(--spacer4);}
+    .modal_popup .popup_inner > ._privacyPop .close-modal {right: var(--spacer4);}
+
+    .similar-policy .board-list.type2 > li{width: 100%;}
+    .similar-policy .item-share {right: 0;}
+    .similar-policy .item-share:before{right: 2.1rem;}
+
+    }
+
+@media (max-width: 667px) {
+    .breadcrumb li {
+        display: none;
+    }
+
+    .breadcrumb li.home,
+    .breadcrumb li:last-child {
+        display: inline-flex;
+    }
+
+    .breadcrumb li:not(:nth-child(2)):last-child::before,
+    .breadcrumb li:not(:nth-child(2)):last-child::after {
+        display: inline-flex;
+        flex-direction: row;
+        align-items: center;
+        width: 1.6rem;
+        height: 1.6rem;
+        background: url(../../../images/common/icon/ico_bread_dot.svg) no-repeat 0 center / contain;
+        order: 1;
+        content: "";
+    }
+
+    .breadcrumb li:not(:nth-child(2)):last-child::after {
+        background: url(../../../images/mps/layout/ico_bread_arr.svg) no-repeat;
+        order: 2;
+    }
+
+    .breadcrumb li:not(:nth-child(2)):last-child a {
+        order: 3;
+    }
+
+    .commu-wrap .establishing-policy [class*="col-sm-"] {
+        width: 100%;
+        margin: 1.2rem;
+    }
+
+    .commu-org .group ul {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .commu-org .group ul > li {
+        width: 100%;
+        margin-top: .8rem;
+    }
+
+    .commu-org .group ul > li br {
+        display: none;
+    }
+
+    .commu-org .group ul > li + li {
+        margin-left: 0;
+    }
+
+    .commu-org .group ul > li::after {
+        display: none;
+    }
+
+    .commu-org .group ul > li:nth-child(2)::before {
+        display: none;
+    }
+
+    .commu-org .group ul > li:nth-child(3)::before {
+        display: none;
+    }
+
+    .commu-org .group ul > li:nth-child(4)::before {
+        display: none;
+    }
+
+    .commu-org .group ul > li:nth-child(5)::before {
+        display: none;
+    }
+
+    .commu-org .group {
+        margin-top: 7rem;
+    }
+
+    .commu-org .group::before {
+        display: none;
+    }
+
+    .career-list::after {
+        top: var(--spacer2);
+        left: 0.2rem;
+        transform: inherit;
+    }
+
+    .career-list > li {
+        flex-direction: column;
+        align-items: normal;
+        padding-left: var(--spacer5);
+    }
+
+    .career-list .year,
+    .career-list .desc {
+        width: 100%;
+    }
+
+    .career-list .year::after {
+        top: var(--spacer2);
+        right: auto;
+        left: -2.6rem;
+        margin-right: 0;
+        transform: inherit;
+    }
+
+    .career-list .desc {
+        padding-left: 0;
+    }
+
+    .policy-Inquiry .subject {
+        padding-top: var(--spacer1);
+        padding-right: var(--spacer25);
+        line-height: 1.4;
+    }
+
+    .counsel-field .select {
+        width: 100%;
+    }
+
+    .counseling-info .info-area {
+        padding-left: var(--spacer10);
+        padding-right: var(--spacer10);
+    }
+
+    .counseling-info .counsel-link {
+        flex-flow: row wrap;
+        gap: var(--spacer3);
+    }
+
+    .search-box {
+        text-align: left;
+    }
+
+    .search-box.reserve-search .row.single {
+        flex-direction: column;
+    }
+
+    .search-box .date-group {
+        width: 100%;
+    }
+
+    .search-box .group {
+        display: flex;
+        flex-direction: column;
+        width: calc(50% - 1.3rem);
+    }
+
+    .face-talk input[type="text"] {
+        width: calc(100% - var(--spacer5));
+        margin: var(--spacer1) 0 0 var(--spacer5);
+    }
+
+    [class*="youthPolicy-write"] .tit {
+        width: 100%;
+        padding-bottom: 0;
+    }
+
+    [class*="youthPolicy-write"] > li .tit br {
+        display: none;
+    }
+
+    [class*="youthPolicy-write"] > li:nth-child(-n+4) {
+        padding-right: 0;
+    }
+
+    [class*="youthPolicy-write"] > li .txt {
+        width: 100%;
+    }
+
+    [class*="youthPolicy-write"] > li:nth-child(-n+4) > .txt {
+        margin-top: var(--spacer2);
+    }
+
+    [class*="youthPolicy-write"] .multi-select .tit {
+        margin-bottom: var(--spacer2);
+    }
+
+    .member-form .check-inline > li {
+        width: calc(50% - 1.4rem);
+    }
+
+    .search-input .form-control {
+        height: 6rem;
+        font-size: 2rem;
+    }
+
+    .search-filter {
+        font-size: 1.8rem;
+    }
+
+    .search-input .btn-ico {
+        width: 3.5rem;
+        height: 3.5rem;
+    }
+
+    .total-search .input-wrap {
+        padding-right: var(--spacer14);
+    }
+
+    .total-search .btn-ico {
+        right: var(--spacer5);
+    }
+
+    /* 20250811 청년지원-청년포털*/
+    .portal-list > ul {
+        column-gap: 1.2rem;
+    }
+
+    .portal-list > ul > li {
+        width: calc(100% / 2 - 6px);
+    }
+
+    .portal-list .imgs {
+        height: 7.6rem;
+    }
+
+    /* 국내외 일경험 20250822 */
+    .overseas-con-list > li {
+        flex-direction: column;
+        text-align: center;
+        gap: 10px;
+    }
+
+    .overseas-con-list > li > a {
+        height: 76px;
+    }
+
+    .overseas-con-list > li > .desc {
+        width: 100%;
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 640px) {
+
+    .form-entry .txt-bold,
+    .form-entry .subject {
+        margin-bottom: var(--spacer1);
+        line-height: 1.5;
+    }
+
+    .greeting-wrap {
+        padding: 3rem 2rem;
+    }
+
+    .greeting-wrap .tit strong {
+        font-size: 2.4rem;
+    }
+
+    .greeting-wrap .tit strong br {
+        display: none;
+    }
+
+    .board-list.type2,
+    .board-list.type3 {
+        margin: 0 -0.8rem;
+    }
+
+    .new-policy .board-list {
+        margin: 0;
+    }
+
+    .board-list.type2 > li,
+    .board-list.type3 > li,
+    .board-list.type4 > li {
+        width: calc(50% - var(--spacer4));
+        margin: var(--spacer2);
+    }
+    /*  청년통합검색 */
+    .policy-secrch .search-in{flex-wrap: wrap}
+    .policy-secrch .checks-group{order:2; margin:0;}
+    .policy-secrch .search-input{order:1; max-width: 100%; width:100%;}
+    .policy-secrch .btn-personal{order:3; height:4.5rem;}
+
+    .policy-secrch .search-input .input-line{max-width: 100%}
+
+    .policy-secrch .select-field {
+        padding: var(--spacer6) var(--spacer6) 0;
+    }
+
+    .policy-secrch .btn-area {
+        margin: var(--spacer8) -2.4rem 0;
+    }
+
+
+    /* 20250820 - 심층상담 수정 요청건
+    .counseling-type .tit {
+        margin-bottom: var(--spacer20);
+    }
+    */
+    .counseling-type a {
+        padding: var(--spacer5);
+    }
+
+    .counseling-type .icon {
+        bottom: var(--spacer5);
+        right: var(--spacer5);
+    }
+
+    .counselPro-area {
+        flex-direction: column;
+    }
+
+    .counselPro-area nav {
+        width: 100%;
+        min-height: auto;
+        padding: 0;
+        border: none;
+    }
+
+    .counselor-list {
+        display: flex;
+        gap: var(--spacer5);
+        padding-bottom: var(--spacer2);
+        overflow-x: auto;
+    }
+
+    .counselor-list li:not(:last-child) {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+
+    .counselor-list li button {
+    }
+
+    .counselor-list li button::after {
+        opacity: 0;
+    }
+
+    .counselor-profile {
+        width: 100%;
+    }
+
+    .agree-box {
+        font-size: 1.6rem;
+    }
+
+    .counsel-field .hope-area {
+        flex-flow: row wrap;
+    }
+
+    .reservation-time li {
+        width: calc(100% / 2);
+    }
+
+    .reservation-info .title-justify {
+        justify-content: flex-end;
+        gap: var(--spacer2);
+    }
+
+    .reservation-info .title-justify .depth3-title {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .row-process .counseling-process {
+        padding: 0 var(--spacer5);
+        font-size: 1.6rem;
+    }
+
+    .mypolicy-search .box-item {
+        width: calc(50% - var(--spacer2));
+        margin: var(--spacer1);
+    }
+
+    .mypolicy-search .job-status > li,
+    .mypolicy-search .long-item .check-outline > li {
+        width: calc(50% - var(--spacer2));
+    }
+
+    .mypolicy-search .long-item input[type="checkbox"]:checked + label::before {
+        width: 2.5rem;
+        margin: 0;
+    }
+
+    .mypolicy-search .job-status label,
+    .mypolicy-search .long-item label {
+        flex-flow: row wrap;
+        min-height: 4.2rem;
+        padding: var(--spacer1) 0;
+    }
+
+    .mypolicy-search .job-status label .icon,
+    .mypolicy-search .job-status li [type="checkbox"]:checked + label .ico-arrow {
+        margin: 0;
+    }
+
+    .mypolicy-search .job-status li label .ico-arrow {
+        width: 0;
+        height: 3rem;
+    }
+
+    .form-entry .field-counseling li {
+        width: calc(50% - var(--spacer2));
+    }
+
+    .member-form .income-terms .check-inline > li:last-child .display-inline:first-child {
+        width: 100%;
+        margin-bottom: var(--spacer2);
+    }
+
+    .member-form .fake-list > li .tit,
+    .member-form .fake-list > li .txt {
+        width: 100%;
+    }
+
+    .member-form .email-input input:nth-child(2) {
+        width: 50%;
+    }
+
+    .member-form .email-input input:last-child {
+        width: 43%;
+    }
+
+    .area-setting {
+        gap: var(--spacer2);
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .area-setting > li {
+        gap: var(--spacer1);
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .sitemap > li {
+        width: calc(50% - var(--spacer4));
+    }
+
+    .search-filter > li,
+    .recommend-search {
+        flex-direction: column;
+    }
+
+    .search-filter .tit {
+        width: 100%;
+        height: auto;
+    }
+
+    .search-filter.basic-search .input-group,
+    .recommend-search .input-group {
+        width: 100%;
+    }
+
+    .search-filter .date-row input {
+        width: calc(50% - 1.8rem);
+    }
+
+    .recommend-search {
+        padding-top: var(--spacer10);
+    }
+
+    .recommend-search .tit {
+        margin-bottom: var(--spacer3);
+    }
+
+    .essentials-info {
+        background-image: url(../../../images/mps/main/essentials_bg.png);
+        background-position: right bottom;
+    }
+
+    .essentials-info .desc {
+        width: 65%;
+    }
+
+    .policy-part .part-list {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    .policy-part .part-list > li{width: 100%;}
+    .policy-part .part-list > li .imgs{width: 7rem; height:7rem; margin:0 auto var(--spacer3);padding: 1.6rem; }
+
+}
+
+@media (max-width: 585px) {
+    .search-box .label2 {
+        display: block;
+        margin-right: 0;
+    }
+
+    .search-box .ba {
+        display: block;
+        margin: var(--spacer1) 0;
+    }
+
+    .whitebox.chk-area {
+        padding: var(--spacer5);
+    }
+
+    [class*="reservation-time"] {
+        gap: var(--spacer3);
+        margin: 0;
+    }
+
+    .reservation-time02 > li {
+        width: 100%;
+    }
+
+    .establishing-policy {
+        grid-template-columns: 1fr;
+    }
+
+    .establishing-policy [class*="col-sm-"] {
+        width: 100%;
+    }
+
+    .new-policy .bx-viewport {
+        min-height: 43rem;
+    }
+
+    .new-policy .board-list > li {
+        width: 100% !important;
+        margin: 0 !important;
+    }
+
+    .board-list.type2,
+    .board-list.type3,
+    .board-list.type4 {
+        margin: 0;
+    }
+
+    .board-list.type2 > li,
+    .board-list.type3 > li,
+    .board-list.type4 > li {
+        width: 100%;
+        margin: var(--spacer2) 0;
+    }
+
+    .eligibility-info {
+        align-items: flex-start;
+    }
+
+    .eligibility-info .float-wrap {
+        margin-top: var(--spacer1);
+        text-align: left;
+    }
+
+    .field-setting > li {
+        width: calc(33.33% - var(--spacer2));
+    }
+
+    .counsel-link + .character {
+        top: 9rem;
+        bottom: auto;
+    }
+
+    .counseling-info .counsel-link > li {
+        width: calc(50% - var(--spacer3));
+    }
+
+    .row-process .counseling-process {
+        padding: var(--spacer5);
+    }
+
+    .row-process .counseling-process {
+        gap: var(--spacer5);
+        flex-direction: column;
+    }
+
+    .row-process .counseling-process > li {
+        position: relative;
+        align-items: stretch;
+        min-height: 7.6rem;
+        padding: var(--spacer3) 0 var(--spacer3) var(--spacer25);
+        text-align: left;
+    }
+
+    .row-process .counseling-process > li:not(:first-child) {
+        margin-top: 2rem;
+    }
+
+    .row-process .counseling-process .icon {
+        position: absolute;
+        top: 50%;
+        left: 0;
+        margin: 0;
+        transform: translateY(-50%);
+    }
+
+    .row-process .counseling-process .subject,
+    .row-process .counseling-process .desc {
+        width: 100%;
+    }
+
+    .row-process .counseling-process .desc br {
+        display: none;
+    }
+
+    .row-process .counseling-process > li:not(:first-child)::before {
+        top: -2rem;
+        left: 50%;
+        transform: translateY(-50%) rotate(0deg);
+    }
+    .row-process .counseling-process.type2{grid-template-columns: none;}
+    .row-process .counseling-process.type2>li{padding: var(--spacer3) 0 var(--spacer3) var(--spacer25);}
+    .row-process .counseling-process.type2>li:nth-child(4)::before{display: block;}
+
+    .mypage-header > .graybox {
+        padding: var(--spacer5) var(--spacer4);
+    }
+
+    .mypersonal-data {
+        margin: -.5rem;
+    }
+
+    .mypersonal-data > li,
+    .mypersonal-data > li.col-sm-6 {
+        width: calc(50% - 1rem);
+        margin: 0.5rem;
+    }
+
+    .mypolicy-search .field-list {
+        margin: -.4rem;
+    }
+
+    .mypolicy-search .field-list > li,
+    .mypolicy-search .check-outline > li {
+        width: calc(33.33% - var(--spacer1));
+        margin: var(--spacer-default2);
+    }
+
+    .mypolicy-search .job-status > li,
+    .mypolicy-search .long-item .check-outline > li {
+        width: calc(50% - var(--spacer1));
+    }
+
+    .search-box .col > .display-block {
+        display: flex;
+        align-items: center;
+    }
+
+    .search-box .col > .display-block input {
+        width: 14.5rem;
+        min-width: auto;
+    }
+
+    .whitebox.info-link {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacer2);
+    }
+
+    .bx-pager {
+        justify-content: flex-start;
+    }
+
+    .new-policy .board-list.type2 {
+        width: 100% !important;
+    }
+
+    .new-policy .bx-controls {
+        line-height: 1;
+    }
+
+    /* 202507 */
+    /* 청년정책 개요 */
+    .policy-overview {
+        width: 100%;
+        font-size: 1.6rem;
+    }
+
+    .policy-overview > .step-item {
+        padding: var(--spacer6) var(--spacer5);
+    }
+
+    .policy-overview > .step-item .establishing-policy [class*="col-sm-"]:nth-child(2n):before {
+        width: 80%;
+        height: 1px;
+        left: 50%;
+        top: 0;
+        transform: translate(-50%, 0);
+    }
+}
+
+@media (max-width: 525px) {
+    .eligibility-info [class*="btn-type"] {
+        margin-left: 0;
+    }
+
+    .policy-personal input[type="text"] {
+        width: 80%;
+    }
+
+    .counseling-type {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .hope-area {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .hope-area .display-flex {
+        width: 100%;
+    }
+
+    .hope-area select {
+        width: calc(100% - 7.4rem);
+    }
+
+    .counseling-info .character {
+        right: var(--spacer4);
+        width: 14rem;
+        height: 12rem;
+        text-align: right;
+    }
+
+    .counseling-info .character img {
+        height: 100%;
+    }
+
+    .mypolicy-search .field-list > li {
+        width: calc(50% - var(--spacer1));
+    }
+
+    .my-package::after {
+        height: 11rem;
+    }
+
+    .search-box {
+        text-align: left;
+    }
+
+    .search-box .col > .display-block {
+        width: 100%;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .search-box .col > .display-block input {
+        width: auto;
+    }
+
+    [class*="youthPolicy-write"] .target {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .member-form .form-entry > li:not(:last-child) .all-checks + .check-inline > li {
+        width: calc(50% - 1.4rem);
+    }
+
+    .member-form .division-search input[type="text"] {
+        width: calc(100% - 7.5rem);
+    }
+
+    .rrn-write {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .total-search {
+        padding: var(--spacer12) var(--spacer2);
+    }
+
+    .recommend-search {
+        padding-top: var(--spacer8);
+    }
+
+    .policy-current .title-area {
+        max-width: 100%;
+    }
+
+    .policy-comparison .comparison-area {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 485px) {
+    .tab-menu-type2.g-4 {
+        grid-template-columns: repeat(2, 1fr);
+        column-gap: 1rem;
+    }
+
+    [class*="depth2-title"] {
+        line-height: 1.3;
+        font-size: 2.2rem;
+    }
+
+    [class*="depth2-title"]::before {
+        top: 0.5rem;
+    }
+
+    [class*="depth3-title"] {
+        font-size: 2rem;
+    }
+
+    [class*="depth4-title"] {
+        font-size: 1.8rem;
+    }
+
+    .cont-info {
+        padding-left: var(--spacer10);
+    }
+
+    .counseling-info {
+        padding-left: 0;
+    }
+
+    .cont-info .icon {
+        position: relative;
+        top: inherit;
+        left: inherit;
+        transform: none;
+        margin: 0 auto var(--spacer3);
+    }
+
+    .policy-secrch .input-group {
+        flex-direction: column;
+        row-gap: 0.5rem;
+        align-items: flex-start
+    }
+
+    .policy-secrch .input-group .search-input {
+        width: 100%;
+    }
+
+    .policy-personal .col,
+    .policy-personal .row.single {
+        flex-direction: column;
+    }
+
+    .policy-personal .tit,
+    .policy-personal .txt {
+        width: 100%;
+    }
+
+    .policy-personal .tit {
+        margin-bottom: var(--spacer1);
+    }
+
+    .policy-personal .tit br {
+        display: none;
+    }
+
+    .policy-personal .check-outline > li {
+        width: calc(50% - var(--spacer1));
+    }
+
+    .policy-personal .check-outline label {
+        width: 100%;
+        text-align: center;
+    }
+
+    .policy-secrch .checks-group .checks input[type="checkbox"] + label{font-size: 1.4rem;line-height:2.3rem;}
+    .policy-secrch .search-input{padding-right:0; display: flex; align-items: center; border: 1px solid #13457F; border-radius: 4rem;padding: 0 1.3rem 0 1rem; overflow: hidden; }
+    .policy-secrch .search-input .input-line{border:0;    border-radius: 0;}
+    .policy-secrch .search-input input[type="text"]{width: calc(100% - 3rem);}
+    .policy-secrch .search-input .btn{position:static;display: flex; align-items: center; gap:1rem;}
+    .policy-secrch .search-input .btn-policy{border:0; width: 3rem;  height: 3rem; border-radius: 0}
+    .policy-secrch .btn-search .ico-search{width: 2rem; height:2rem;}
+    .policy-secrch .btn-initialize .ico-refresh {width: 2rem;}
+
+    .policy-secrch .btn-area { flex-flow: column;}
+
+    .policy-secrch .select-field > .btn-area [class*="btn-type"] {
+        width: 100%;
+    }
+
+    .policy-secrch .btn-area .btn-auto {
+        width: 72%;
+    }
+
+    /* 정책 통합 검색 태그*/
+    .policy-Inquiry .subject {
+        padding-bottom: var(--spacer5);
+        padding-right: 0;
+    }
+
+    .policy-Inquiry .btn-area {
+        position: relative;
+        top: inherit;
+        right: inherit;
+        justify-content: center;
+        margin-top: var(--spacer5);
+    }
+
+    .policy-Inquiry .btn-area [class*="btn-type"] {
+        flex-flow: row wrap;
+        gap: 0.4rem;
+        width: auto;
+        height: 3.6rem;
+        padding: var(--spacer1) var(--spacer5);
+        border-radius: 2.4rem;
+        line-height: 1.6;
+    }
+
+    .policy-Inquiry .btn-area [class*="btn-type"] .sr-only {
+        position: relative;
+        width: auto;
+        height: auto;
+        margin: 0;
+        color: #333;
+    }
+
+    .policy-Inquiry .btn-area .btn-type04 .sr-only {
+        color: #fff;
+    }
+
+    .other-counseling .caution .tit {
+        float: none;
+        margin: 0 0 var(--spacer2);
+    }
+
+    .counseling-process .txt {
+        width: 100%;
+    }
+
+    .reservation-time li {
+        width: 100%;
+    }
+
+    .counseling-process > li {
+        flex-direction: column;
+    }
+
+    .counseling-process .icon {
+        margin: 0 auto;
+    }
+
+    .mypolicy-search {
+        margin: 0;
+    }
+
+    .mypolicy-search .section-tit {
+        margin-bottom: var(--spacer4);
+    }
+
+    .mypolicy-search .box-item {
+        width: 100%;
+        margin: var(--spacer1) 0;
+        padding: var(--spacer5);
+    }
+
+    .mypolicy-search .field-list > li,
+    .mypolicy-search .long-item .check-outline > li {
+        width: calc(33.33% - var(--spacer1));
+    }
+
+    .form-entry input {
+        max-width: 100%;
+    }
+
+    .form-entry .jumin {
+        width: 46%;
+    }
+
+    .form-entry .email-input input[class*="col-sm-"] {
+        width: 100%;
+    }
+
+    .whitebox.chk-area {
+        flex-flow: row wrap;
+        gap: 0;
+    }
+
+    .whitebox.chk-area .checks {
+        width: 100%;
+    }
+
+    .whitebox.chk-area .checks > li {
+        display: block;
+        margin: var(--spacer2) 0;
+    }
+
+    [class*="reservation-time"] {
+        margin: 0;
+    }
+
+    .form-entry .field-counseling .checks {
+        margin: 0;
+    }
+
+    .form-entry .field-counseling li {
+        width: 100%;
+        margin: 0;
+    }
+
+    [class*="youthPolicy-write"] .fake-list.row {
+        gap: var(--spacer2);
+    }
+
+    [class*="youthPolicy-write"] .fake-list.row > li {
+        width: 100%;
+    }
+
+    [class*="youthPolicy-write"] .column > li .checks {
+        width: 100%;
+        margin-bottom: var(--spacer2);
+    }
+
+    [class*="youthPolicy-write"] > li.row .tit,
+    [class*="youthPolicy-write"] > li.row .txt,
+    [class*="youthPolicy-write"] > li.row .txt select,
+    [class*="youthPolicy-write"] > li .txt [class*="col-sm-"],
+    [class*="youthPolicy-write"] > li .txt [class*="col-sm-"] + .checks,
+    [class*="youthPolicy-write"] .all-checks {
+        width: 100%;
+    }
+
+    [class*="youthPolicy-write"] > li .txt {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    [class*="youthPolicy-write"] .multi-select .row .checks > li {
+        width: calc(50% - var(--spacer2));
+    }
+
+    [class*="youthPolicy-write"] .txt.marriage {
+        flex-flow: row wrap;
+    }
+
+    [class*="youthPolicy-write"] .marriage .all-checks {
+        width: 11rem;
+        margin-right: var(--spacer2);
+        padding-right: var(--spacer3);
+    }
+
+    [class*="youthPolicy-write"] .marriage .checks > li {
+        width: auto;
+    }
+
+    .member-form .check-inline > li {
+        width: 100%;
+    }
+
+    .member-form .email-input input {
+        width: 100% !important;
+    }
+
+    .txt.application-data > li {
+        flex-direction: column;
+    }
+
+    .application-data .lstyle-normal {
+        width: 100%;
+    }
+
+    .txt.application-data input[type="date"] {
+        width: 11.8rem;
+        font-size: 1.4rem;
+    }
+
+    .txt.application-data .btn-control {
+        position: absolute;
+        top: 0.5rem;
+        right: 0;
+    }
+
+    .txt.application-data [class*="btn-type"].small {
+        width: 2.8rem;
+        height: 2.8rem;
+    }
+
+    .search-box .col {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacer1);
+    }
+
+    .search-box .label {
+        width: 100%;
+    }
+
+    .enquiry-list {
+        gap: var(--spacer7);
+    }
+
+    [class*="youthPolicy-write"] .file-box input[type="text"] {
+        width: auto;
+    }
+
+    .my-package02 {
+        padding-bottom: var(--spacer29);
+    }
+
+    .policy-secrch .box-select,
+    .policy-secrch > .btn-type03 {
+        width: calc(50% - .3rem);
+    }
+
+    .policy-secrch > .box-select {
+        margin-bottom: var(--spacer1);
+    }
+
+    .step-wrap {
+        margin-bottom: var(--spacer10);
+    }
+
+    .step-wrap > li {
+        font-size: 1.3rem;
+    }
+
+    .step-wrap .step-tit {
+        padding-right: var(--spacer4);
+    }
+
+    .main-service .lstyle-dot > li {
+        width: 100%;
+    }
+
+    .enquiry-list > li {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .enquiry-list strong,
+    .enquiry-list span {
+        width: 100%;
+        text-align: left;
+    }
+
+    .enquiry-list strong {
+        float: none;
+        margin-right: 0;
+    }
+
+    .enquiry-list span {
+        margin-left: 1.2rem;
+        padding-right: 0;
+    }
+
+    [class*="reservation-time"] li.col-sm-12 input[type="text"] {
+        width: 100%;
+    }
+
+    .vote-btn .btn-area.txt-right{text-align: center;}
+
+    }
+
+@media (max-width: 420px) {
+    .part-list > li {
+        flex-direction: column;
+    }
+
+    .policy-part .tit {
+        width: 100%;
+    }
+
+    .part-list .txt {
+        width: 100%;
+        margin-top: var(--spacer5);
+    }
+
+    .policy-part .checks.all {
+        justify-content: center;
+    }
+
+    .policy-secrch .btn-area .btn-auto {
+        width: 100%;
+    }
+
+    .counseling-process > li {
+        flex-direction: column;
+    }
+
+    .counseling-process .icon {
+        margin: 0 0 var(--spacer4);
+    }
+
+    .counseling-process .txt {
+        width: 100%;
+    }
+
+    .field-setting > li {
+        width: calc(50% - var(--spacer2));
+    }
+
+    .field-setting label {
+        font-size: 1.6rem;
+    }
+
+    .title-actions {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .title-actions .btn-type03 {
+        justify-content: space-between;
+        margin-top: var(--spacer3);
+    }
+
+    .counsel-field {
+        flex-direction: column;
+        gap: var(--spacer1);
+    }
+
+    .counsel-field .select {
+        max-width: 100%;
+    }
+
+    .counsel-field > .display-flex {
+        width: 100%;
+    }
+
+    .counseling-info .btn-area {
+        flex-direction: column;
+    }
+
+    .btn-area.counsel-link {
+        flex-flow: row wrap;
+        padding-left: var(--spacer8);
+        padding-right: var(--spacer8);
+    }
+
+    .mypage-header .my-package {
+        padding-bottom: 0;
+    }
+
+    .my-package {
+        padding-bottom: 0;
+    }
+
+    .my-package::after {
+        position: relative;
+        bottom: inherit;
+        right: inherit;
+        left: inherit;
+        width: 110%;
+        background-position: right bottom;
+    }
+
+    .search-box .date-group {
+        flex-direction: column;
+        align-items: normal;
+    }
+
+    .search-box .group {
+        width: 100%;
+        flex-flow: row wrap;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .search-box .group input {
+        width: calc(100% - 5.5rem);
+    }
+
+    .search-box .ba {
+        margin: 0;
+    }
+
+    .search-box.reserve-search .col > input,
+    .search-box.reserve-search .col > select {
+        width: 100%;
+    }
+
+    [class*="youthPolicy-write"] .txt.ministry input[type="text"] {
+        width: calc(100% - 8rem);
+    }
+
+    .member-form .form-entry > li:not(:last-child) .all-checks + .check-inline > li {
+        width: 100%;
+    }
+
+    .application-data .lstyle-normal > li {
+        display: flex;
+        flex-flow: row wrap;
+        align-items: center;
+    }
+
+    .txt.application-data input[type="date"] {
+        width: 38%;
+    }
+
+    .sitemap {
+        margin: 0;
+    }
+
+    .sitemap > li {
+        width: 100%;
+        margin: 0 0 var(--spacer10);
+    }
+
+    .search-filter .check-outline > li {
+        width: calc(33.33% - .4rem);
+    }
+
+    .search-filter .check-outline label {
+        width: 100%;
+    }
+
+    .local-choice .box {
+        padding-left: 1rem;
+    }
+
+    .local-choice .area-list li:not(:first-child) {
+        margin-top: var(--spacer1);
+    }
+
+    .facility-list .tit {
+        font-size: 1.6rem;
+    }
+
+    .facility-list .icon {
+        width: 7rem;
+        height: 7rem;
+    }
+}
+
+@media (max-width: 380px) {
+    .graybox02 {
+        padding: var(--spacer8) var(--spacer5);
+    }
+
+    .policy-secrch > .btn-type03,
+    .policy-secrch > .box-select {
+        width: 100%;
+        margin-bottom: var(--spacer1);
+    }
+
+    .policy-part .checks.all,
+    .policy-part .check-outline,
+    .policy-personal .check-outline > li {
+        width: 100%;
+    }
+
+    .counseling-history {
+        padding: var(--spacer8);
+    }
+
+    .terms-agree .chk-area {
+        width: 100%;
+        flex-direction: column;
+        gap: var(--spacer2);
+        margin-top: var(--spacer2);
+    }
+
+    .terms-agree .chk-area > span {
+        display: block;
+    }
+
+    .txt.application-data input[type="date"] {
+        width: 72%;
+    }
+
+    .application-data .lstyle-normal {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacer2);
+    }
+
+    .application-data .lstyle-normal > li {
+        align-items: stretch;
+    }
+
+    .search-filter .date-row {
+        flex-direction: column;
+        gap: var(--spacer1);
+    }
+
+    .search-filter .date-row input {
+        width: 100%;
+        gap: 0;
+    }
+
+    /* 20250926 투표 상세 */
+    .vote-check-list li {
+        padding: 1.6rem;
+    }
+}
+
+@media (max-width: 360px) {
+
+    .form-entry .checks input[type="radio"] + label,
+    .form-entry .checks input[type="checkbox"] + label {
+        line-height: 1.5;
+        font-size: 1.5rem;
+    }
+
+    .counseling-history .decision + .txt-center {
+        flex-direction: column;
+    }
+
+    .inflow-path > [class*="col-sm-"] {
+        flex-direction: column;
+    }
+
+    .inflow-path label {
+        width: 100%;
+    }
+
+    .datepicker-tbl td > button {
+        width: 3.5rem;
+        height: 3.5rem;
+        margin-bottom: var(--spacer2);
+    }
+
+    .hopeful-date {
+        font-size: 2.5rem;
+    }
+
+    .btn-area.counsel-link {
+        gap: var(--spacer2);
+        padding: var(--spacer8) var(--spacer4);
+    }
+
+    .form-entry .jumin {
+        width: 100%;
+    }
+
+    .form-entry .jumin + .ba {
+        display: block;
+        width: 100%;
+    }
+
+    .whitebox.chk-area label + select {
+        width: calc(100% - var(--spacer5));
+        margin-left: var(--spacer5);
+    }
+
+    [class*="youthPolicy-write"] input[type="date"] {
+        width: 100%;
+    }
+
+    [class*="youthPolicy-write"] .txt.marriage {
+        flex-direction: column;
+    }
+
+    [class*="youthPolicy-write"] .marriage {
+        gap: var(--spacer2);
+    }
+
+    [class*="youthPolicy-write"] .marriage .all-checks {
+        margin-right: 0;
+        padding-right: 0;
+    }
+
+    [class*="youthPolicy-write"] .all-checks::after {
+        display: none;
+    }
+
+    [class*="youthPolicy-write"] .marriage .checks,
+    [class*="youthPolicy-write"] .marriage .checks > li {
+        width: 100%;
+    }
+}
+
+/* 청년정책 비교 팝업 */
+@media (min-width: 601px) {
+    .desktop-table {
+        display: table;
+        width: 100%;
+    }
+
+    .mobile-list {
+        display: none;
+    }
+}
+
+@media (max-width: 600px) {
+    .desktop-table {
+        display: none;
+    }
+
+    .mobile-list {
+        display: block;
+    }
+
+    .mobile-list .tab-inline {
+        margin-top: 0;
+    }
+
+    .mobile-list .tab-menu-type2 {
+        grid-template-columns: 1fr;
+    }
+
+    .mobile-list .mob-content {
+        overflow: hidden;
+        overflow-y: auto;
+        max-height: 300px;
+    }
+
+}

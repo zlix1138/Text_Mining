@@ -1,0 +1,1493 @@
+/**
+ * WebRTC Voice Conversation Module
+ * OpenAI Realtime API를 사용한 WebRTC 기반 실시간 음성 대화 모듈
+ * 음성 대화 전용 - 텍스트 변환 없이 오디오 스트림으로만 대화
+ * 
+ * @class WebRTCVoiceConversationModule
+ */
+class WebRTCVoiceConversationModule {
+    constructor(config = {}) {
+        const normalizeRealtimeModel = (rawModel) => {
+            if (!rawModel || typeof rawModel !== 'string') return '';
+            const trimmed = rawModel.trim();
+            if (!trimmed) return '';
+            if (trimmed === 'gpt-realtime') return 'gpt-realtime-1.5';
+            return trimmed;
+        };
+
+        // 기본 설정
+        this.apiBaseUrl = config.apiBaseUrl || window.url1 || '';
+        this.model = normalizeRealtimeModel(config.model || '');
+        this.mode = config.mode || 'conversation';
+        this.voice = config.voice || '';
+        this.ragProfile = config.ragProfile || 'default';
+        this.ragDb = config.ragDb || '';
+        this.ragChatId = config.ragChatId || '';
+        this.useWebSearch = this.resolveUseWebSearchFlag(
+            config.useWebSearch ?? config.use_web_search ?? config.metadata?.use_web_search
+        );
+        this.ragTopK = Number.isFinite(Number(config.ragTopK)) ? Number(config.ragTopK) : 10;
+        this.toolTimeoutMs = Number.isFinite(Number(config.toolTimeoutMs)) ? Number(config.toolTimeoutMs) : 1800;
+        this.metadata = (config.metadata && typeof config.metadata === 'object') ? config.metadata : {};
+        this.buildSessionPayload = typeof config.buildSessionPayload === 'function' ? config.buildSessionPayload : null;
+        this.sessionId = null;
+        this.sessionEndpointUsed = null;
+        this.pendingFunctionCalls = new Map();
+        this.executedFunctionCallIds = new Set();
+        this.allowedTools = new Set(['search_knowledge_base']);
+        this.activeResponseId = null;
+        this.responseCreatePending = false;
+        this.queuedResponseCreate = false;
+        this._partialTranscript = '';
+        this._interruptedTranscript = '';
+        this._currentAssistantAudioItemId = '';
+        this._audioEndMs = 0;
+        this._resumeCount = 0;
+        this._awaitingInterruptionTranscription = false;
+        
+        // WebRTC 관련
+        this.pc = null;
+        this.localStream = null;
+        this.dataChannel = null;
+        this.isConnected = false;
+        this.connectionState = 'disconnected'; // disconnected, connecting, connected, failed
+        
+        // 오디오 재생 관련
+        this.remoteAudio = null;
+        
+        // 콜백 함수들
+        this.onConnectionStateChangeCallback = null;
+        this.onErrorCallback = null;
+        this.onRemoteAudioCallback = null;
+        this.onSessionEventCallback = null; // 세션 이벤트 (선택적)
+        
+        // 이벤트 핸들러 바인딩
+        this.handleDataChannelMessage = this.handleDataChannelMessage.bind(this);
+        this.handleConnectionStateChange = this.handleConnectionStateChange.bind(this);
+        this.handleTrack = this.handleTrack.bind(this);
+        
+        // ICE 서버 설정
+        this.iceServers = config.iceServers || [
+            { urls: 'stun:stun.l.google.com:19302' }
+        ];
+    }
+
+    assertRequiredConfig() {
+        if (this.model) {
+            return;
+        }
+
+        const error = new Error(
+            '[VOICE_CFG_MISSING_MODEL] WebRTC module requires a non-empty model before connect()'
+        );
+        console.error(error.message, {
+            apiBaseUrl: this.apiBaseUrl || '',
+            mode: this.mode || ''
+        });
+        throw error;
+    }
+
+    normalizeApiBaseUrl() {
+        return (this.apiBaseUrl || '').replace(/\/+$/, '');
+    }
+
+    getSessionEndpointCandidates() {
+        const baseUrl = this.normalizeApiBaseUrl();
+        return [
+            `${baseUrl}/AI_voice/voice-chat-v3/agent/session`,
+            `${baseUrl}/AI_voice/webrtc-voice-conversation-session`
+        ];
+    }
+
+    isUsingLegacySessionEndpoint() {
+        return (this.sessionEndpointUsed || '').includes('/AI_voice/webrtc-voice-conversation-session');
+    }
+
+    getConfigEndpoint() {
+        const baseUrl = this.normalizeApiBaseUrl();
+        if (this.isUsingLegacySessionEndpoint()) {
+            return `${baseUrl}/AI_voice/webrtc-voice-conversation-config`;
+        }
+        return `${baseUrl}/AI_voice/voice-chat-v3/agent/config`;
+    }
+
+    getSearchKnowledgeBaseEndpoint() {
+        const baseUrl = this.normalizeApiBaseUrl();
+        return `${baseUrl}/AI_voice/voice-chat-v3/agent/tools/search-knowledge-base`;
+    }
+
+    getSearchWebEndpoint() {
+        const baseUrl = this.normalizeApiBaseUrl();
+        return `${baseUrl}/AI_voice/voice-chat-v3/agent/tools/search-web`;
+    }
+
+    resolveUseWebSearchFlag(rawValue) {
+        if (typeof rawValue === 'boolean') return rawValue;
+        if (typeof rawValue === 'number') return rawValue === 1;
+        if (typeof rawValue === 'string') {
+            const normalized = rawValue.trim().toLowerCase();
+            if (['true', '1', 'yes', 'on', 'y'].includes(normalized)) return true;
+            if (['false', '0', 'no', 'off', 'n'].includes(normalized)) return false;
+        }
+
+        if (typeof window !== 'undefined' && typeof window.search_web === 'string') {
+            return window.search_web.toLowerCase() === 'on';
+        }
+
+        return false;
+    }
+
+    syncAllowedTools(sessionConfig = {}) {
+        const hasToolsField = Array.isArray(sessionConfig?.session?.tools);
+        const tools = hasToolsField ? sessionConfig.session.tools : [];
+
+        if (!hasToolsField) {
+            this.allowedTools = new Set(['search_knowledge_base']);
+            return;
+        }
+
+        const nextTools = new Set();
+        tools.forEach((tool) => {
+            if (tool?.type === 'function' && typeof tool?.name === 'string' && tool.name.trim()) {
+                nextTools.add(tool.name.trim());
+            }
+        });
+
+        this.allowedTools = nextTools.size > 0 ? nextTools : new Set(['search_knowledge_base']);
+    }
+
+    isToolAllowed(functionName) {
+        if (!functionName) {
+            return false;
+        }
+
+        if (functionName === 'search_web' && !this.useWebSearch) {
+            return false;
+        }
+
+        return this.allowedTools.has(functionName);
+    }
+
+    getRealtimeDialect() {
+        const model = typeof this.model === 'string' ? this.model.trim() : '';
+        return model.startsWith('gpt-realtime-2') ? 'ga' : 'legacy';
+    }
+
+    isGaRealtimeModel() {
+        return this.getRealtimeDialect() === 'ga';
+    }
+
+    applyOutputModalities(payload, outputModes = ['audio']) {
+        if (this.isGaRealtimeModel()) {
+            payload.output_modalities = outputModes;
+            delete payload.modalities;
+        } else {
+            payload.modalities = outputModes;
+            delete payload.output_modalities;
+        }
+
+        return payload;
+    }
+
+    buildResponseCreate(outputModes = ['audio']) {
+        return {
+            type: 'response.create',
+            response: this.applyOutputModalities({
+                instructions: '도구 결과를 근거로 한국어로 간결하게 답변하세요.'
+            }, outputModes)
+        };
+    }
+
+    buildSessionUpdate(sessionConfig = {}) {
+        const session = (sessionConfig && typeof sessionConfig.session === 'object')
+            ? { ...sessionConfig.session }
+            : {};
+
+        if (Array.isArray(session.modalities) || Array.isArray(session.output_modalities)) {
+            const rawModes = session.modalities || session.output_modalities;
+            const modes = this.isGaRealtimeModel() ? ['audio'] : rawModes;
+            this.applyOutputModalities(session, modes);
+        }
+
+        const payload = {
+            type: 'session.update',
+            session
+        };
+
+        if (typeof sessionConfig?.event_id === 'string' && sessionConfig.event_id) {
+            payload.event_id = sessionConfig.event_id;
+        }
+
+        return payload;
+    }
+
+    sanitizeSessionUpdatePayload(sessionConfig = {}) {
+        return this.buildSessionUpdate(sessionConfig);
+    }
+    
+    /**
+     * WebRTC 연결 시작
+     * @returns {Promise<void>}
+     */
+    async connect() {
+        try {
+            this.assertRequiredConfig();
+            this.setConnectionState('connecting');
+            this._sessionInitialized = false;
+            this._sessionInitializing = false;
+            this.pendingFunctionCalls.clear();
+            this.executedFunctionCallIds.clear();
+            this.activeResponseId = null;
+            this.responseCreatePending = false;
+            this.queuedResponseCreate = false;
+            this._resetResumeOnNoiseState();
+            // 1. 마이크 권한 요청
+            this.localStream = await navigator.mediaDevices.getUserMedia({
+                audio: {
+                    sampleRate: 24000,
+                    channelCount: 1,
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true
+                }
+            });
+            // 2. RTCPeerConnection 생성
+            this.pc = new RTCPeerConnection({
+                iceServers: this.iceServers
+            });
+            
+            // 3. 로컬 스트림 추가
+            this.localStream.getTracks().forEach(track => {
+                this.pc.addTrack(track, this.localStream);
+            });
+            
+            // 4. DataChannel 생성 (SDP Offer 생성 전에 생성해야 SDP에 포함됨)
+            this.dataChannel = this.pc.createDataChannel('oai-events', {
+                ordered: true
+            });
+            
+            // DataChannel 핸들러 설정
+            this.setupDataChannelHandlers();
+            
+            // 서버에서 DataChannel을 생성하는 경우도 대비
+            this.pc.ondatachannel = (event) => {
+                // 서버에서 생성한 DataChannel이 있으면 사용
+                if (!this.dataChannel || this.dataChannel.readyState !== 'open') {
+                    this.dataChannel = event.channel;
+                    this.setupDataChannelHandlers();
+                }
+            };
+            
+            // 5. PeerConnection 이벤트 핸들러 설정
+            this.setupPeerConnectionHandlers();
+            
+            // 6. SDP Offer 생성
+            const offer = await this.pc.createOffer({
+                offerToReceiveAudio: true,
+                offerToReceiveVideo: false
+            });
+            await this.pc.setLocalDescription(offer);
+            
+            // 7. 서버에 세션 생성 요청
+            const requestPayload = this.createSessionRequestPayload(offer.sdp);
+            const endpoints = this.getSessionEndpointCandidates();
+            let response = null;
+            let lastErrorText = '';
+            let lastStatus = 0;
+
+            for (const endpoint of endpoints) {
+                const currentResponse = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestPayload)
+                });
+
+                if (currentResponse.ok) {
+                    response = currentResponse;
+                    this.sessionEndpointUsed = endpoint;
+                    break;
+                }
+
+                lastStatus = currentResponse.status;
+                lastErrorText = await currentResponse.text();
+                console.warn(`⚠️ 세션 엔드포인트 실패 (${endpoint}):`, currentResponse.status, lastErrorText);
+            }
+
+            if (!response) {
+                throw new Error(`서버 응답 오류: ${lastStatus || 'unknown'} - ${lastErrorText || '세션 엔드포인트 호출 실패'}`);
+            }
+
+            // 8. SDP Answer 수신 및 설정
+            const parsedResponse = await this.parseSessionResponse(response);
+            const sdpAnswer = parsedResponse.sdpAnswer;
+            this.sessionId = parsedResponse.sessionId || null;
+
+            if (!sdpAnswer) {
+                throw new Error('SDP Answer가 비어 있습니다.');
+            }
+            await this.pc.setRemoteDescription({
+                type: 'answer',
+                sdp: sdpAnswer
+            });
+            
+        } catch (error) {
+            console.error('💥 WebRTC 연결 오류:', error);
+            this.setConnectionState('failed');
+            this.handleError(error);
+            throw error;
+        }
+    }
+
+    createSessionRequestPayload(localSdp) {
+        const basePayload = {
+            sdp: localSdp,
+            model: this.model,
+            mode: this.mode,
+            voice: this.voice || undefined,
+            rag_profile: this.ragProfile,
+            rag_db: this.ragDb,
+            rag_chat_id: this.ragChatId,
+            rag_top_k: this.ragTopK,
+            use_web_search: this.useWebSearch,
+            metadata: {
+                ...this.metadata,
+                rag_db: this.ragDb || this.metadata.rag_db || '',
+                rag_chat_id: this.ragChatId || this.metadata.rag_chat_id || '',
+                rag_top_k: this.ragTopK,
+                use_web_search: this.useWebSearch
+            }
+        };
+
+        if (!basePayload.metadata.source) {
+            basePayload.metadata.source = 'voice_webrtc_module';
+        }
+
+        if (this.buildSessionPayload) {
+            try {
+                const customPayload = this.buildSessionPayload(basePayload);
+                if (customPayload && typeof customPayload === 'object') {
+                    return customPayload;
+                }
+            } catch (error) {
+                console.warn('custom session payload builder error:', error);
+            }
+        }
+
+        return basePayload;
+    }
+
+    async parseSessionResponse(response) {
+        const contentType = response.headers.get('content-type') || '';
+
+        if (contentType.includes('application/json')) {
+            const json = await response.json();
+            return {
+                sdpAnswer: json.sdp_answer || json.sdpAnswer || json.answer || '',
+                sessionId: json.session_id || json.sessionId || null,
+                raw: json
+            };
+        }
+
+        const text = await response.text();
+        try {
+            const json = JSON.parse(text);
+            return {
+                sdpAnswer: json.sdp_answer || json.sdpAnswer || json.answer || '',
+                sessionId: json.session_id || json.sessionId || null,
+                raw: json
+            };
+        } catch (_error) {
+            return {
+                sdpAnswer: text,
+                sessionId: null,
+                raw: text
+            };
+        }
+    }
+
+    getOrCreateFunctionCallState(callId) {
+        if (!callId) return null;
+
+        if (!this.pendingFunctionCalls.has(callId)) {
+            this.pendingFunctionCalls.set(callId, {
+                name: '',
+                argumentsText: '',
+                argumentsDone: false,
+                outputDone: false
+            });
+        }
+
+        return this.pendingFunctionCalls.get(callId);
+    }
+
+    extractFunctionCallId(payload) {
+        return payload?.call_id || payload?.item?.call_id || payload?.response?.call_id || '';
+    }
+
+    extractFunctionCallName(payload) {
+        return payload?.name || payload?.item?.name || payload?.item?.function?.name || '';
+    }
+
+    extractFunctionArguments(payload) {
+        if (typeof payload?.arguments === 'string') return payload.arguments;
+        if (typeof payload?.item?.arguments === 'string') return payload.item.arguments;
+        if (typeof payload?.response?.arguments === 'string') return payload.response.arguments;
+        return '';
+    }
+
+    parseFunctionArguments(rawArguments) {
+        if (!rawArguments || typeof rawArguments !== 'string') {
+            return {};
+        }
+
+        try {
+            const parsed = JSON.parse(rawArguments);
+            return (parsed && typeof parsed === 'object') ? parsed : {};
+        } catch (_error) {
+            return {};
+        }
+    }
+
+    normalizeTopK(value) {
+        const candidate = Number(value);
+        if (!Number.isFinite(candidate)) {
+            return Number.isFinite(Number(this.ragTopK)) ? Number(this.ragTopK) : 5;
+        }
+
+        if (candidate < 1) return 1;
+        if (candidate > 20) return 20;
+        return Math.floor(candidate);
+    }
+
+    resolveRagDb() {
+        const globalDbName =
+            (typeof window !== 'undefined' && window.db_name)
+                ? window.db_name
+                : ((typeof db_name !== 'undefined') ? db_name : '');
+        const candidate = this.ragDb || this.metadata?.rag_db || globalDbName;
+        return (candidate || '').toString().trim();
+    }
+
+    resolveRagChatId() {
+        const globalAppChatBotId =
+            (typeof window !== 'undefined' && window.app?.chat_bot_id)
+                ? window.app.chat_bot_id
+                : '';
+        const globalVueChatBotId =
+            (typeof window !== 'undefined' && window.vueApp?.chat_bot_id)
+                ? window.vueApp.chat_bot_id
+                : '';
+        const globalHeadChatBotId =
+            (typeof window !== 'undefined' && window.appHeadInstance?.chat_bot_id)
+                ? window.appHeadInstance.chat_bot_id
+                : '';
+        const globalChatBotId =
+            (typeof window !== 'undefined' && window.chat_bot_id)
+                ? window.chat_bot_id
+                : (globalAppChatBotId || globalVueChatBotId || globalHeadChatBotId || ((typeof chat_bot_id !== 'undefined') ? chat_bot_id : ''));
+        const candidate = this.ragChatId || this.metadata?.rag_chat_id || globalChatBotId || globalAppChatBotId || globalVueChatBotId || globalHeadChatBotId;
+        return (candidate || '').toString().trim();
+    }
+
+    resolveToolTimeoutMs() {
+        const timeoutMs = Number(this.toolTimeoutMs);
+        if (Number.isFinite(timeoutMs) && timeoutMs >= 300) {
+            return timeoutMs;
+        }
+        return 1800;
+    }
+
+    handleFunctionCallArgumentsDelta(data) {
+        const callId = this.extractFunctionCallId(data);
+        if (!callId) return;
+
+        const callState = this.getOrCreateFunctionCallState(callId);
+        if (!callState) return;
+
+        if (typeof data.delta === 'string') {
+            callState.argumentsText += data.delta;
+        }
+
+        const functionName = this.extractFunctionCallName(data);
+        if (functionName) {
+            callState.name = functionName;
+        }
+    }
+
+    handleFunctionCallArgumentsDone(data) {
+        const callId = this.extractFunctionCallId(data);
+        if (!callId) return;
+
+        const callState = this.getOrCreateFunctionCallState(callId);
+        if (!callState) return;
+
+        const finalizedArguments = this.extractFunctionArguments(data);
+        if (typeof finalizedArguments === 'string' && finalizedArguments.length > 0) {
+            callState.argumentsText = finalizedArguments;
+        }
+
+        const functionName = this.extractFunctionCallName(data);
+        if (functionName) {
+            callState.name = functionName;
+        }
+
+        callState.argumentsDone = true;
+    }
+
+    async handleFunctionCallOutputItemDone(data) {
+        const itemType = data?.item?.type;
+        if (itemType !== 'function_call' && itemType !== 'tool_call') {
+            return;
+        }
+
+        const callId = this.extractFunctionCallId(data);
+        if (!callId) {
+            console.warn('⚠️ function call item에 call_id가 없습니다:', data);
+            return;
+        }
+
+        const callState = this.getOrCreateFunctionCallState(callId);
+        if (!callState) return;
+
+        const functionName = this.extractFunctionCallName(data);
+        if (functionName) {
+            callState.name = functionName;
+        }
+
+        const finalizedArguments = this.extractFunctionArguments(data);
+        if (typeof finalizedArguments === 'string' && finalizedArguments.length > 0) {
+            callState.argumentsText = finalizedArguments;
+            callState.argumentsDone = true;
+        }
+
+        callState.outputDone = true;
+        await this.executeFunctionCallIfNeeded(callId);
+    }
+
+    async executeFunctionCallIfNeeded(callId) {
+        if (!callId || this.executedFunctionCallIds.has(callId)) {
+            return;
+        }
+
+        const callState = this.pendingFunctionCalls.get(callId);
+        if (!callState || !callState.outputDone || !callState.name) {
+            return;
+        }
+
+        this.executedFunctionCallIds.add(callId);
+        const functionName = callState.name;
+        const parsedArguments = this.parseFunctionArguments(callState.argumentsText);
+
+        let toolOutput;
+        try {
+            toolOutput = await this.executeToolFunction(functionName, parsedArguments);
+        } catch (error) {
+            console.error('❌ tool 실행 오류:', error);
+            toolOutput = this.buildToolErrorOutput(error, functionName, parsedArguments);
+        }
+
+        await this.sendFunctionCallOutput(callId, toolOutput);
+        this.sendResponseCreate();
+        this.pendingFunctionCalls.delete(callId);
+    }
+
+    async executeToolFunction(functionName, parsedArguments) {
+        if (!this.isToolAllowed(functionName)) {
+            return {
+                status: 'blocked',
+                function_name: functionName,
+                message: functionName === 'search_web'
+                    ? '현재 세션에서는 외부 검색을 사용할 수 없습니다.'
+                    : `현재 세션에서는 ${functionName} 도구를 사용할 수 없습니다.`
+            };
+        }
+
+        if (functionName === 'search_knowledge_base') {
+            return this.executeSearchKnowledgeBaseTool(parsedArguments);
+        }
+
+        if (functionName === 'search_web') {
+            return this.executeSearchWebTool(parsedArguments);
+        }
+
+        throw new Error(`지원하지 않는 도구입니다: ${functionName}`);
+    }
+
+    buildToolErrorOutput(error, functionName, parsedArguments = {}) {
+        return {
+            status: 'error',
+            function_name: functionName,
+            error: error?.message || 'tool execution failed',
+            query: typeof parsedArguments?.query === 'string' ? parsedArguments.query : ''
+        };
+    }
+
+    async executeSearchKnowledgeBaseTool(parsedArguments = {}) {
+        if (this.isUsingLegacySessionEndpoint()) {
+            throw new Error('legacy WebRTC endpoint에서는 search_knowledge_base 도구를 지원하지 않습니다.');
+        }
+
+        const query = typeof parsedArguments.query === 'string' ? parsedArguments.query.trim() : '';
+        const ragDb = this.resolveRagDb();
+        const ragChatId = this.resolveRagChatId();
+        const topK = this.normalizeTopK(parsedArguments.top_k ?? parsedArguments.topK ?? this.ragTopK);
+
+        if (!query) {
+            throw new Error('search_knowledge_base 호출에 query가 필요합니다.');
+        }
+
+        if (!ragDb || !ragChatId) {
+            throw new Error('tool 실행에 필요한 rag_db 또는 rag_chat_id가 비어 있습니다.');
+        }
+
+        this.emitToolStatus('tool_running', 'search_knowledge_base', '근거 찾는 중...');
+        const stopSlowNotice = this.startToolSlowNoticeTimer('search_knowledge_base');
+        const requestUrl = this.getSearchKnowledgeBaseEndpoint();
+        const requestBody = {
+            query,
+            rag_db: ragDb,
+            rag_chat_id: ragChatId,
+            top_k: topK
+        };
+        try {
+            const response = await this.fetchWithTimeout(
+                requestUrl,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                },
+                Math.max(15000, this.resolveToolTimeoutMs())
+            );
+
+            const payload = await this.parseToolResponseBody(response);
+            if (!response.ok) {
+                throw new Error(`tool API 오류: ${response.status} - ${(payload?.detail || payload?.message || '')}`);
+            }
+
+            this.emitToolStatus('answering', 'search_knowledge_base');
+            return payload;
+        } finally {
+            stopSlowNotice();
+            this.emitToolStatus('done', 'search_knowledge_base');
+        }
+    }
+
+    async executeSearchWebTool(parsedArguments = {}) {
+        if (this.isUsingLegacySessionEndpoint()) {
+            return {
+                status: 'blocked',
+                function_name: 'search_web',
+                message: '현재 연결 환경에서는 외부 검색을 사용할 수 없습니다.'
+            };
+        }
+
+        const query = typeof parsedArguments.query === 'string' ? parsedArguments.query.trim() : '';
+        const ragDb = this.resolveRagDb();
+        const ragChatId = this.resolveRagChatId();
+        const topK = this.normalizeTopK(parsedArguments.top_k ?? parsedArguments.topK ?? 3);
+
+        if (!query) {
+            throw new Error('search_web 호출에 query가 필요합니다.');
+        }
+
+        if (!ragDb || !ragChatId) {
+            throw new Error('tool 실행에 필요한 rag_db 또는 rag_chat_id가 비어 있습니다.');
+        }
+
+        if (!this.useWebSearch) {
+            return {
+                status: 'blocked',
+                function_name: 'search_web',
+                message: '현재 세션에서는 외부 검색이 비활성화되어 있습니다.'
+            };
+        }
+
+        this.emitToolStatus('tool_running', 'search_web', '외부에서 찾는 중...');
+        const stopSlowNotice = this.startToolSlowNoticeTimer('search_web');
+        const requestUrl = this.getSearchWebEndpoint();
+        const requestBody = {
+            query,
+            rag_db: ragDb,
+            rag_chat_id: ragChatId,
+            top_k: topK,
+            use_web_search: this.useWebSearch
+        };
+        try {
+            const response = await this.fetchWithTimeout(
+                requestUrl,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                },
+                Math.max(15000, this.resolveToolTimeoutMs())
+            );
+
+            const payload = await this.parseToolResponseBody(response);
+            if (response.status === 403) {
+                return {
+                    status: 'blocked',
+                    function_name: 'search_web',
+                    message: '현재 설정에서는 외부 검색을 사용할 수 없어 내부 정보로 안내해드릴게요.'
+                };
+            }
+
+            if (!response.ok) {
+                throw new Error(`tool API 오류: ${response.status} - ${(payload?.detail || payload?.message || '')}`);
+            }
+
+            this.emitToolStatus('answering', 'search_web');
+            return payload;
+        } finally {
+            stopSlowNotice();
+            this.emitToolStatus('done', 'search_web');
+        }
+    }
+
+    async parseToolResponseBody(response) {
+        const contentType = response.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+            return response.json();
+        }
+
+        const text = await response.text();
+        try {
+            return JSON.parse(text);
+        } catch (_error) {
+            return {
+                status: 'ok',
+                raw: text
+            };
+        }
+    }
+
+    emitToolStatus(state, toolName, message = '') {
+        if (typeof this.onSessionEventCallback !== 'function') {
+            return;
+        }
+
+        this.onSessionEventCallback({
+            type: 'voice.tool.status',
+            state,
+            tool_name: toolName,
+            message,
+            timestamp: Date.now()
+        });
+    }
+
+    startToolSlowNoticeTimer(toolName, delayMs = 9000) {
+        const timer = setTimeout(() => {
+            this.emitToolStatus('tool_running', toolName, '조금 오래 걸리고 있어요. 잠시만 기다려주세요.');
+        }, delayMs);
+
+        return () => {
+            clearTimeout(timer);
+        };
+    }
+
+    async fetchWithTimeout(url, options = {}, timeoutMs = 1800) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+        try {
+            return await fetch(url, {
+                ...options,
+                signal: controller.signal
+            });
+        } catch (error) {
+            if (error && error.name === 'AbortError') {
+                throw new Error(`tool timeout (${timeoutMs}ms)`);
+            }
+            throw error;
+        } finally {
+            clearTimeout(timer);
+        }
+    }
+
+    async sendFunctionCallOutput(callId, outputPayload) {
+        const output = (typeof outputPayload === 'string')
+            ? outputPayload
+            : JSON.stringify(outputPayload || {});
+
+        this.sendDataChannelMessage({
+            type: 'conversation.item.create',
+            item: {
+                type: 'function_call_output',
+                call_id: callId,
+                output
+            }
+        });
+    }
+
+    sendResponseCreate() {
+        if (this.activeResponseId || this.responseCreatePending) {
+            this.queuedResponseCreate = true;
+            console.warn('⏳ response.create 중복 요청 차단', {
+                activeResponseId: this.activeResponseId,
+                responseCreatePending: this.responseCreatePending
+            });
+            return;
+        }
+
+        this.responseCreatePending = true;
+        const sent = this.sendDataChannelMessage(this.buildResponseCreate(['audio']));
+
+        if (!sent) {
+            this.responseCreatePending = false;
+        }
+    }
+
+    completeResponseLifecycle() {
+        this.activeResponseId = null;
+        this.responseCreatePending = false;
+        this._partialTranscript = '';
+        this._currentAssistantAudioItemId = '';
+
+        if (!this._awaitingInterruptionTranscription) {
+            this._interruptedTranscript = '';
+        }
+
+        if (this.queuedResponseCreate) {
+            this.queuedResponseCreate = false;
+            this.sendResponseCreate();
+        }
+    }
+
+    createRealtimeError(data) {
+        const rawMessage = data?.error?.message || '서버 오류';
+        const normalizedMessage = String(rawMessage || '').toLowerCase();
+        const error = new Error(rawMessage);
+        error.rawMessage = rawMessage;
+        error.serverEvent = data;
+        error.code = 'REALTIME_SERVER_ERROR';
+
+        if (
+            normalizedMessage.includes('active response in progress') ||
+            normalizedMessage.includes('already has an active response')
+        ) {
+            error.code = 'ACTIVE_RESPONSE_IN_PROGRESS';
+        }
+
+        return error;
+    }
+
+    _resetResumeOnNoiseState() {
+        this._partialTranscript = '';
+        this._interruptedTranscript = '';
+        this._currentAssistantAudioItemId = '';
+        this._audioEndMs = 0;
+        this._awaitingInterruptionTranscription = false;
+        this._resumeCount = 0;
+    }
+
+    getAssistantAudioItemId(data = {}) {
+        return data?.item_id || data?.item?.id || data?.output_item_id || '';
+    }
+
+    getCurrentAudioPlaybackMs() {
+        const currentTime = Number(this.remoteAudio?.currentTime);
+        return Number.isFinite(currentTime) && currentTime > 0
+            ? Math.floor(currentTime * 1000)
+            : 0;
+    }
+
+    sendTruncate(itemId, audioEndMs) {
+        if (!itemId) {
+            return false;
+        }
+
+        return this.sendDataChannelMessage({
+            type: 'conversation.item.truncate',
+            item_id: itemId,
+            content_index: 0,
+            audio_end_ms: Math.max(0, Math.floor(Number(audioEndMs) || 0))
+        });
+    }
+
+    isNoiseTranscript(transcript) {
+        return (transcript || '').trim().length <= 3;
+    }
+
+    handleSpeechStarted() {
+        if (!this._partialTranscript) {
+            return;
+        }
+
+        this._interruptedTranscript = this._partialTranscript;
+        this._awaitingInterruptionTranscription = true;
+        this._audioEndMs = this.getCurrentAudioPlaybackMs();
+        this.sendTruncate(this._currentAssistantAudioItemId, this._audioEndMs);
+        this._partialTranscript = '';
+    }
+
+    handleInputTranscriptionCompleted(data = {}) {
+        const transcript = (data?.transcript || '').trim();
+        this._awaitingInterruptionTranscription = false;
+
+        if (this.isNoiseTranscript(transcript) && this._interruptedTranscript) {
+            this.triggerResumeOnNoise();
+            return;
+        }
+
+        this._interruptedTranscript = '';
+        this._resumeCount = 0;
+    }
+
+    triggerResumeOnNoise() {
+        if (this._resumeCount >= 2) {
+            this._interruptedTranscript = '';
+            return;
+        }
+
+        this._resumeCount += 1;
+        const resumeInstruction = '이전 응답이 소음으로 끊겼습니다. '
+            + `이미 말한 내용은 반복하지 말고 다음 내용 이후부터 자연스럽게 이어서 응답하세요: "${this._interruptedTranscript}"`;
+        const sent = this.sendDataChannelMessage({
+            type: 'response.create',
+            response: this.applyOutputModalities({
+                instructions: resumeInstruction
+            }, ['audio'])
+        });
+
+        if (sent) {
+            this.responseCreatePending = true;
+        }
+        this._interruptedTranscript = '';
+    }
+    
+    
+    /**
+     * PeerConnection 이벤트 핸들러 설정
+     */
+    setupPeerConnectionHandlers() {
+        // ICE 연결 상태 변경
+        this.pc.oniceconnectionstatechange = () => {
+        };
+        
+        // 연결 상태 변경
+        this.pc.onconnectionstatechange = () => {
+            this.handleConnectionStateChange();
+        };
+        
+        // 원격 트랙 수신 (오디오 스트림)
+        this.pc.ontrack = this.handleTrack;
+        
+        // ICE Candidate 처리
+        this.pc.onicecandidate = (event) => {
+            if (event.candidate) {
+                // ICE candidate는 WebRTC 연결에서 자동 처리됨
+            }
+        };
+    }
+    
+    /**
+     * DataChannel 이벤트 핸들러 설정
+     */
+    setupDataChannelHandlers() {
+        if (!this.dataChannel) {
+            console.warn('⚠️ DataChannel이 없어 핸들러를 설정할 수 없습니다.');
+            return;
+        }
+        
+        // DataChannel이 이미 열려있으면 즉시 세션 설정 전송
+        if (this.dataChannel.readyState === 'open') {
+            this.setConnectionState('connected');
+            this.initializeSession();
+        }
+        
+        this.dataChannel.onopen = () => {
+            this.setConnectionState('connected');
+            
+            // DataChannel이 열리면 세션 설정 전송
+            this.initializeSession();
+        };
+        
+        this.dataChannel.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                this.handleDataChannelMessage(data);
+            } catch (e) {
+                console.error('📡 DataChannel 메시지 파싱 오류:', e, event.data);
+            }
+        };
+        
+        this.dataChannel.onclose = () => {
+            this.setConnectionState('disconnected');
+        };
+        
+        this.dataChannel.onerror = (error) => {
+            console.error('💥 DataChannel 오류:', error, {
+                label: this.dataChannel?.label,
+                readyState: this.dataChannel?.readyState
+            });
+            this.handleError(error);
+        };
+        
+        this.dataChannel.onbufferedamountlow = null;
+    }
+    
+    /**
+     * DataChannel 메시지 처리
+     * 주로 세션 설정 및 상태 관리용 (음성 대화는 오디오 스트림으로 처리)
+     * @param {Object} data - 수신된 메시지 데이터
+     */
+    handleDataChannelMessage(data) {
+        // 세션 이벤트 콜백 호출 (선택적)
+        if (this.onSessionEventCallback) {
+            this.onSessionEventCallback(data);
+        }
+        
+        switch (data.type) {
+            case 'session.created':
+            case 'session.updated':
+                break;
+
+            case 'input_audio_buffer.speech_started':
+                this.handleSpeechStarted();
+                break;
+
+            case 'input_audio_buffer.speech_stopped':
+                break;
+
+            case 'response.audio.delta':
+            case 'response.output_audio.delta': {
+                const itemId = this.getAssistantAudioItemId(data);
+                if (itemId) {
+                    this._currentAssistantAudioItemId = itemId;
+                }
+                break;
+            }
+
+            case 'response.audio_transcript.delta':
+            case 'response.output_audio_transcript.delta':
+                this._partialTranscript += data?.delta || '';
+                break;
+
+            case 'conversation.item.input_audio_transcription.completed':
+                this.handleInputTranscriptionCompleted(data);
+                break;
+
+            case 'response.audio_transcript.done':
+            case 'response.output_audio_transcript.done':
+                // AI 응답 오디오 완료 (오디오 스트림으로 이미 재생됨)
+                break;
+
+            case 'response.created': {
+                const responseId = data?.response?.id || data?.response_id || data?.id || null;
+                this.activeResponseId = responseId;
+                this.responseCreatePending = false;
+                break;
+            }
+
+            case 'response.done':
+            case 'response.completed':
+            case 'response.cancelled':
+            case 'response.failed':
+                this.completeResponseLifecycle();
+                break;
+
+            case 'response.function_call_arguments.delta':
+                this.handleFunctionCallArgumentsDelta(data);
+                break;
+
+            case 'response.function_call_arguments.done':
+                this.handleFunctionCallArgumentsDone(data);
+                break;
+
+            case 'response.output_item.done':
+                void this.handleFunctionCallOutputItemDone(data);
+                break;
+                
+            case 'error':
+                console.error('❌ 서버 오류:', data);
+                if (
+                    typeof data?.error?.message === 'string' &&
+                    data.error.message.toLowerCase().includes('active response in progress')
+                ) {
+                    this.responseCreatePending = false;
+                    this.queuedResponseCreate = true;
+                }
+                if (
+                    this.isGaRealtimeModel() &&
+                    typeof data?.error?.message === 'string' &&
+                    data.error.message.includes('session.audio.output.format.rate')
+                ) {
+                    const fallbackModel = 'gpt-realtime-1.5';
+                    console.warn(`⚠️ ${this.model} 모델 오류, ${fallbackModel}로 폴백 시도...`);
+                    this.disconnect().then(() => {
+                        this.model = fallbackModel;
+                        return this.connect();
+                    }).catch(e => this.handleError(e));
+                    break;
+                }
+                this.handleError(this.createRealtimeError(data));
+                break;
+                
+            default:
+                break;
+        }
+    }
+    
+    /**
+     * 연결 상태 변경 처리
+     */
+    handleConnectionStateChange() {
+        const state = this.pc.connectionState;
+        
+        if (state === 'connected') {
+            this.setConnectionState('connected');
+        } else if (state === 'disconnected' || state === 'failed') {
+            this.setConnectionState('failed');
+            console.error('❌ 연결 실패:', state);
+        } else if (state === 'connecting') {
+            this.setConnectionState('connecting');
+        }
+    }
+    
+    /**
+     * 원격 오디오 트랙 처리 (AI 응답 음성)
+     * 음성 대화의 핵심 - AI 응답을 오디오 스트림으로 재생
+     * OpenAI Realtime API는 실시간 오디오 스트림을 제공하므로
+     * 트랙이 추가되면 자동으로 스트리밍됩니다.
+     * 
+     * 중요: ontrack은 트랙이 추가될 때 한 번만 발생하고,
+     * 그 이후 스트림은 계속 흐르므로 Audio 객체를 한 번만 생성하고 재사용합니다.
+     * @param {RTCTrackEvent} event
+     */
+    handleTrack(event) {
+        if (this.onRemoteAudioCallback) {
+            // 커스텀 콜백이 있으면 사용
+            this.onRemoteAudioCallback(event.streams[0]);
+        } else {
+            // 기본 처리: 오디오 재생
+            // Audio 객체가 없거나 다른 스트림이면 새로 생성
+            if (!this.remoteAudio || this.remoteAudio.srcObject !== event.streams[0]) {
+                // 기존 오디오가 있으면 정리
+                if (this.remoteAudio) {
+                    this.remoteAudio.pause();
+                    this.remoteAudio.srcObject = null;
+                    this.remoteAudio = null;
+                }
+                
+                // 새 오디오 재생 (실시간 스트리밍)
+                this.remoteAudio = new Audio();
+                this.remoteAudio.srcObject = event.streams[0];
+                
+                this.remoteAudio.onerror = (e) => {
+                    console.error('❌ 오디오 재생 오류:', e);
+                };
+                
+                // 자동 재생 시작 (실시간 스트리밍)
+                // 연결 직후 인사말 등이 자동으로 재생됨
+                this.remoteAudio.play().catch(e => {
+                    console.error('오디오 재생 실패:', e);
+                    // 사용자 상호작용이 필요한 경우를 대비한 에러 처리
+                    if (e.name === 'NotAllowedError') {
+                        console.warn('⚠️ 오디오 자동 재생이 차단되었습니다. 사용자 상호작용이 필요합니다.');
+                    }
+                });
+            }
+        }
+    }
+    
+    /**
+     * 연결 상태 설정
+     * @param {string} state - 연결 상태
+     */
+    setConnectionState(state) {
+        if (this.connectionState !== state) {
+            this.connectionState = state;
+            this.isConnected = (state === 'connected');
+            
+            if (this.onConnectionStateChangeCallback) {
+                this.onConnectionStateChangeCallback(state);
+            }
+        }
+    }
+    
+    /**
+     * 에러 처리
+     * @param {Error} error
+     */
+    handleError(error) {
+        console.error('💥 WebRTC STT 오류:', error);
+
+        if (error?.code === 'ACTIVE_RESPONSE_IN_PROGRESS') {
+            this.responseCreatePending = false;
+        }
+        
+        if (this.onErrorCallback) {
+            this.onErrorCallback(error);
+        }
+    }
+    
+    /**
+     * WebRTC 연결 종료
+     * @returns {Promise<void>}
+     */
+    async disconnect() {
+        try {
+            // 로컬 스트림 정리
+            if (this.localStream) {
+                this.localStream.getTracks().forEach(track => {
+                    track.stop();
+                });
+                this.localStream = null;
+            }
+            
+            // 원격 오디오 정리
+            if (this.remoteAudio) {
+                this.remoteAudio.pause();
+                this.remoteAudio.srcObject = null;
+                this.remoteAudio = null;
+            }
+            
+            // DataChannel 정리
+            if (this.dataChannel) {
+                this.dataChannel.close();
+                this.dataChannel = null;
+            }
+            
+            // PeerConnection 정리
+            if (this.pc) {
+                this.pc.close();
+                this.pc = null;
+            }
+
+            this.pendingFunctionCalls.clear();
+            this.executedFunctionCallIds.clear();
+            this.activeResponseId = null;
+            this.responseCreatePending = false;
+            this.queuedResponseCreate = false;
+            this._resetResumeOnNoiseState();
+            
+            this.setConnectionState('disconnected');
+            
+        } catch (error) {
+            console.error('💥 연결 종료 중 오류:', error);
+            throw error;
+        }
+    }
+    
+    /**
+     * 연결 상태 변경 콜백 등록
+     * @param {Function} callback - (state: string) => void
+     */
+    onConnectionStateChange(callback) {
+        this.onConnectionStateChangeCallback = callback;
+    }
+    
+    /**
+     * 에러 콜백 등록
+     * @param {Function} callback - (error: Error) => void
+     */
+    onError(callback) {
+        this.onErrorCallback = callback;
+    }
+    
+    /**
+     * 원격 오디오 콜백 등록 (AI 응답 음성)
+     * @param {Function} callback - (stream: MediaStream) => void
+     */
+    onRemoteAudio(callback) {
+        this.onRemoteAudioCallback = callback;
+    }
+    
+    /**
+     * 세션 이벤트 콜백 등록 (선택적 - 디버깅/로깅용)
+     * @param {Function} callback - (event: Object) => void
+     */
+    onSessionEvent(callback) {
+        this.onSessionEventCallback = callback;
+    }
+    
+    /**
+     * 세션 초기화 (음성 대화 모드 설정)
+     */
+    async initializeSession() {
+        this.assertRequiredConfig();
+
+        // 중복 호출 방지
+        if (this._sessionInitializing) {
+            return;
+        }
+        
+        this._sessionInitializing = true;
+        
+        try {
+            // 백엔드에서 세션 설정 가져오기 시도
+            try {
+                const query = new URLSearchParams();
+                if (this.model) {
+                    query.set('model', this.model);
+                }
+                if (this.voice) {
+                    query.set('voice', this.voice);
+                }
+                query.set('use_web_search', this.useWebSearch ? 'true' : 'false');
+                query.set('rag_db', this.resolveRagDb());
+                query.set('rag_chat_id', this.resolveRagChatId());
+
+                const configUrl = `${this.getConfigEndpoint()}${query.toString() ? `?${query.toString()}` : ''}`;
+                const response = await fetch(configUrl);
+                if (response.ok) {
+                    const sessionConfig = await response.json();
+                    
+                    // 세션 설정 전송
+                    if (sessionConfig && typeof sessionConfig === 'object') {
+                        // type 필드 확인
+                        if (!sessionConfig.type) {
+                            sessionConfig.type = 'session.update';
+                        }
+
+                        const sessionUseWebSearch =
+                            sessionConfig?.session?.use_web_search ??
+                            sessionConfig?.use_web_search ??
+                            sessionConfig?.session?.metadata?.use_web_search;
+                        this.useWebSearch = this.resolveUseWebSearchFlag(sessionUseWebSearch ?? this.useWebSearch);
+                        this.syncAllowedTools(sessionConfig);
+
+                        // GA 모델(gpt-realtime-2)은 세션이 초기 연결 POST에서 이미 구성되어 있으므로
+                        // session.update를 재전송하지 않는다. flat 포맷 전송 시 GA API가 거부한다.
+                        if (!this.isGaRealtimeModel()) {
+                            const sanitizedSessionUpdate = this.sanitizeSessionUpdatePayload(sessionConfig);
+                            this.sendDataChannelMessage(sanitizedSessionUpdate);
+                        }
+                        this._sessionInitialized = true;
+                        return;
+                    }
+                }
+            } catch (e) {
+                console.warn('⚠️ 백엔드 세션 설정 가져오기 실패, 기본 설정 사용:', e.message);
+            }
+            
+            // 백업: 기본 음성 대화 세션 설정
+            const defaultSessionConfig = {
+                type: 'session.update',
+                event_id: 'voice_conversation_setup',
+                session: {
+                    model: this.model,
+                    modalities: ['audio'],
+                    instructions: 'You are a helpful AI assistant. Respond naturally in conversation.',
+                    voice: this.voice || undefined,
+                    input_audio_format: 'pcm16',
+                    output_audio_format: 'pcm16',
+                    input_audio_transcription: {
+                        model: 'gpt-4o-transcribe',
+                        language: 'ko'
+                    },
+                    tools: [
+                        {
+                            type: 'function',
+                            name: 'search_knowledge_base',
+                            parameters: {
+                                type: 'object',
+                                properties: {
+                                    query: { type: 'string' },
+                                    top_k: { type: 'integer', minimum: 1, maximum: 20 }
+                                },
+                                required: ['query'],
+                                additionalProperties: false
+                            }
+                        },
+                        ...(this.useWebSearch ? [{
+                            type: 'function',
+                            name: 'search_web',
+                            parameters: {
+                                type: 'object',
+                                properties: {
+                                    query: { type: 'string' },
+                                    top_k: { type: 'integer', minimum: 1, maximum: 20 }
+                                },
+                                required: ['query'],
+                                additionalProperties: false
+                            }
+                        }] : [])
+                    ],
+                    use_web_search: this.useWebSearch,
+                    tool_choice: 'auto',
+                    turn_detection: {
+                        type: 'server_vad',
+                        threshold: 0.5,
+                        prefix_padding_ms: 300,
+                        silence_duration_ms: 500
+                    },
+                    temperature: 0.8,
+                    max_response_output_tokens: 4096
+                }
+            };
+
+            this.syncAllowedTools(defaultSessionConfig);
+
+            this.sendDataChannelMessage(defaultSessionConfig);
+            this._sessionInitialized = true;
+            
+        } catch (error) {
+            console.error('❌ 세션 초기화 오류:', error);
+            this.handleError(error);
+        } finally {
+            this._sessionInitializing = false;
+        }
+    }
+    
+    /**
+     * DataChannel을 통해 메시지 전송
+     * @param {Object} message - 전송할 메시지 객체
+     */
+    sendDataChannelMessage(message) {
+        if (!this.dataChannel) {
+            console.warn('⚠️ DataChannel이 없습니다.');
+            return false;
+        }
+        
+        if (this.dataChannel.readyState !== 'open') {
+            console.warn('⚠️ DataChannel이 열려있지 않습니다. 상태:', this.dataChannel.readyState);
+            // DataChannel이 열릴 때까지 대기
+            this.dataChannel.onopen = () => {
+                this.sendDataChannelMessage(message);
+            };
+            return false;
+        }
+        
+        try {
+            const messageStr = JSON.stringify(message);
+            this.dataChannel.send(messageStr);
+            return true;
+        } catch (error) {
+            console.error('❌ DataChannel 메시지 전송 오류:', error);
+            this.handleError(error);
+            return false;
+        }
+    }
+    
+    /**
+     * 현재 연결 상태 반환
+     * @returns {string}
+     */
+    getConnectionState() {
+        return this.connectionState;
+    }
+    
+    /**
+     * 연결 여부 확인
+     * @returns {boolean}
+     */
+    isConnectedNow() {
+        return this.isConnected;
+    }
+}
+
+// 전역으로 노출 (필요한 경우)
+if (typeof window !== 'undefined') {
+    window.WebRTCVoiceConversationModule = WebRTCVoiceConversationModule;
+    // 호환성을 위해 이전 이름도 유지
+    window.WebRTCSTTModule = WebRTCVoiceConversationModule;
+}
+

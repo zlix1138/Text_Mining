@@ -1,0 +1,114 @@
+
+.chat-bot-box .message.bot > a.advs i, .message.bot > a.advs span{<?php echo $ai_font_family; echo $ai_font_size; echo $ai_color;?>}
+.chat-bot-box .message.bot *{font-family: inherit;}
+.chat-bot-box .message.user *{font-family: inherit;}
+.ai-model-alls{display: flex;align-items: center;}
+.ai-model-alls img{width: 20px;margin-right: 5px;}
+.span-bars{position: relative;display:inline-block;}
+.span-bars ul, .span-bars li{list-style:none;}
+.tools-depth1{background: #fff;position:absolute;right:0;top:20px;width:105px;border: 1px solid #ddd;padding: 4px 0;border-radius: 5px;z-index: 10;}
+.tools-depth1 > li:last-child{position:relative;}
+.tools-depth1 > li > a{display: block;padding: 4px 10px;font-size: 12px;}
+.tools-depth1 > li > a:hover{background: #eee;}
+.tools-depth2{position:absolute;right:105px;top:0;/*display:none;*/background: #fff;border: 1px solid #ddd;padding: 4px 0;border-radius: 5px;box-sizing:border-box;max-height: 80vh;overflow-y: auto;}
+.tools-depth2::-webkit-scrollbar {width: 4px; }
+.tools-depth2::-webkit-scrollbar-track {background: #f1f1f1; border-radius: 10px;}
+.tools-depth2::-webkit-scrollbar-thumb {background: #c5c5c5; border-radius: 10px; transition: background 0.3s ease; }
+.tools-depth2::-webkit-scrollbar-thumb:hover {background: #a8a8a8;}
+.tools-depth2::-webkit-scrollbar-button {display: none; }
+.tools-depth2 label{display: flex;cursor: pointer;padding: 4px 10px;font-size: 12px;white-space: nowrap;}
+.tools-depth2 label img{width: 15px;vertical-align: middle;margin-right: 4px;}
+.tools-depth2 label:hover{color: #007BFF;background: #eee;}
+.tools-depth2 li{position: relative;}
+.tools-depth2 li input[type="radio"]{position: absolute;left: 0;top: 0;opacity: 0;}
+.tools-depth2 li input[type="radio"]:checked + label {color: #007BFF;}
+.tools-depth2 li input[type="radio"]:focus + label {
+   border:1px solid #000;
+}
+.tools-depth2 li input[type="checkbox"]:focus + label {
+   border:1px solid #000;
+}
+.no-auth-box{background: #fff8f8;border: 1px solid #ffdede;border-radius: 12px; color: #c0392b;padding: 16px;text-align: center; font-size: 15px;margin:10px;}
+
+.porelative{position: relative;}
+
+
+
+.font-size-controls {position: absolute;right: 105px;top: 0;width: 140px;background: #fff;border: 1px solid #ddd;border-radius: 5px;box-sizing: border-box;display: flex;flex-wrap: wrap;justify-content: center;}
+.font-position{top: 55px; z-index: 999;}
+.preset-buttons {display: flex;gap: 5px;margin-bottom: 10px;padding-left: 7px;width: 100%;justify-content: space-between;}
+.preset-buttons button {padding: 2px 3px;font-size: 12px;}
+input[type="range"] {width: 120px;}
+.text-to-adjust {font-size: 16px;margin-top: 10px;border: 1px solid #eee;padding: 10px;}
+.fontSizeValue{display: none;}
+
+
+
+.tools-depth2{min-width: 180px;max-height: 250%;}
+.tools-depth2.expandSetting{}
+.tools-depth2.expandSetting li{text-align: left;padding: 5px;}
+.tools-depth2.expandSetting li h4{font-size: 14px;padding: 0 8px;margin: 0px;}
+.tools-depth2.expandSetting li .expand-radio-group{display: flex;}
+.tools-depth2.expandSetting li .expand-radio-group label{display: block;}
+.tools-depth2.expandSetting li label input[type="radio"]{position: static;opacity: 1;margin-right: 2px;}
+.tools-depth2.expandSetting li label{align-items: center;}
+.tools-depth2.expandSetting li label span{display: inline-block;margin-right: 4px;}
+.tools-depth2.expandSetting li label .sp-replacer{padding: 2px;}
+.tools-depth2.expandSetting li label .sp-preview{height: 10px;}
+.tools-depth2.expandSetting li label .sp-dd{height: 10px;padding: 2px 0;line-height: 6px;}
+
+.confirm-modal-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(0, 0, 0, 0.5);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 9999;
+}
+
+.confirm-modal {
+	background: white;
+	border-radius: 12px;
+	padding: 24px;
+	min-width: 300px;
+	text-align: center;
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.confirm-modal-message {
+	font-size: 16px;
+	color: #333;
+	margin-bottom: 20px;
+	line-height: 1.5;
+}
+
+.confirm-modal-buttons {
+	display: flex;
+	gap: 12px;
+	justify-content: center;
+}
+
+.confirm-btn-yes {
+	background: #007aff;
+	color: white;
+	border: none;
+	padding: 10px 24px;
+	border-radius: 8px;
+	font-size: 14px;
+	cursor: pointer;
+	font-weight: 500;
+}
+
+.confirm-btn-no {
+	background: #f0f0f0;
+	color: #333;
+	border: 1px solid #ddd;
+	padding: 10px 24px;
+	border-radius: 8px;
+	font-size: 14px;
+	cursor: pointer;
+}

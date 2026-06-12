@@ -1,0 +1,1050 @@
+const YTHIPbiz = function(){
+
+    let _menuList = null;
+    /**
+     * 레이아웃 사이드바 메뉴
+     * @type {{init: _init}}
+     * @private
+     */
+    const _menu = function(){
+
+        /**
+         * 상단 메뉴, 사이드메뉴, 메뉴경로 초기화 (메뉴정보 가져와 보여주고 현재 접속한 메뉴에 대한 처리)
+         * @private
+         */
+        const _inits = async function() {
+            let $gnbMenuNavi = $("ul.topmenu");
+
+            // GNB 영역 a 태그 처리
+            $("a", $gnbMenuNavi).YTHIPon("click", function(e){
+
+                //새창열기를 위한 코드 추가
+                if($(this).attr('target') === '_blank') {
+                    window.open($(this).attr('href'), '_blank', 'noopener');
+                    return false;
+                }
+
+
+                e.preventDefault();
+
+                if ($(this).attr("href") !== "javascript:;") {
+                    if ($(this).siblings("ul").children("li").length !== 0) {
+
+                        let _bbsYn = $(this).siblings("ul").children("li[data-menuurladdr!='']").data("bbsyn");
+                        let _menuAddr = $(this).siblings("ul").children("li[data-menuurladdr!='']").data("menuurladdr");
+
+                        if (_bbsYn === "Y") {
+                            YTHIPbiz.menu.util.goBbsLink(_menuAddr);
+                        } else {
+                            if (!YTHIPutil.isEmpty(_menuAddr)) location.href = _menuAddr;
+                            return false;
+                        }
+                    } else {
+                        let _bbsYn = $(this).parents("li").data("bbsyn");
+                        let _menuAddr = $(this).parents("li").data("menuurladdr");
+
+                        if (_bbsYn === "Y") {
+                            YTHIPbiz.menu.util.goBbsLink(_menuAddr);
+                        } else {
+
+                            if($(this).attr("href")) {
+
+                            }
+                            location.href = $(this).attr("href");
+                            return false;
+                        }
+                    }
+                } else {
+                    const firstMenuUrlAddr = $(this)
+                        .siblings("div.depth3") // 같은 뎁스의 div.depth3 찾기
+                        .find("ul li[data-menuurladdr!='']") // ul 내부의 li[data-menuurladdr!=''] 찾기
+                        .first() // 가장 첫 번째 li
+                        .data("menuurladdr"); // data-menuurladdr 값 가져오기
+
+                    if (firstMenuUrlAddr) {
+                        location.href = firstMenuUrlAddr; // 가장 첫 번째 URL로 이동
+                    }
+                }
+            });
+
+            let $lnbMenuNavi = $('div#side');
+            let currUri = $(location).attr("pathname");
+            // LNB 영역 a 태그 처리
+            $("a", $lnbMenuNavi).YTHIPon("click", function (e) {
+
+                //새창열기를 위한 코드 추가
+                if($(this).attr('target') === '_blank') {
+                    window.open($(this).attr('href'), '_blank', 'noopener');
+                    return false;
+                }
+
+                e.preventDefault();
+
+                if ($(this).siblings("ul").children("li").length === 0) {
+                    if ($(this).attr("href") === "") {
+                        $(this).attr("href", "javascript:void(0);");
+                        return false;
+                    } else {
+
+                        let bbsYn = $(this).parents("li").data("bbsyn");
+                        let menuAddr = $(this).parents("li").data("menuurladdr");
+                        if(!YTHIPutil.isEmpty(menuAddr)) {
+                            if (bbsYn === "Y") {
+                                YTHIPbiz.menu.util.goBbsLink(menuAddr);
+                            } else {
+                                location.href = $(this).attr("href");
+                                return false;
+                            }
+                        }
+                    }
+                } else {
+                    if ($(this).closest("li").hasClass("active")) {
+                        //$(this).closest("li").removeClass("active"); // <li>에 plus 클래스 추가
+                    } else {
+                        //$(this).closest("li").addClass("plus active"); // <li>에 plus 클래스 추가
+                    }
+                }
+            });
+
+            // 접속한 페이지의 사이드바에 위치 표시
+            $("li[data-menuurladdr='" + currUri + "']", $lnbMenuNavi).addClass("active");
+            $("li[data-menuurladdr='" + currUri + "']", $lnbMenuNavi).parents("li").addClass("active");
+
+            $("a[id^='breadcrumb-']").YTHIPon("click", function (event) {
+                event.preventDefault(); // 기본 동작 방지
+
+                const $parentLi = $(this).closest("li"); // 클릭된 <a>의 부모 <li>
+                if (!$parentLi.length) return;
+
+                // 현재 메뉴 데이터 가져오기
+                const curData = {
+                    menuUrlAddr: $parentLi.data("menuurladdr"),
+                    menuSn: $parentLi.data("menusn"),
+                    bbsYn: $parentLi.data("bbsyn"),
+                };
+
+                if (!curData.menuUrlAddr || $.trim(curData.menuUrlAddr) === "") {
+                    const navElement = $lnbMenuNavi[0]?.querySelector('nav'); // jQuery 객체를 DOM 객체로 변환
+                    if (navElement) {
+                        const snbElement = navElement.querySelector('ul#snb'); // ul#snb 요소 선택
+                        if (snbElement) {
+                            // 같은 메뉴찾아
+                            const targetLi = snbElement.querySelector(`li[data-menusn="${curData.menuSn}"]`);
+
+                            if (targetLi) {
+                                // data-menuurladdr이 있는 경우
+                                if (targetLi.dataset.menuurladdr) {
+                                    curData.menuUrlAddr = targetLi.dataset.menuurladdr;
+                                } else {
+                                    // 하위 depth3 ul 요소 확인
+                                    const depth3Ul = targetLi.querySelector('ul.depth3');
+                                    if (depth3Ul) {
+                                        const firstDepth3Li = depth3Ul.querySelector('li:first-child'); // depth3의 최상위 li
+                                        if (firstDepth3Li && firstDepth3Li.dataset.menuurladdr) {
+                                            curData.menuUrlAddr = firstDepth3Li.dataset.menuurladdr;
+                                        }
+                                    }
+                                }
+                            } else {
+                                console.warn("일치하는 data-menusn를 찾을 수 없습니다:", curData.menuSn);
+
+                                const firstLi = snbElement.querySelector('li:first-child'); // 최상위 li 선택
+                                if (firstLi && firstLi.dataset.menuurladdr) {
+                                    curData.menuUrlAddr = firstLi.dataset.menuurladdr;
+                                    curData.bbsYn = firstLi.dataset.bbsyn;
+                                } else {
+                                    // ul.depth3의 최상위 li의 menuurladdr 값 가져오기
+                                    const depth3Ul = firstLi?.querySelector('ul.depth3'); // depth3 ul 찾기
+                                    if (depth3Ul) {
+                                        const firstDepth3Li = depth3Ul.querySelector('li:first-child'); // depth3 최상위 li 찾기
+                                        if (firstDepth3Li && firstDepth3Li.dataset.menuurladdr) {
+                                            curData.menuUrlAddr = firstDepth3Li.dataset.menuurladdr;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // URL 이동 처리
+
+                if (curData.menuUrlAddr) {
+                    if (curData.bbsYn === "Y") {
+                        YTHIPbiz.menu.util.goBbsLink(curData.menuUrlAddr); // 게시판 이동
+                    } else {
+                        location.href = curData.menuUrlAddr; // 일반 URL 이동
+                    }
+                }
+            });
+        }
+
+        const _init = async function(){
+            /*
+            //YTHIPutil.log(">>>>> =============== MENU TREE LOAD ===============");
+            var param = {};
+            param.sysCd = "0002001";
+            param.useYn = "Y";
+            //console.log("로그인된 권한: ", YTHIPbiz_auth.auth.getLoginedScope())
+            const _scope = YTHIPbiz_auth.auth.getLoginedScope();
+
+            YTHIPcomm.promise("GET", YTHIPcomm.API_COM_URL + "/sur/com/menu/menu", param)
+            .catch( () => {
+                console.error("%c!! 메뉴정보를 가져올 수 없습니다. !! 시스템관리자에게 문의해주세요.", "color:yellow; background:#292b2a");
+                //YTHIPcomm.alert("메뉴정보를 가져올 수 없습니다.", "시스템관리자에게 문의해주세요.");
+            })
+            .then(data=>{
+                _menuList = data.result.menuList;
+
+                // 로그인된 사용자 권한 (단일 문자열)
+                const userAuthCode = YTHIPbiz_auth.auth.getLoginedScope();
+
+                _menuList = _menuList.filter(item => {
+                    if (!userAuthCode) {
+                        // 로그인된 사용자 권한이 없으면 item.authrtCodes가 존재하는 메뉴는 제거
+                        return !item.authrtCodes;
+                    }
+
+                    if (!item.authrtCodes) {
+                        return true; // authrtCodes가 없는 경우 항상 포함
+                    }
+
+                    // authrtCodes가 존재하는 경우 로그인된 사용자 권한과 비교
+                    const menuAuthCodes = item.authrtCodes.split(",").map(code => code.trim());
+                    return menuAuthCodes.includes(userAuthCode); // 권한과 일치하는 메뉴만 포함
+                });
+
+
+                //console.log("필터링된 메뉴 리스트: ", _menuList);
+
+                //YTHIPutil.log("YTHIPbiz _menuList : " + _menuList);
+                //YTHIPutil.log("YTHIPbiz _menuList : " + _menuList.length);
+
+                // ####################################################################
+                // ##########################  GNB 영역 처리 ###########################
+                let $gnbMenuNavi = $("ul.topmenu");
+                $gnbMenuNavi.empty();
+                $.each(_menuList, function (index, item) {
+                    //console.log(item.authrtCodes);
+                    //console.log(index + " : " + JSON.stringify(item));
+                    let $li = $('<li data-menuurladdr="' + item.menuUrlAddr + '" data-bbsyn="' + item.bbsYn + '" data-menusn="' + item.menuSn + '" data-upmenusn="' + item.upMenuSn + '" data-menudepth="' + item.depth + '"></li>');
+                    $li.data("mData", item);
+                    //$li += '<li data-menuurladdr="' + item.menuUrlAddr + '" data-menusn="' + item.menuSn + '" data-upmenusn="' + item.upMenuSn + '" data-menudepth="' + item.depth + '">';
+                    if (item.depth == 0) {
+                        // _menuList를 사용해서 하위 메뉴 여부 확인
+                        const hasChildMenu = _menuList.some(subItem => subItem.upMenuSn === item.menuSn);
+
+                        if (!hasChildMenu && item.menuUrlAddr && item.menuUrlAddr !== "") {
+                            // 하위 메뉴가 없고 menuUrlAddr이 존재하는 경우 링크 부여
+                            $li.append('<a href="' + item.menuUrlAddr + '">' + item.menuNm + '</a>');
+                        } else {
+                            // 기본 처리 (하위 메뉴가 있거나 링크가 없는 경우)
+                            $li.append('<a href="javascript:;">' + item.menuNm + '</a>');
+                        }
+                    } else {
+                        $li.append('<a href="javascript:;">' + item.menuNm + '</a>');
+                    }
+                    //$li.append('<a href="javascript:;">' + item.menuNm + '</a>');
+
+                    if (item.upMenuSn !== 0 && item.depth !== 0) {
+                        let $parentLi = $("li[data-menusn=" + item.upMenuSn + "]", $gnbMenuNavi);
+
+                        if(item.depth === 1) {
+                            //YTHIPutil.log("ul >>> " + $parentLi.find("ul").length);
+                            if ($parentLi.find("div.submenu > ul.depth2").length === 0) {
+                                $parentLi.append('<div class="submenu"><ul class="inner depth2" data-menusn="' + item.upMenuSn + '"></ul></div>');
+                                //$parentLi.addClass("arrow");
+                            }
+
+                            $li.append('<div class="depth3"><strong class="depth3-title"><a href="' + ((item.menuUrlAddr == "")? "javascript:;":item.menuUrlAddr) + '">' + item.menuNm + '</a></strong></div>');
+                            $parentLi.find("ul.depth2").append($li);
+                        }
+                        if (item.depth === 2) {
+                            $parentLi = $("li[data-menusn=" + item.upMenuSn + "] > div.depth3", $gnbMenuNavi);
+                            //YTHIPutil.log("ul >>> " + $parentLi.find("ul").length);
+                            if ($parentLi.find("ul.depth3-ul").length === 0) {
+                                $parentLi.append('<ul class="depth3-ul"></ul>');
+                                //$parentLi.addClass("arrow");
+                            }
+                            $li = $('<li data-menuurladdr="' + item.menuUrlAddr + '" data-bbsyn="' + item.bbsYn + '" data-menusn="' + item.menuSn + '" data-upmenusn="' + item.upMenuSn + '" data-menudepth="' + item.depth + '"></li>');
+                            $li.append('<a href="' + ((item.menuUrlAddr == "")? "javascript:;":item.menuUrlAddr) + '">' + item.menuNm + '</a>');
+                            $li.data("mData", item);
+                            $parentLi.find("ul.depth3-ul").append($li);
+                        }
+                    } else {
+                        $gnbMenuNavi.append($li);
+                    }
+                });
+                $('#gnb').gnb();
+                $("#gnb li a").each(function(){
+                    const t = $(this);
+                    // 서브메뉴가 있는 경우
+                    if (t.next(".submenu").length) {
+                        t.closest("li").addClass("plus"); // <li>에 plus 클래스 추가
+                        t.append("<span class='sr-only'>열기</span>"); // 링크에 '열기' 텍스트 추가
+                    }
+                });
+                // GNB 첫 번째 하위 메뉴 활성화
+                $("#gnb .submenu > ul > li").eq(0).each(function(){
+                    $(this).addClass("active");
+                });
+
+                // GNB 영역 a 태그 처리
+                $("a", $gnbMenuNavi).YTHIPon("click", function(e){
+                    e.preventDefault();
+                    if ($(this).attr("href") !== "javascript:;") {
+                        if ($(this).siblings("ul").children("li").length !== 0) {
+                            let mData = $(this).siblings("ul").children("li[data-menuurladdr!='']").data("mData");
+                            if (mData.bbsYn === "Y") {
+                                YTHIPbiz.menu.util.goBbsLink(mData.menuUrlAddr);
+                            } else {
+                                if (!YTHIPutil.isEmpty(mData.menuUrlAddr)) location.href = mData.menuUrlAddr;
+                                return false;
+                            }
+                        } else {
+                            let mData = $(this).parents("li").data("mData");
+                            if (mData.bbsYn === "Y") {
+                                YTHIPbiz.menu.util.goBbsLink(mData.menuUrlAddr);
+                            } else {
+                                location.href = $(this).attr("href");
+                                return false;
+                            }
+                        }
+                    }
+                });
+
+
+                // 현재 접속된 페이지 메뉴네비게이션에 위치 표시
+                let currUri = $(location).attr("pathname"); // $("._mainContents").attr("pageid");
+                let curMenu = _menuList.find(function(item){
+                    if(!YTHIPutil.isEmpty(item.menuUrlAddr)) {
+                        if (item.bbsYn === 'Y') {
+                            //console.log(item.menuUrlAddr + " : " + currUri.split("/")[2] + " = " + ((item.menuUrlAddr === currUri.split("/")[2])?"true":"false"));
+                            if (item.menuUrlAddr === currUri.split("/")[2]) {
+                                return item;
+                            }
+                        } else {
+                            if (currUri.indexOf(item.menuUrlAddr) === 0) {
+                                return item;
+                            }
+                        }
+                    }
+                });
+
+                // ####################################################################
+                // ##########################  LNB 영역 처리 ###########################
+                let $lnbMenuNavi = $('div#side');
+                if($lnbMenuNavi.length) {
+                    if(!YTHIPutil.isEmpty(curMenu)) {
+                        $.each(_menuList, function (index, item) {
+                            if ((item.orderPathNm.split(" > ")[0]).startsWith((curMenu.orderPathNm.split(" > ")[0]))) {
+                                if (item.depth === 0) {
+                                    $("h2.snb-title", $lnbMenuNavi).text(item.menuNm);
+                                }
+                                if (item.depth === 1) {
+                                    let $addLi = $('<li data-menuurladdr="' + item.menuUrlAddr + '" data-bbsyn="' + item.bbsYn + '" data-menusn="' + item.menuSn + '" data-upmenusn="' + item.upMenuSn + '" data-menudepth="' + item.depth + '"><a href="' + item.menuUrlAddr + '">' + item.menuNm + '</a></li>');
+                                    $addLi.data("mData", item);
+                                    $("ul#snb", $lnbMenuNavi).append($addLi);
+                                }
+
+                                if (item.depth === 2) {
+                                    let $targetLi = $("li[data-menusn='" + item.upMenuSn + "']", $lnbMenuNavi);
+
+                                    if ($("ul.depth3", $targetLi).length === 0) {
+                                        $targetLi.append($('<ul class="depth3"></ul>'));
+                                    }
+                                    let $addLi = $('<li data-menuurladdr="' + item.menuUrlAddr + '" data-bbsyn="' + item.bbsYn + '" data-menusn="' + item.menuSn + '" data-upmenusn="' + item.upMenuSn + '" data-menudepth="' + item.depth + '"><a href="' + item.menuUrlAddr + '">' + item.menuNm + '</a></li>');
+                                    $addLi.data("mData", item);
+                                    $("ul.depth3", $targetLi).append($addLi);
+                                }
+                            }
+                        });
+
+                        // LNB 영역 3뎁스 펼침 처리
+                        $("div#side ul#snb > li > a").each(function () {
+                            const t = $(this);
+                            // 서브메뉴가 있는 경우
+                            if (t.next(".depth3").length) {
+                                t.closest("li").addClass("plus"); // <li>에 plus 클래스 추가
+                                t.append("<span class='sr-only'>열기</span>"); // 링크에 '열기' 텍스트 추가
+                            }
+                        });
+
+                        // LNB 영역 a 태그 처리
+                        $("a", $lnbMenuNavi).YTHIPon("click", function (e) {
+                            e.preventDefault();
+
+                            if ($(this).siblings("ul").children("li").length === 0) {
+                                if ($(this).attr("href") === "") {
+                                    $(this).attr("href", "javascript:void(0);");
+                                    return false;
+                                } else {
+                                    let mData = $(this).parents("li").data("mData");
+
+                                    if (mData.bbsYn === "Y") {
+                                        YTHIPbiz.menu.util.goBbsLink(mData.menuUrlAddr);
+                                    } else {
+                                        location.href = $(this).attr("href");
+                                        return false;
+                                    }
+                                }
+                            } else {
+                                if ($(this).closest("li").hasClass("active")) {
+                                    $(this).closest("li").removeClass("active"); // <li>에 plus 클래스 추가
+                                } else {
+                                    $(this).closest("li").addClass("active"); // <li>에 plus 클래스 추가
+                                }
+                            }
+                        });
+
+                        // 접속한 페이지의 사이드바에 위치 표시
+                        $("li[data-menuurladdr='" + currUri + "']", $lnbMenuNavi).addClass("active");
+                        $("li[data-menuurladdr='" + currUri + "']", $lnbMenuNavi).parents("li").addClass("active");
+                    }else{
+                        console.error("%c'pageId' 오류로 메뉴를 표시할 수 없습니다.", "color:yellow; background:#292b2a");
+                    }
+
+                    // 현재 접속된 페이지의 메뉴경로 처리
+                    if(!YTHIPutil.isEmpty(curMenu)) {
+                        $("main#content > div.title-wrap").remove();
+                        let $titleWrapHtml = $('<div class="title-wrap"><h1 class="stitle">' + curMenu.menuNm + '</h1><nav class="breadcrumb-wrap" aria-label="브레드크럼"><ol class="breadcrumb"></ol></nav></div>');
+
+                        // 메뉴경로
+                        $("ol", $titleWrapHtml).append('<li class="home"><a href="/">홈</a></li>');
+                        let $arrOrderPathNm = curMenu.orderPathNm.replace(/\s/gi, '').split(">");
+                        $.each($arrOrderPathNm, function (i, v) {
+                            let tmpMenu = _menuList.find(function (obj) {
+                                return (obj.menuSn === v.trim()) ? obj : null;
+                            });
+                            if (!YTHIPutil.isEmpty(tmpMenu)) {
+                                let $addLi = $('<li data-menuurladdr="' + tmpMenu.menuUrlAddr + '" data-bbsyn="' + tmpMenu.bbsYn + '" data-menusn="' + tmpMenu.menuSn + '" data-upmenusn="' + tmpMenu.upMenuSn + '" data-menudepth="' + tmpMenu.depth + '"><a href="javascript:;">' + tmpMenu.menuNm + '</a></li>');
+                                $addLi.data("mData", tmpMenu);
+                                $("ol", $titleWrapHtml).append($addLi);
+                            }
+                        });
+                        $("main#content").prepend($titleWrapHtml);
+                        $("main#content > div.title-wrap").css("display", "flex");
+
+                        // 메뉴경로의 a 태그 처리
+                        $("a", $("main#content > .title-wrap > nav")).off("click").YTHIPon("click", function (e) {
+
+                            let mData = null;
+
+                            let curData = $(this).parents("li").data("mData");
+                            if (YTHIPutil.isEmpty(curData.menuUrlAddr)) {
+                                mData = _menuList.find(function (item) {
+                                    if (item.orderPathNm.indexOf(curData.menuSn) !== -1 && !YTHIPutil.isEmpty(item.menuUrlAddr)) {
+                                        return item;
+                                    }
+                                })
+                            } else {
+                                mData = $(this).parents("li").data("mData");
+                            }
+
+                            if (!YTHIPutil.isEmpty(mData.menuUrlAddr)) {
+                                if (mData.bbsYn === 'Y') {
+                                    YTHIPbiz.menu.util.goBbsLink(mData.menuUrlAddr);
+                                } else {
+                                    location.href = mData.menuUrlAddr;
+                                }
+                            } else {
+                                console.error("%c이동할 메뉴를 찾을 수 없음", "color:yellow; background:#292b2a");
+                            }
+                        });
+                        return false;
+                    }
+                }
+            });
+            */
+        }
+
+
+        const _initTitle = async function(){
+            /*
+            const curMenuSn = $("li.active", $("ul#snb")).data("menusn");
+            //YTHIPutil.log(">>>>> =============== MENU TREE LOAD ===============");
+            var param = {};
+            param.sysCd = "0002001";
+            param.useYn = "Y";
+            //console.log("로그인된 권한: ", YTHIPbiz_auth.auth.getLoginedScope())
+            const _scope = YTHIPbiz_auth.auth.getLoginedScope();
+
+            YTHIPcomm.promise("GET", YTHIPcomm.API_COM_URL + "/sur/com/menu/menu", param)
+                .catch( () => {
+                    console.error("%c!! 메뉴정보를 가져올 수 없습니다. !! 시스템관리자에게 문의해주세요.", "color:yellow; background:#292b2a");
+                    //YTHIPcomm.alert("메뉴정보를 가져올 수 없습니다.", "시스템관리자에게 문의해주세요.");
+                })
+                .then(data=>{
+                    _menuList = data.result.menuList;
+
+                    // 현재 접속된 페이지 메뉴네비게이션에 위치 표시
+                    let curMenu = _menuList.find(function(item){
+                        if(parseInt(item.menuSn) === parseInt(curMenuSn)) return item;
+                    });
+
+                    // 현재 접속된 페이지의 메뉴경로 처리
+                    if(!YTHIPutil.isEmpty(curMenu)) {
+                        $("main#content > div.title-wrap").remove();
+                        let $titleWrapHtml = $('<div class="title-wrap"><h1 class="stitle">' + curMenu.menuNm + '</h1><nav class="breadcrumb-wrap" aria-label="브레드크럼"><ol class="breadcrumb"></ol></nav></div>');
+
+                        // 메뉴경로
+                        $("ol", $titleWrapHtml).append('<li class="home"><a href="/">홈</a></li>');
+                        let $arrOrderPathNm = curMenu.orderPathNm.replace(/\s/gi, '').split(">");
+                        $.each($arrOrderPathNm, function (i, v) {
+                            let tmpMenu = _menuList.find(function (obj) {
+                                return (obj.menuSn === v.trim()) ? obj : null;
+                            });
+                            if (!YTHIPutil.isEmpty(tmpMenu)) {
+                                let $addLi = $('<li data-menuurladdr="' + tmpMenu.menuUrlAddr + '" data-bbsyn="' + tmpMenu.bbsYn + '" data-menusn="' + tmpMenu.menuSn + '" data-upmenusn="' + tmpMenu.upMenuSn + '" data-menudepth="' + tmpMenu.depth + '"><a href="javascript:;">' + tmpMenu.menuNm + '</a></li>');
+                                $addLi.data("mData", tmpMenu);
+                                $("ol", $titleWrapHtml).append($addLi);
+                            }
+                        });
+                        $("main#content").prepend($titleWrapHtml);
+                        $("main#content > div.title-wrap").css("display", "flex");
+
+                        // 메뉴경로의 a 태그 처리
+                        $("a", $("main#content > .title-wrap > nav")).off("click").YTHIPon("click", function (e) {
+                            let mData = null;
+
+                            let curData = $(this).parents("li").data("mData");
+                            if (YTHIPutil.isEmpty(curData.menuUrlAddr)) {
+                                mData = _menuList.find(function (item) {
+                                    if (item.orderPathNm.indexOf(curData.menuSn) !== -1 && !YTHIPutil.isEmpty(item.menuUrlAddr)) {
+                                        return item;
+                                    }
+                                })
+                            } else {
+                                mData = $(this).parents("li").data("mData");
+                            }
+
+                            if (!YTHIPutil.isEmpty(mData.menuUrlAddr)) {
+                                if (mData.bbsYn === 'Y') {
+                                    YTHIPbiz.menu.util.goBbsLink(mData.menuUrlAddr);
+                                } else {
+                                    location.href = mData.menuUrlAddr;
+                                }
+                            } else {
+                                console.error("%c이동할 메뉴를 찾을 수 없음", "color:yellow; background:#292b2a");
+                            }
+                        });
+                        return false;
+                    }
+                });
+             */
+        }
+
+        const _util = function () {
+
+            const _getBbsUrl = function (bbsTypeCd) {
+                if (bbsTypeCd === "0001001") return YTHIPcomm.BBS_URL.B01.LIST;
+                if (bbsTypeCd === "0001002") return YTHIPcomm.BBS_URL.B02.LIST;
+                if (bbsTypeCd === "0001003") return YTHIPcomm.BBS_URL.B03.LIST;
+                if (bbsTypeCd === "0001004") return YTHIPcomm.BBS_URL.B04.LIST;
+            }
+
+            const _goBbsLink = function(bbsSn){
+                // 게시판 정보 조회
+                let url = YTHIPcomm.API_CMU_URL + "/sur/cmu/bbs/bbs/" + bbsSn;
+                let param = {};
+
+                YTHIPcomm.ajax(url, param, function (data) {
+                    YTHIPutil.log(data);
+                    if (data.result.bbs !== null) {
+                        let item = data.result.bbs;
+                        let bbsUrl = YTHIPbiz.menu.util.getBbsUrl(item.bbsTypeCd);
+                        YTHIPbiz.code.getCodeName('G0001', item.bbsTypeCd, function (data) {
+                            YTHIPutil.log(data);
+                            YTHIPutil.log(bbsUrl + item.bbsSn);
+
+                            location.href = bbsUrl + '/' + item.bbsSn;
+                        });
+                    }
+                }, {type: "GET"});
+
+            }
+
+            return {
+                getBbsUrl : _getBbsUrl,
+                goBbsLink : _goBbsLink
+            }
+        }();
+
+        return {
+            init : _init,
+            initTitle : _initTitle,
+            inits : _inits,
+            util : _util
+        }
+    }();
+
+    const _code = function(){
+
+        const _initMakeCmnTag = function($currObj){
+            //const $currObj = $(obj);
+            const currObjData = $currObj.data();
+
+            // 필수정보 Validate
+            if( YTHIPutil.isEmpty(currObjData.objid) ) {
+                console.warn("%c필수정보누락 [data-objid]", "color:yellow; background:#292b2a");
+                return false;
+            }
+            if( YTHIPutil.isEmpty(currObjData.cdgroup) ){
+                console.warn("%c필수정보누락 [data-cdgroup]", "color:yellow; background:#292b2a");
+                return false;
+            }
+
+            YTHIPbiz.code.getCodeList(currObjData.cdgroup, function(data){
+                if(data.result.comCdVOList.length !== 0){
+                    $currObj.empty();
+                    $currObj.prop("id", currObjData.objid);
+                    $currObj.prop("name", currObjData.objid);
+                    if($currObj.hasClass("_initCmnCdSbx")) {
+                        $currObj.append(' <option value="">선택하세요.</option>');
+                    }
+
+                    $.each(data.result.comCdVOList, function (index, item) {
+                        if(item.useYn === 'Y') {
+                            if($currObj.hasClass("_initCmnCdSbx")) {
+                                let selected = (!YTHIPutil.isEmpty(currObjData.comcd) && currObjData.comcd === item.comCd) ? 'selected="selected"' : '';
+                                $currObj.append('<option value="' + item.comCd + '" ' + selected + '>' + item.cdNm + '</option>');
+                            }
+                            if($currObj.hasClass("_initCmnCdRdo") || $currObj.hasClass("_initCmnCdCbx")){
+                                let objType = ($currObj.hasClass("_initCmnCdRdo"))?"radio":"checkbox";
+                                //if(!$currObj.hasClass("checks")) $currObj.addClass("checks");
+
+                                if($currObj.prop("tagName").toLowerCase() === "ul"){
+                                    let $tmpLi = '<li>';
+                                    $tmpLi += '<input type="' + objType + '" name="' + currObjData.objid + '" id="' + (currObjData.objid + "" + index) + '" value="' + item.comCd + '">';
+                                    $tmpLi += '<label for="' + (currObjData.objid + "" + index) + '">' + item.cdNm + '</label>';
+                                    $tmpLi += '</li>';
+                                    $currObj.append($tmpLi);
+                                }else {
+                                    $currObj.append(' <input type="' + objType + '" name="' + currObjData.objid + '" id="' + (currObjData.objid + "" + index) + '" value="' + item.comCd + '">');
+                                    $currObj.append(' <label for="' + (currObjData.objid + "" + index) + '">' + item.cdNm + '</label>');
+                                }
+                            }
+                        }
+                    });
+
+                    if($currObj.hasClass("_initCmnCdRdo")) {
+                        if( YTHIPutil.isEmpty(currObjData.comcd) ){
+                            $("input:radio:eq(0)", $currObj).prop("checked", true);
+                        }else {
+                            let val = currObjData.comcd.split(",")[0];
+                            $("input:radio[value='" + val + "']", $currObj).prop("checked", true);
+                        }
+                    }
+                    if($currObj.hasClass("_initCmnCdCbx")) {
+                        if(!YTHIPutil.isEmpty(currObjData.comcd)) {
+                            $.each(currObjData.comcd.split(","), function (i2, v2) {
+                                $("input:checkbox[value='" + v2 + "']", $currObj).prop("checked", true);
+                            });
+                        }
+                    }
+                }
+
+                if(!YTHIPutil.isEmpty(currObjData.callback)){
+                    try {
+                        new Function('return ' + currObjData.callback + '()')();  // 콜백 실행
+                    }catch(e){
+                        console.warn("%c콜백함수 없음!! [" + currObjData.callback + "]", "color:orange; background:#292b2a");
+                    }
+                }
+            });
+        }
+
+        // 외부 지역코드 콤보연계
+        const _initMakeExtComboTag = function($currObj){
+            //const $currObj = $(obj);
+            let currObjData = $currObj.data();
+
+            // 필수정보 Validate
+            if( YTHIPutil.isEmpty(currObjData.objid1) ) {
+                console.warn("%c필수정보누락 [data-objid1]", "color:yellow; background:#292b2a");
+                return false;
+            }
+            if( YTHIPutil.isEmpty(currObjData.extlink1) ) {
+                console.warn("%c필수정보누락 [data-extlink1]", "color:yellow; background:#292b2a");
+                return false;
+            }
+
+            var url = YTHIPcomm.API_FRT_URL + "/go/ythip/" + currObjData.extlink1;
+            var param = {};
+            YTHIPcomm.ajax(url, param, function (data) {
+                YTHIPutil.log(data);
+                $currObj.empty();
+
+                let dataList = null;
+                if(currObjData.extlink1 === "getCtpvCd" || currObjData.extlink1 === "getSggCd") dataList = data.admVOList.admVOList;
+                if(currObjData.extlink1 === "getInstCd") dataList = data.StanOrgCd[1].row;
+
+                if (dataList != null && dataList.length !== 0) {
+                    $currObj.prop("id", currObjData.objid1);
+                    $currObj.prop("name", currObjData.objid1);
+                    $currObj.prop("title", "지역");
+
+                    $currObj.append(' <option value="">선택하세요.</option>');
+                    $currObj.css("margin-right", "5px");
+
+                    //console.table(data.admVOList.admVOList);
+                    $.each(dataList, function (index, item) {
+                        if(currObjData.extlink1 === "getCtpvCd" || currObjData.extlink1 === "getSggCd") {
+                            let selected = (!YTHIPutil.isEmpty(currObjData.dfltcd1) && currObjData.dfltcd1 === parseInt(item.admCode)) ? 'selected="selected"' : '';
+                            $currObj.append('<option value="' + item.admCode + '" ' + selected + '>' + item.lowestAdmCodeNm + '</option>');
+                        }
+                        if(currObjData.extlink1 === "getInstCd"){
+                            let selected = (!YTHIPutil.isEmpty(currObjData.dfltcd1) && currObjData.dfltcd1 === parseInt(item.org_cd)) ? 'selected="selected"' : '';
+                            $currObj.append('<option value="' + item.org_cd + '" ' + selected + '>' + item.low_nm + '</option>');
+                        }
+
+                    });
+                }else{
+                    console.warn("%c데이터 없음!! [" + currObjData.extlink1 + "]", "color:orange; background:#292b2a");
+                }
+
+                if (!YTHIPutil.isEmpty(currObjData.callback1)) {
+                    try {
+                        new Function('return ' + currObjData.callback1 + '()')();  // 콜백 실행
+                    } catch (e) {
+                        console.warn("%c콜백함수 없음!! [" + currObjData.callback1 + "]", "color:orange; background:#292b2a");
+                    }
+                }
+
+                if (!YTHIPutil.isEmpty(currObjData.objid2)) {
+                    if( YTHIPutil.isEmpty(currObjData.extlink2) ) {
+                        console.warn("%c필수정보누락 [data-extlink2]", "color:yellow; background:#292b2a");
+                        return false;
+                    }
+
+                    let $sbxObj2 = $("select#" + currObjData.objid2);
+
+                    if($sbxObj2.length != 0){
+                        $sbxObj2.empty();
+                        $sbxObj2.append('<option value="">선택하세요.</option>');
+                    }else {
+                        $sbxObj2 = $('<select id="' + currObjData.objid2 + '" name="' + currObjData.objid2 + '"></select>');
+                        $sbxObj2.append(' <option value="">선택하세요.</option>');
+                        $sbxObj2.prop("title", "지역 시/구/군");
+                        $currObj.after($sbxObj2);
+                    }
+
+                    $currObj.YTHIPon("change", function () {
+                        if( YTHIPutil.isEmpty($("select#" + currObjData.objid2).data("dfltcd")) ) $("select#" + currObjData.objid2).data("dfltcd", currObjData.dfltcd2);
+
+                        let currObjData2 = $("select#" + currObjData.objid2).data();
+                        if (!YTHIPutil.isEmpty($currObj.find("option:selected").val())) {
+                            var url = YTHIPcomm.API_FRT_URL + "/go/ythip/" + currObjData.extlink2 + "/" + $currObj.find("option:selected").val();
+                            var param = {};
+                            YTHIPcomm.ajax(url, param, function (data) {
+                                YTHIPutil.log(data);
+                                let $sbxObj2 = $("select#" + currObjData.objid2);
+                                $sbxObj2.empty();
+                                $sbxObj2.prop("title", "지역 시/구/군");
+                                $sbxObj2.append('<option value="">선택하세요.</option>');
+                                $sbxObj2.append('<option value="">전체</option>');
+                                if (data.admVOList.admVOList.length !== 0) {
+                                    //console.table(data.admVOList.admVOList);
+                                    $.each(data.admVOList.admVOList, function (index, item) {
+
+                                        // 표준코드를 맞추기 위해 코드 앞 2자리 제거
+                                        item.admCode2 = item.admCode.substring(2);
+                                        let selected = (!YTHIPutil.isEmpty(currObjData2.dfltcd) && (currObjData.dfltcd1 + '' + currObjData2.dfltcd) == item.admCode) ? 'selected="selected"' : '';
+                                        $sbxObj2.append('<option value="' + item.admCode2 + '" ' + selected + '>' + item.lowestAdmCodeNm + '</option>');
+
+                                    });
+                                }
+
+                                if (!YTHIPutil.isEmpty($currObj.data("callback2"))) {
+                                    try {
+                                        new Function('return ' + currObjData.callback2 + '()')();  // 콜백 실행
+                                    } catch (e) {
+                                        console.warn("%c콜백함수 없음!! [" + currObjData.callback2 + "]", "color:orange; background:#292b2a");
+                                    }
+                                }
+
+                            }, function () {
+                                YTHIPcomm.alert("코드정보를 가져올 수 없습니다.", "시스템관리자에게 문의해주세요.");
+                            }, {type: "GET"});
+                        }
+                    });
+
+                    if (!YTHIPutil.isEmpty(currObjData.dfltcd1) || !YTHIPutil.isEmpty($currObj.find("option:selected").val())) {
+                        $currObj.trigger("change");
+                    }
+                }
+
+            }, function () {
+                YTHIPcomm.alert("코드정보를 가져올 수 없습니다.", "시스템관리자에게 문의해주세요.");
+            }, {type: "GET"});
+        }
+
+        const _init = function($page){
+            //YTHIPutil.log('>>>>> =============== CODE INIT  ===============');
+            // 공통코드 셀렉트박스 처리
+            $targetObj = (YTHIPutil.isEmpty($page))? $("select._initCmnCdSbx, span._initCmnCdRdo, span._initCmnCdCbx, ul._initCmnCdRdo, ul._initCmnCdCbx"):$("select._initCmnCdSbx, span._initCmnCdRdo, span._initCmnCdCbx, ul._initCmnCdRdo, ul._initCmnCdCbx", $page);
+            $targetObj.each(function(i, v){
+                _initMakeCmnTag($(this));
+            });
+
+            // 외부 연계 API 셀렉트박스
+            $targetObj_ext = (YTHIPutil.isEmpty($page))? $("select._initExtComboCdSbx"):$("select._initExtComboCdSbx", $page);
+            $targetObj_ext.each(function(i, v){
+                _initMakeExtComboTag($(this));
+            });
+        }
+
+        const _getCodeList = function(cdGroup, callbackFn){
+            let param = {};
+            param.pageNum = 0;
+            param.cdGroup = cdGroup;
+            param.isNeedSysColYn = 'N';
+            param.useYn = "Y";
+
+            YTHIPcomm.promise("GET", YTHIPcomm.API_COM_URL + "/sur/com/code/comCd", param)
+                .catch( ()=>{
+                    YTHIPcomm.alert("'" + currObjData.cdgroup + "' 코드정보를 가져올 수 없습니다.", "시스템관리자에게 문의해주세요.");
+                }).then(data => {
+                if (callbackFn != null && $.type(callbackFn) == "function") callbackFn(data);
+            });
+        }
+
+        const _getCodeName = function(cdGroup, comCd, callbackFn){
+            _getCodeNm(comCd, callbackFn);
+        }
+
+        const _getCodeNm = function(comCd, callbackFn){
+            if(YTHIPutil.isEmpty(comCd)) comCd = "0000000";
+            var param = {};
+            param.pageNum = 0;
+            param.isNeedSysColYn = 'N';
+            param.useYn = "Y";
+
+            YTHIPcomm.promise("GET", YTHIPcomm.API_COM_URL + "/sur/com/code/comCd/G" + comCd.substring(0, 4) + "/" + comCd, param)
+                .catch( () => {
+                    if (callbackFn != null && $.type(callbackFn) == "function") callbackFn({});
+                }).then(data => {
+                    if (callbackFn != null && $.type(callbackFn) == "function") callbackFn(data.result.comCdInfo);
+                });
+        }
+
+        return {
+            init : _init,
+            initMakeCmnTag : _initMakeCmnTag,
+            initMakeExtComboTag : _initMakeExtComboTag,
+            getCodeList : _getCodeList,
+            getCodeName : _getCodeName,
+            getCodeNm : _getCodeNm
+        }
+    }();
+
+    const _comm = function(){
+
+        const _init = function(){
+            // 버튼 : 마스킹해제
+            $("button._btnMaskingClear").YTHIPon("click", function(){
+                const $obj = $(this);
+                YTHIPcomm.confirm({title:"주의", msg:"마스킹해제를 진행하시겠습니까?"}, $obj, function(){
+                    YTHIPcomm.GLOBAL_CONST.isMaskingYn = "N";
+                    if(typeof _maskingInitPage === "function"){
+                        _maskingInitPage();
+                    }else{
+                        YTHIPcomm.alert({title:"오류", msg:"마스킹 진입 함수 _maskingInitPage 를 생성해주세요"}, $obj);
+                    }
+                });
+            });
+
+            $(document).YTHIPon("click", "button.btn-share", function(){
+                const $this = $(this);
+                $this.siblings("div.item-share").remove();
+                let $itemShare = $('<div class="item-share"></div>');
+                $itemShare.append('<strong class="section-subtit">공유하기</strong>');
+                let $snsType = $('<div class="sns-type"></div>');
+                $snsType.append('<a href="javascript:;" class="_btnFacebook" title="새창열림"><i class="icon" aria-hidden="true"><img src="/images/mps/main/ico_facebook.svg" alt=""></i> <span>페이스북</span></a>');
+                $snsType.append('<a href="javascript:;" class="_btnKakao" title="새창열림"><i class="icon" aria-hidden="true"><img src="/images/mps/main/ico_kakao.svg" alt=""></i> <span>카카오</span></a>');
+                $snsType.append('<a href="javascript:;" class="_btnBand" title="새창열림"><i class="icon" aria-hidden="true"><img src="/images/mps/main/ico_band.svg" alt=""></i> <span>밴드</span></a>');
+                $snsType.append('<a href="javascript:;" class="_btnBlog" title="새창열림"><i class="icon" aria-hidden="true"><img src="/images/mps/main/ico_blog.svg" alt=""></i> <span>네이버블로그</span></a>');
+                $snsType.append('<a href="javascript:;" class="_btnX" title="새창열림"><i class="icon" aria-hidden="true"><img src="/images/mps/main/ico_x.svg" alt=""></i> <span>X</span></a>');
+                $itemShare.append($snsType);
+                let $urlCopy = $('<div class="url-copy"></div>');
+                $urlCopy.append('<span class="url-box"><input type="url" id="" class="input-url" title="공유할 URL" /></span>');
+                $urlCopy.append('<button type="button" class="btn-url">URL 복사</button>');
+                $itemShare.append($urlCopy);
+                $itemShare.append('<button type="button" class="btn-close"><span class="sr-only">공유하기 닫기</span></button>');
+                $this.after($itemShare);
+                $this.addClass('active').next('.item-share').addClass('active');
+
+                let shareUrl = (!YTHIPutil.isEmpty($this.data("shareurl")))? $this.data("shareurl"):location.pathname;
+                if(!shareUrl.startsWith("http://") && !shareUrl.startsWith("https://")){
+                    shareUrl = YTHIPcomm.API_FRT_URL + shareUrl;
+                }
+                let shareTitle = (!YTHIPutil.isEmpty($this.data("sharetitle")))? $this.data("sharetitle"):"온통청년";
+
+                $("span.url-box input", $itemShare).val(shareUrl);
+                // 버튼 : URL 복사
+                $(".btn-url", $itemShare).off("click").YTHIPon("click", function(){
+                    const $this = $(this);
+                    navigator.clipboard.writeText($("span.url-box input", $itemShare).val())
+                        .then(()=>{
+                            YTHIPcomm.alert({title:"알림", msg:"URL 주소가 복사되었습니다."}, $this);
+                        })
+                        .catch(()=> {
+                            YTHIPcomm.alert({title:"오류", msg:"이 브라우저는 지원하지 않습니다."}, $this);
+                        })
+                });
+
+                // 버튼 : FACEBOOK
+                $("a._btnFacebook", $itemShare).off("click").YTHIPon("click", function(){
+                    YTHIPutil.sns.facebook(shareUrl, shareTitle);
+                });
+
+                // 버튼 : KAKAO
+                $("a._btnKakao", $itemShare).off("click").YTHIPon("click", function(){
+                    YTHIPutil.sns.kakao(shareUrl, shareTitle);
+                });
+
+                // 버튼 : NAVER BAND
+                $("a._btnBand", $itemShare).off("click").YTHIPon("click", function(){
+                    YTHIPutil.sns.band(shareUrl, shareTitle);
+                });
+
+                // 버튼 : NAVER BLOG
+                $("a._btnBlog", $itemShare).off("click").YTHIPon("click", function(){
+                    YTHIPutil.sns.blog(shareUrl, shareTitle);
+                });
+
+                // 버튼 : X
+                $("a._btnX", $itemShare).off("click").YTHIPon("click", function(){
+                    YTHIPutil.sns.twitter(shareUrl, shareTitle);
+                });
+
+
+
+                // 버튼 : 공유하기 닫기
+                $(".btn-close", $itemShare).off("click").YTHIPon("click", function(){
+                    $this.closest('.btn-share').removeClass('active');
+                    $(this).closest('.item-share').removeClass('active');
+                    $(this).closest('.item-share').remove();
+                });
+            });
+
+            $(document).YTHIPon("click", "button.btn-share-nokakao", function(){
+                const $this = $(this);
+                $this.siblings("div.item-share").remove();
+                let $itemShare = $('<div class="item-share"></div>');
+                $itemShare.append('<strong class="section-subtit">공유하기</strong>');
+                let $snsType = $('<div class="sns-type"></div>');
+                $snsType.append('<a href="javascript:;" class="_btnFacebook" title="새창열림"><i class="icon" aria-hidden="true"><img src="/images/mps/main/ico_facebook.svg" alt=""></i> <span>페이스북</span></a>');
+                // $snsType.append('<a href="javascript:;" class="_btnKakao" title="새창열림"><i class="icon" aria-hidden="true"><img src="/images/mps/main/ico_kakao.svg" alt=""></i> <span>카카오</span></a>');
+                $snsType.append('<a href="javascript:;" class="_btnBand" title="새창열림"><i class="icon" aria-hidden="true"><img src="/images/mps/main/ico_band.svg" alt=""></i> <span>밴드</span></a>');
+                $snsType.append('<a href="javascript:;" class="_btnBlog" title="새창열림"><i class="icon" aria-hidden="true"><img src="/images/mps/main/ico_blog.svg" alt=""></i> <span>네이버블로그</span></a>');
+                $snsType.append('<a href="javascript:;" class="_btnX" title="새창열림"><i class="icon" aria-hidden="true"><img src="/images/mps/main/ico_x.svg" alt=""></i> <span>X</span></a>');
+                $itemShare.append($snsType);
+                let $urlCopy = $('<div class="url-copy"></div>');
+                $urlCopy.append('<span class="url-box"><input type="url" id="" class="input-url" title="공유할 URL" /></span>');
+                $urlCopy.append('<button type="button" class="btn-url">URL 복사</button>');
+                $itemShare.append($urlCopy);
+                $itemShare.append('<button type="button" class="btn-close"><span class="sr-only">공유하기 닫기</span></button>');
+                $this.after($itemShare);
+                $this.addClass('active').next('.item-share').addClass('active');
+
+                let shareUrl = (!YTHIPutil.isEmpty($this.data("shareurl")))? $this.data("shareurl"):location.pathname;
+                if(!shareUrl.startsWith("http://") && !shareUrl.startsWith("https://")){
+                    shareUrl = YTHIPcomm.API_FRT_URL + shareUrl;
+                }
+                let shareTitle = (!YTHIPutil.isEmpty($this.data("sharetitle")))? $this.data("sharetitle"):"온통청년";
+
+                $("span.url-box input", $itemShare).val(shareUrl);
+                // 버튼 : URL 복사
+                $(".btn-url", $itemShare).off("click").YTHIPon("click", function(){
+                    const $this = $(this);
+                    navigator.clipboard.writeText($("span.url-box input", $itemShare).val())
+                        .then(()=>{
+                            YTHIPcomm.alert({title:"알림", msg:"URL 주소가 복사되었습니다."}, $this);
+                        })
+                        .catch(()=> {
+                            YTHIPcomm.alert({title:"오류", msg:"이 브라우저는 지원하지 않습니다."}, $this);
+                        })
+                });
+
+                // 버튼 : FACEBOOK
+                $("a._btnFacebook", $itemShare).off("click").YTHIPon("click", function(){
+                    YTHIPutil.sns.facebook(shareUrl, shareTitle);
+                });
+
+                // 버튼 : KAKAO
+                $("a._btnKakao", $itemShare).off("click").YTHIPon("click", function(){
+                    YTHIPutil.sns.kakao(shareUrl, shareTitle);
+                });
+
+                // 버튼 : NAVER BAND
+                $("a._btnBand", $itemShare).off("click").YTHIPon("click", function(){
+                    YTHIPutil.sns.band(shareUrl, shareTitle);
+                });
+
+                // 버튼 : NAVER BLOG
+                $("a._btnBlog", $itemShare).off("click").YTHIPon("click", function(){
+                    YTHIPutil.sns.blog(shareUrl, shareTitle);
+                });
+
+                // 버튼 : X
+                $("a._btnX", $itemShare).off("click").YTHIPon("click", function(){
+                    YTHIPutil.sns.twitter(shareUrl, shareTitle);
+                });
+
+
+
+                // 버튼 : 공유하기 닫기
+                $(".btn-close", $itemShare).off("click").YTHIPon("click", function(){
+                    $this.closest('.btn-share').removeClass('active');
+                    $(this).closest('.item-share').removeClass('active');
+                    $(this).closest('.item-share').remove();
+                });
+            });
+
+        }
+
+        return {
+            init : _init
+        }
+    }();
+
+    const _ctpvSgg = function(){
+
+        const _init = function(){
+            if(!YTHIPcomm.sessStorage.get("ctpvCnt") || !YTHIPcomm.sessStorage.get("ctpvSggCnt")) {
+                let count = 0;
+                YTHIPcomm.promise("GET", YTHIPcomm.API_FRT_URL + "/go/ythip/getCtpvCd", {}).then(data => {
+                    const lastidx = data.admVOList.totalCount - 1;
+                    YTHIPcomm.sessStorage.set("ctpvCnt", data.admVOList.totalCount);
+                    $.each(data.admVOList.admVOList, function (i, v) {
+                        YTHIPcomm.promise("GET", YTHIPcomm.API_FRT_URL + "/go/ythip/getSggCd/" + v.admCode, {}).then(data2 => {
+                            count += parseInt(data2.admVOList.totalCount);
+                            if (i === lastidx){
+                                YTHIPcomm.sessStorage.set("ctpvSggCnt", count);
+                            }
+                        });
+                    })
+                })
+            }
+        }
+
+        const _init2 = function(){
+            YTHIPcomm.sessStorage.set("ctpvCnt", parseInt(__ctpvCnt));
+            YTHIPcomm.sessStorage.set("ctpvSggCnt", parseInt(__ctpvSggCnt));
+        }
+
+        return {
+            init : _init2,
+            init2 : _init
+        }
+
+    }();
+
+    return {
+        menu  : _menu
+        , code : _code
+        , comm : _comm
+        , ctpvSgg : _ctpvSgg
+    }
+}();

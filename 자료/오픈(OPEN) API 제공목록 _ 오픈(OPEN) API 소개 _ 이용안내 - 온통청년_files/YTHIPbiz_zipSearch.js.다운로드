@@ -1,0 +1,144 @@
+var YTHIPbiz_zipSearch = function () {
+
+    // 현재페이지 전역변수
+    let _currentPage = 1;
+    let _countPerPage = 5;
+
+    var _fn = function () {
+
+        /**
+         * 사이드바 메뉴 초기화 (메뉴정보 가져와 보여주고 현재 접속한 메뉴에 대한 처리)
+         * @private
+         */
+        var _initPage = function () {
+
+
+        }
+
+        var _checkSearchedWord = function (obj) {
+            console.log(obj)
+            console.log($(obj).val().length)
+            if ($(obj).val().length > 0) {
+                //특수문자 제거
+                var expText = /[%=><]/;
+                if (expText.test($(obj).val()) == true) {
+                    YTHIPcomm.alert({title:"알림", msg:"특수문자를 입력 할수 없습니다."}, $('.btn-zipSearch'));
+                    $(obj).val($(obj).val().split(expText).join(""));
+                    return false;
+                }
+
+                //특정문자열(sql예약어의 앞뒤공백포함) 제거 
+                var sqlArray = new Array(
+                    "OR", "SELECT", "INSERT", "DELETE", "UPDATE",
+                    "CREATE", "DROP", "EXEC", "UNION",
+                    "FETCH", "DECLARE", "TRUNCATE");
+
+                var regex;
+                for (var i = 0; i < sqlArray.length; i++) {
+                    regex = new RegExp(sqlArray[i], "gi");
+
+                    if (regex.test($(obj).val())) {
+                        YTHIPcomm.alert({title:'알림', msg:'"' + sqlArray[i] + '"와(과) 같은 특정문자로 검색할 수 없습니다.'}, $('.btn-zipSearch'));
+                        $(obj).val($(obj).val().replace(regex, ""));
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        var _ajaxZipSearchList = function (pageNum) {
+            _currentPage = pageNum;
+
+            console.log(pageNum)
+
+            if ($('#address-search').val() == "" || $('#address-search').val() == null) {
+                YTHIPcomm.alert({title:"알림", msg:"검색어를 입력해주세요."}, $('.btn-zipSearch'));
+                return;
+            }
+            if (!_checkSearchedWord($('#address-search'))) {
+                return;
+            }
+            let url = YTHIPcomm.API_FRT_URL + "/go/ythip/getZipSearch/" + $('#address-search').val();
+            let param = {};
+            param.confmKey = "devU01TX0FVVEgyMDI0MDkwOTEzNTAyMzExNTA3MzQ=";
+            param.currentPage = _currentPage;
+            param.countPerPage = _countPerPage;
+            param.keyword = $('#address-search').val();
+            param.resultType = 'json';
+
+            /*
+            $.ajax({
+                     url :"https://business.juso.go.kr/addrlink/addrLinkApiJsonp.do"  //인터넷망
+                    ,type:"post"
+                    ,data: param
+                    ,dataType:"jsonp"
+                    ,crossDomain:true
+                    ,success:function(jsonStr){
+                        console.log(jsonStr)
+                        var errCode = jsonStr.results.common.errorCode;
+                        var errDesc = jsonStr.results.common.errorMessage;
+
+                        if(errCode != "0"){
+                            alert(errCode+"="+errDesc);
+                        }else{
+                            if(jsonStr != null){
+                        console.log(jsonStr)
+                            }
+                        }
+                    }
+                    ,error: function(xhr,status, error){
+                        alert("에러발생");
+                    }
+                });
+            */
+
+            YTHIPcomm.ajax(url, param, function (data) {
+                console.log('dadata', data)
+                console.dir(data.results);
+                let pageParam = {};
+                pageParam.totCount = parseInt(data.results.common.totalCount);
+                pageParam.pageNum = parseInt(data.results.common.currentPage);
+                pageParam.pageSize = parseInt(data.results.common.countPerPage);
+                pageParam.pageCount = 5
+
+                $(".post-search-tip").css('display', 'none')
+                $(".address-result").css('display', '')
+                let $listHtml = $("div#_tblZipSearchList");
+                $("tbody", $listHtml).empty();
+                if (data.results.juso.length !== 0) {
+                    $.each(data.results.juso, function (index, item) {
+                        let $subTags = $('<tr></tr>');
+                        $subTags.append('<td><button type="button" class="_tblZipList_Detail">' + item.zipNo + '</button></td>');
+                        $subTags.append('<td class="txt-left"><button type="button" class = "_tblZipList_Detail">' + item.jibunAddr + '</button></td>');
+                        $subTags.data("item", item);
+                        $("tbody", $listHtml).append($subTags);
+                        YTHIPcomm.pagination.fn('.board-pager', pageParam, _ajaxZipSearchList);
+                    });
+
+                    $('._tblZipList_Detail').YTHIPon('click', function () {
+
+                        callbackZipSearch($(this).parents("tr").data("item"));
+                        YTHIPcomm.popup.layerClose($('div#zipcode-search'));
+
+                    });
+                } else {
+                    $("tbody", $listHtml).empty();
+                    let $listTd = $('<tr><td colspan="9">검색 결과가 없습니다.</td></tr>');
+                    $("tbody", $listHtml).append($listTd);
+                    $(".board-pager").empty();
+                    $(".articles").empty();
+                }
+            }, {type: "GET", dataType: ""});
+        }
+
+        return {
+            initPage: _initPage,
+            ajaxZipSearchList: _ajaxZipSearchList
+        }
+    }();
+
+    return {
+        fn: _fn
+    }
+}();

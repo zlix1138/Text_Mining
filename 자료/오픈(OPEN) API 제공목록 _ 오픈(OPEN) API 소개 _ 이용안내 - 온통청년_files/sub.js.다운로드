@@ -1,0 +1,266 @@
+/*-------------------------------------------------
+sub Javascript / park myeong-hee
+-------------------------------------------------*/
+$(function() {
+    //오른쪽 퀵메뉴가 있을 경우 class 추가
+    var quickTypeElement = document.querySelector('.quick-type');
+    if (quickTypeElement) {
+        document.documentElement.classList.add('sticky');
+    } else {
+        document.documentElement.classList.remove('sticky');
+    }
+
+    // sns 공유하기
+    $('.btn-share').click(function() {
+        $(this).addClass('active').next('.item-share').addClass('active');
+    });
+    $('.item-share').on('click', '.btn-close', function() {
+        $(this).closest('.item-share').removeClass('active');
+        $('.btn-share').removeClass('active');
+    });
+
+	// 사이드 메뉴
+    $('#side #snb > li').each(function (i) {
+        if ($(this).find('ul').length > 0) {
+            $(this).addClass('plus');
+
+            if ($(this).hasClass("active")) {
+                $(this).find("> a").attr("title", "하위 메뉴 닫기");
+            } else {
+                $(this).find("> a").attr("title", "하위 메뉴 열기");
+            }
+
+            // li.plus일 때 a 링크의 href 변경
+            $(this).find("> a").attr("href", "javascript:;");
+
+            // 클릭 이벤트 추가
+            $(this).find("> a").on("click", function (e) {
+                e.preventDefault(); // 기본 동작 방지
+                $(this).closest('li').toggleClass('active');
+
+                // active 클래스에 따라 title 변경
+                if ($(this).closest('li').hasClass("active")) {
+                    $(this).attr("title", "하위 메뉴 닫기");
+                } else {
+                    $(this).attr("title", "하위 메뉴 열기");
+                }
+            });
+        }
+    });
+
+	//디자인 select box
+	$(".custom-select .select-default").click(function() {
+		var sortSelect = $(this).next('.sort-select');
+        sortSelect.toggleClass("active");
+
+        if (sortSelect.hasClass("active")) {
+            $(this).attr("aria-expanded", "true");
+        } else {
+            $(this).attr("aria-expanded", "false");
+        }
+		return false;
+	});
+
+	$(".sort-select > li > button").click(function() {
+        var selectedValue = $(this).text(); // 클릭된 버튼의 텍스트 가져오기
+        $(this).closest('.sort-select').removeClass("active");
+        $(this).closest('.sort-select').prev('.select-default').text(selectedValue); // select-default에 값 설정
+        $(this).closest('.sort-select').prev('.select-default').attr("aria-expanded", "false");
+    });
+    $('.search-filter > li .acco-btn').on('click', function () {
+        $(this).parent().toggleClass('active');
+    });
+
+	 //캘린더
+	$('.datepicker-wrap').each(function() {
+		const $e = $(this);
+		const $yearBtn = $e.find('.btn-cal-switch.year');
+		const $monBtn = $e.find('.btn-cal-switch.month');
+		const $nextBtn = $e.find('.btn-cal-move.next'); // next 버튼 선택자
+
+		let activeLayer; // 변수 선언
+
+		$yearBtn.on('click', function() { // 년도 레이어 토글
+			const $yearLayer = $e.find('.datepicker-year-wrap');
+			toggleLayer($yearLayer);
+		});
+
+		$monBtn.on('click', function() { // 월 레이어 토글
+			const $monLayer = $e.find('.datepicker-mon-wrap');
+			toggleLayer($monLayer);
+		});
+
+		function toggleLayer($layer) {
+			if (activeLayer && activeLayer.is($layer)) {
+				// 이미 활성화된 경우 비활성화
+				activeLayer.removeClass('active').attr('aria-hidden', 'true');
+				activeLayer = null;
+			} else {
+				// 다른 레이어가 활성화되어 있다면 비활성화
+				if (activeLayer) {
+					activeLayer.removeClass('active').attr('aria-hidden', 'true');
+				}
+				// 새로운 레이어 활성화
+				activeLayer = $layer.addClass('active').attr('tabindex', '0').attr('aria-hidden', 'false');
+				setTimeout(() => {
+					activeLayer.focus();
+				}, 50);
+			}
+		}
+
+		// 키보드 네비게이션
+		$(document).on('keydown', function(e) {
+			if (e.key === 'Tab' && activeLayer) {
+				const $focusableElements = activeLayer.find('a, button, [tabindex]:not([tabindex="-1"])');
+				const $firstFocusable = $focusableElements.first();
+				const $lastFocusable = $focusableElements.last();
+
+				if (e.shiftKey) { // Shift + Tab
+					if (document.activeElement === $firstFocusable[0]) {
+						e.preventDefault();
+						$nextBtn.focus(); // 첫 번째 포커스 가능 요소에서 Shift + Tab 시 next 버튼으로 이동
+					}
+				} else { // Tab
+					if (document.activeElement === $lastFocusable[0]) {
+						e.preventDefault();
+						$nextBtn.focus(); // 마지막 포커스 가능 요소에서 Tab 시 next 버튼으로 이동
+					}
+				}
+			}
+		});
+	});
+
+	//탭메뉴
+	$(".tab-content").hide();
+    $(".tab-line li:first a").addClass("active").attr('title','선택됨').show();
+    $(".tab-content:first").show();
+
+    $(".tab-line li a").click(function() {
+        if($(this).attr("href") === 'javascript:;') {
+            return false;
+        }
+        var activeTab = $(this).attr("href");
+        $(".tab-line li a").removeClass("active").attr('title','');
+        $(this).addClass("active").attr('title','선택됨');
+        $(".tab-content").hide();
+        $(activeTab).css("display", "block").fadeIn();
+        return false;
+    });
+
+});
+
+/* ** 윈도우 사이즈 체크 (반응형) ** */
+let winSize;
+function winSizeSet() {
+	const brekpoint = 1024;
+	if (window.innerWidth >= brekpoint) {
+		winSize = 'pc';
+	}
+	else {
+		winSize = 'mob';
+	}
+}
+
+//오른쪽 퀵메뉴
+/*let scrollY = window.scrollY;
+let scrollH = document.body.scrollHeight;*/
+
+function scrollVal() {
+  scrollY = window.scrollY;
+  scrollH = document.body.scrollHeight;
+}
+
+const winHeight = window.innerHeight;
+const quickIndicators = document.querySelectorAll('.quick-list');
+
+const quickNav = {
+  init: () => {
+    const quickIndicators = document.querySelectorAll('.quick-list');
+    if (quickIndicators.length > 0) {
+      quickNav.linkNav();
+    }
+  },
+  reset: () => {
+    const quickIndicators = document.querySelectorAll('.quick-list');
+    quickIndicators.forEach(e => {
+      const locationList = e.querySelectorAll('a');
+      locationList.forEach(ele => {
+        ele.classList.remove('active');
+        ele.removeAttribute("title");
+      });
+    });
+  },
+  linkNav: () => {
+    const quickIndicators = document.querySelectorAll('.quick-list');
+    quickIndicators.forEach(e => {
+      const locationList = e.querySelectorAll('a');
+      locationList.forEach(ele => {
+        const target = document.querySelector(ele.getAttribute('href'));
+
+        ele.addEventListener('click', (ev) => {
+          ev.preventDefault();
+
+          target.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+          });
+
+          setTimeout(() => {
+            quickNav.navHighlight();
+          }, 800);
+        });
+      });
+    });
+  },
+  navHighlight: () => {
+    const quickIndicators = document.querySelectorAll('.quick-list');
+    if (quickIndicators.length > 0) {
+      const sectionArea = document.querySelectorAll('.scroll-check .conts-wrap');
+      const scrollY = window.scrollY;
+      const scrollH = document.body.scrollHeight;
+      const winHeight = window.innerHeight;
+      const topHeight = Math.ceil(winHeight / 4);
+      const firstSecTop = sectionArea[0].offsetTop;
+
+      sectionArea.forEach(current => {
+        const sectionHeight = current.offsetHeight;
+        const sectionTop = current.offsetTop;
+        const sectionId = current.getAttribute("id");
+
+        const activeLink = document.querySelector(".quick-type > .quick-nav a[href*=" + sectionId + "]");
+
+        if (scrollY <= firstSecTop) {
+          // 첫 번째 섹션이 화면 상단에 있을 때만 첫 번째 메뉴 활성화
+          quickNav.reset();
+          document.querySelector(".quick-type > .quick-nav .quick-list li:first-of-type a").classList.add("active");
+            document.querySelector(".quick-type > .quick-nav .quick-list li:first-of-type a").setAttribute("title","선택됨");
+        } else if (scrollY + winHeight >= scrollH) {
+          // 마지막 섹션이 화면 하단에 있을 때만 마지막 메뉴 활성화
+          quickNav.reset();
+          document.querySelector(".quick-type > .quick-nav .quick-list li:last-of-type a").classList.add("active");
+            document.querySelector(".quick-type > .quick-nav .quick-list li:last-of-type a").setAttribute("title","선택됨");
+        } else if (scrollY >= sectionTop - topHeight && scrollY < sectionTop + sectionHeight) {
+          // 현재 섹션에 있을 때만 해당 메뉴 활성화
+          quickNav.reset();
+          if (activeLink) {
+            activeLink.classList.add("active");
+            activeLink.setAttribute("title","선택됨");
+          }
+        }
+      });
+    }
+  },
+};
+
+// DOMContentLoaded 이벤트가 발생한 후에 quickNav 초기화
+window.addEventListener("DOMContentLoaded", () => {
+    quickNav.init();
+});
+
+window.addEventListener('scroll', () => {
+    quickNav.navHighlight();
+});
+
+window.addEventListener('resize', () => {
+    winSizeSet();
+});

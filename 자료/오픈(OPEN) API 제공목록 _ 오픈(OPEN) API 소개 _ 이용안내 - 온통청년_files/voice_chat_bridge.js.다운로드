@@ -1,0 +1,392 @@
+/**
+ * @typedef {Object} VoiceChatBridgeConfig
+ * @property {boolean} [debug=false] 디버그 로그 출력 여부.
+ * @property {number} [partialThrottleMs=120] 어시스턴트 partial UI 갱신 쓰로틀 간격(ms).
+ * @property {number} [persistDebounceMs=3000] 저장 콜백 디바운스 간격(ms).
+ * @property {(payload: Object) => void} [onUserFinal] 사용자 발화(final) 수신 시 호출되는 콜백.
+ * @property {(payload: Object) => void} [onAssistantPartial] 어시스턴트 partial 갱신 시 호출되는 콜백.
+ * @property {(payload: Object) => void} [onAssistantFinal] 어시스턴트 발화(final) 수신 시 호출되는 콜백.
+ * @property {(payload: Object) => void} [onResponseDone] 응답 라이프사이클 완료 시 호출되는 콜백.
+ * @property {(records: Object[]) => void} [persist] 배치 저장 콜백.
+ */
+
+/**
+ * 실시간 음성 이벤트를 채팅 렌더링용 콜백으로 변환하는 브리지 모듈.
+ */
+class VoiceChatBridge {
+    /**
+     * 브리지 인스턴스를 생성합니다.
+     * @param {VoiceChatBridgeConfig} [config={}]
+     */
+    constructor(config = {}) {
+        this.debug = config.debug === true;
+        this.partialThrottleMs = Number.isFinite(Number(config.partialThrottleMs))
+            ? Math.max(0, Number(config.partialThrottleMs))
+            : 120;
+        this.persistDebounceMs = Number.isFinite(Number(config.persistDebounceMs))
+            ? Math.max(0, Number(config.persistDebounceMs))
+            : 3000;
+
+        this.renderer = {
+            onUserFinal: typeof config.onUserFinal === 'function' ? config.onUserFinal : null,
+            onAssistantPartial: typeof config.onAssistantPartial === 'function' ? config.onAssistantPartial : null,
+            onAssistantFinal: typeof config.onAssistantFinal === 'function' ? config.onAssistantFinal : null,
+            onResponseDone: typeof config.onResponseDone === 'function' ? config.onResponseDone : null
+        };
+
+        this.persist = typeof config.persist === 'function' ? config.persist : null;
+
+        this.boundHandleRealtimeEvent = this.handleRealtimeEvent.bind(this);
+        this.started = false;
+
+        this.userEventIds = new Set();
+        this.partialBuffers = new Map();
+        this.persistQueue = [];
+        this.persistTimer = null;
+    }
+
+    /**
+     * 정규화된 실시간 이벤트 수신을 시작합니다.
+     * @returns {void}
+     */
+    start() {
+        if (this.started || typeof window === 'undefined') {
+            return;
+        }
+
+        window.addEventListener('voice-webrtc-realtime-event', this.boundHandleRealtimeEvent);
+        this.started = true;
+    }
+
+    /**
+     * 이벤트 수신을 중지하고 대기 중인 partial/저장 버퍼를 flush 합니다.
+     * @returns {void}
+     */
+    stop() {
+        if (!this.started || typeof window === 'undefined') {
+            return;
+        }
+
+        window.removeEventListener('voice-webrtc-realtime-event', this.boundHandleRealtimeEvent);
+        this.started = false;
+        this.flushAllPartialBuffers();
+        this.flushPersistQueue();
+    }
+
+    /**
+     * 새 음성 세션을 위해 메모리 상태를 초기화합니다.
+     * @returns {void}
+     */
+    reset() {
+        this.userEventIds.clear();
+        this.flushAllPartialBuffers();
+        this.persistQueue = [];
+        if (this.persistTimer) {
+            clearTimeout(this.persistTimer);
+            this.persistTimer = null;
+        }
+    }
+
+    /**
+     * 수신된 정규화 이벤트를 타입별 전용 핸들러로 라우팅합니다.
+     * @param {CustomEvent|Event} event
+     * @returns {void}
+     * @private
+     */
+    handleRealtimeEvent(event) {
+        const payload = event?.detail;
+        if (!payload || typeof payload !== 'object') {
+            return;
+        }
+
+        const type = payload.type || '';
+
+        if (type === 'conversation.item.input_audio_transcription.completed') {
+            this.handleUserFinal(payload);
+            return;
+        }
+
+        if (this.isAssistantDeltaEvent(type)) {
+            this.handleAssistantPartial(payload);
+            return;
+        }
+
+        if (this.isAssistantDoneEvent(type)) {
+            this.handleAssistantFinal(payload);
+            return;
+        }
+
+        if (type === 'response.done' || type === 'response.completed') {
+            this.handleResponseDone(payload);
+            return;
+        }
+
+        if (type === 'error') {
+            this.enqueuePersistRecord({
+                role: 'system',
+                stage: 'error',
+                type,
+                responseId: payload.responseId || '',
+                itemId: payload.itemId || '',
+                text: payload.text || '',
+                timestamp: payload.timestamp || Date.now()
+            });
+            return;
+        }
+    }
+
+    isAssistantDeltaEvent(type) {
+        return type === 'response.output_text.delta' ||
+            type === 'response.audio_transcript.delta' ||
+            type === 'response.output_audio_transcript.delta';
+    }
+
+    isAssistantDoneEvent(type) {
+        return type === 'response.output_text.done' ||
+            type === 'response.audio_transcript.done' ||
+            type === 'response.output_audio_transcript.done';
+    }
+
+    /**
+     * 사용자 발화 final 이벤트를 처리합니다.
+     * @param {Object} payload
+     * @returns {void}
+     * @private
+     */
+    handleUserFinal(payload) {
+        const itemId = payload.itemId || payload.item_id || '';
+        if (itemId && this.userEventIds.has(itemId)) {
+            return;
+        }
+        if (itemId) {
+            this.userEventIds.add(itemId);
+        }
+
+        const text = (payload.text || '').trim();
+        if (!text) {
+            return;
+        }
+
+        if (this.renderer.onUserFinal) {
+            this.renderer.onUserFinal({
+                itemId,
+                text,
+                timestamp: payload.timestamp || Date.now(),
+                raw: payload.raw || payload
+            });
+        }
+
+        this.enqueuePersistRecord({
+            role: 'user',
+            stage: 'final',
+            type: payload.type,
+            responseId: payload.responseId || '',
+            itemId,
+            text,
+            timestamp: payload.timestamp || Date.now()
+        });
+    }
+
+    /**
+     * 어시스턴트 partial 이벤트를 쓰로틀링하여 처리합니다.
+     * @param {Object} payload
+     * @returns {void}
+     * @private
+     */
+    handleAssistantPartial(payload) {
+        const responseId = payload.responseId || payload.response_id || '';
+        if (!responseId) {
+            return;
+        }
+
+        const aggregatedText = payload.aggregatedText || payload.text || '';
+        const existing = this.partialBuffers.get(responseId) || {
+            timer: null,
+            latestText: ''
+        };
+        existing.latestText = aggregatedText;
+
+        if (!existing.timer) {
+            existing.timer = setTimeout(() => {
+                const current = this.partialBuffers.get(responseId);
+                if (!current) {
+                    return;
+                }
+
+                if (this.renderer.onAssistantPartial) {
+                    this.renderer.onAssistantPartial({
+                        responseId,
+                        text: current.latestText,
+                        timestamp: payload.timestamp || Date.now(),
+                        raw: payload.raw || payload
+                    });
+                }
+                current.timer = null;
+            }, this.partialThrottleMs);
+        }
+
+        this.partialBuffers.set(responseId, existing);
+    }
+
+    /**
+     * 특정 response의 partial 버퍼를 즉시 flush 합니다.
+     * @param {string} responseId
+     * @returns {void}
+     * @private
+     */
+    flushPartialBuffer(responseId) {
+        const current = this.partialBuffers.get(responseId);
+        if (!current) {
+            return;
+        }
+
+        if (current.timer) {
+            clearTimeout(current.timer);
+            current.timer = null;
+        }
+
+        if (current.latestText && this.renderer.onAssistantPartial) {
+            this.renderer.onAssistantPartial({
+                responseId,
+                text: current.latestText,
+                timestamp: Date.now()
+            });
+        }
+        this.partialBuffers.delete(responseId);
+    }
+
+    /**
+     * 대기 중인 모든 partial 버퍼를 flush 합니다.
+     * @returns {void}
+     * @private
+     */
+    flushAllPartialBuffers() {
+        Array.from(this.partialBuffers.keys()).forEach((responseId) => {
+            this.flushPartialBuffer(responseId);
+        });
+    }
+
+    /**
+     * 어시스턴트 final 이벤트를 처리합니다.
+     * @param {Object} payload
+     * @returns {void}
+     * @private
+     */
+    handleAssistantFinal(payload) {
+        const responseId = payload.responseId || payload.response_id || '';
+        if (!responseId) {
+            return;
+        }
+
+        this.flushPartialBuffer(responseId);
+        const text = (payload.aggregatedText || payload.text || '').trim();
+
+        if (this.renderer.onAssistantFinal) {
+            this.renderer.onAssistantFinal({
+                responseId,
+                text,
+                timestamp: payload.timestamp || Date.now(),
+                raw: payload.raw || payload
+            });
+        }
+
+        this.enqueuePersistRecord({
+            role: 'assistant',
+            stage: 'final',
+            type: payload.type,
+            responseId,
+            itemId: payload.itemId || '',
+            text,
+            timestamp: payload.timestamp || Date.now()
+        });
+    }
+
+    /**
+     * 어시스턴트 응답 완료 이벤트를 처리합니다.
+     * @param {Object} payload
+     * @returns {void}
+     * @private
+     */
+    handleResponseDone(payload) {
+        const responseId = payload.responseId || payload.response_id || '';
+        if (responseId) {
+            this.flushPartialBuffer(responseId);
+        }
+
+        const text = (payload.aggregatedText || payload.text || '').trim();
+
+        if (text && this.renderer.onAssistantFinal) {
+            this.renderer.onAssistantFinal({
+                responseId,
+                text,
+                timestamp: payload.timestamp || Date.now(),
+                raw: payload.raw || payload
+            });
+        }
+
+        if (this.renderer.onResponseDone) {
+            this.renderer.onResponseDone({
+                responseId,
+                timestamp: payload.timestamp || Date.now(),
+                raw: payload.raw || payload
+            });
+        }
+
+        this.enqueuePersistRecord({
+            role: 'assistant',
+            stage: 'completed',
+            type: payload.type,
+            responseId,
+            itemId: payload.itemId || '',
+            text,
+            timestamp: payload.timestamp || Date.now()
+        });
+    }
+
+    /**
+     * 저장 디바운스를 위해 레코드 1건을 큐에 추가합니다.
+     * @param {Object} record
+     * @returns {void}
+     * @private
+     */
+    enqueuePersistRecord(record) {
+        if (!this.persist) {
+            return;
+        }
+
+        this.persistQueue.push(record);
+        if (this.persistTimer) {
+            clearTimeout(this.persistTimer);
+        }
+
+        this.persistTimer = setTimeout(() => {
+            this.flushPersistQueue();
+        }, this.persistDebounceMs);
+    }
+
+    /**
+     * 큐에 쌓인 레코드를 저장 콜백으로 전달합니다.
+     * @returns {void}
+     * @private
+     */
+    flushPersistQueue() {
+        if (!this.persist || this.persistQueue.length === 0) {
+            return;
+        }
+
+        const batch = this.persistQueue.splice(0, this.persistQueue.length);
+        this.persistTimer = null;
+
+        try {
+            this.persist(batch);
+        } catch (error) {
+            if (this.debug) {
+                console.error('[VOICE_CHAT_BRIDGE_PERSIST_ERROR]', error);
+            }
+        }
+    }
+}
+
+if (typeof window !== 'undefined') {
+    window.VoiceChatBridge = VoiceChatBridge;
+}

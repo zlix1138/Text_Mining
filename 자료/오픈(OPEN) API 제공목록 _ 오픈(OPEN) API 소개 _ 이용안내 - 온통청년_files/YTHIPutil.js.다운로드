@@ -1,0 +1,3279 @@
+/**
+ * ========================================================================
+ * 공통 util function
+ * ========================================================================
+ * YTHIPutil.date[convertDayFromJumin, getHoliday, inHoliday, inWeekendHoliday, getTodayDate, getTime, addDays, calDate, getMyAge]
+ * ========================================================================
+ * YTHIPutil.validate[getOnlyNumber, inputNumberCheck, inputNumberCheckAmt, inputIntegerCheck, inputNumberKeyUpEvent, inputTelNumberKeyUpEvent, isNumeric, inputBack, isNull, checkMaxLength,
+ *                    checkStartEndDate, checkMonthDate, checkDayDate, checkDate, checkToDate, checkTody, typeCheck, jsNullCheck, jsAlert, jsCheckLenE, jsCheckLenB, jsCheckLenS, jsByteLen,
+ *                    jsPushStr, jsDetectChar, isSpace, jsCheckHan, jsCheckDate, jsNumCheck, startsWith]
+ * ========================================================================
+ * YTHIPutil.parse[int, float, parseNumber, parseDisplayTel, displayJumin, displayTime, displayPsno]
+ * ========================================================================hangleReturn
+ * YTHIPutil.format[insertComma, insertDate, leadingZeros, fillSpaceBack, fillSpaceFront, trim, replaceAll, decimal, removeLZero, dashHpNo, dashYMD, dashYM,
+ *                    markingCard, markingFormat, ageCheck, space2nbsp, amountHangle, hangleReturn, amountHangleEvt, hanLen, strCutRet, putJuminDash, putBusDash, rateForm, getDate]
+ * ========================================================================
+ * YTHIPutil.log
+ * YTHIPutil.isMobile
+ * YTHIPutil.isiOS
+ * YTHIPutil.isSmartBanking
+ * YTHIPutil.emailvalidateCheck
+ * YTHIPutil.convertJoSa
+ */
+let YTHIPutil = (function () {
+    /**========================================================================
+     *                            날짜/시간 관련 유틸 - 시작
+     *========================================================================*/
+    let _date = function () {
+        /**
+         Function	: YTHIPutil.date.convertDayFromJumin(jumin, option)
+         Description	: 입력된 주민번호로 날짜를 계산하여 출력한다.
+         : 주민번호 및 외국인등록번호로 계산한다. 앞6자리+뒤1자리 필수.
+         Parameter	: - jumin	: 주민번호
+         : - option
+         Examples	: > YTHIPutil.date.convertDayFromJumin('7702101******'), YTHIPutil.date.convertDayFromJumin('7702101******', 'parse')
+         Returns		: "19770210", "1977-02-10"
+         Notes		: 날짜는 option에 따라 "-"을 포함하지 않고 출력 할 수 있다.
+         */
+        let _convertDayFromJumin = function (jumin, option) {
+            let dispDay = '';
+            if (jumin.length > 6) {
+                let jumin1 = jumin.substr(0, 6);
+                let jumin2 = jumin.substr(6, 1);
+
+                if ((jumin1 != undefined && jumin1 != '') && (jumin2 != undefined && jumin2 != '')) {
+
+                    let sexNum = jumin2.substr(0, 1);
+                    if (sexNum == '1' || sexNum == '2' || sexNum == '5' || sexNum == '6') {
+                        if (option == 'parse') {
+                            dispDay = _parse.parseNumber('19' + jumin1, true, 'yyyymmdd');
+                        } else {
+                            dispDay = '19' + jumin1;
+                        }
+                        ;
+                    } else if (sexNum == '3' || sexNum == '4' || sexNum == '7' || sexNum == '8') {
+                        if (option == 'parse') {
+                            dispDay = _parse.parseNumber('20' + jumin1, true, 'yyyymmdd');
+                        } else {
+                            dispDay = '20' + jumin1;
+                        }
+                    }
+                }
+            }
+            return dispDay;
+        };
+
+        /**
+         Function	: YTHIPutil.date.getHoliday()
+         Description	: 공휴일 일자 정보
+         Parameter	:
+         Examples	: > YTHIPutil.date.getHoliday()
+         Returns		: [{…}, {…}] array안에 json형태
+         Notes		: 등록된 공휴일 정보를 가져온다.
+         */
+        let _getHoliday = function () {
+            // 공휴일 data를 배열로 만든다.
+            // 공휴일 data는 외부에서 가져온것을 사용 할 수 있다.
+            //
+            let holiday = [
+                {'date': '20230505', 'holiName': '어린이날'},
+                {'date': '20230529', 'holiName': '부처님오신날'},
+                {'date': '20230606', 'holiName': '현충일'},
+                {'date': '20230815', 'holiName': '광복절'},
+                {'date': '20230928', 'holiName': '추석'},
+                {'date': '20230929', 'holiName': '추석'},
+                {'date': '20231003', 'holiName': '개천절'},
+                {'date': '20231009', 'holiName': '한글날'},
+                {'date': '20231225', 'holiName': '성탄절'},
+                {'date': '20240101', 'holiName': '신정'},
+                {'date': '20240209', 'holiName': '설날'},
+                {'date': '20240212', 'holiName': '설날'},
+                {'date': '20240301', 'holiName': '삼일절'},
+                {'date': '20240501', 'holiName': '근로자의날'},
+                {'date': '20240506', 'holiName': '어린이날'},
+                {'date': '20240515', 'holiName': '부처님오신날'},
+                {'date': '20240606', 'holiName': '현충일'},
+                {'date': '20240815', 'holiName': '광복절'},
+                {'date': '20240916', 'holiName': '추석'},
+                {'date': '20240917', 'holiName': '추석'},
+                {'date': '20240918', 'holiName': '추석'},
+                {'date': '20241003', 'holiName': '개천철'},
+                {'date': '20241009', 'holiName': '한글날'},
+                {'date': '20241225', 'holiName': '성탄절'}
+            ]
+
+            return holiday
+        };
+
+        /**
+         Function	: YTHIPutil.date.inHoliday(cDate)
+         Description	: 현재 일자가 공휴일 인지 확인한다.
+         Parameter	: - cDate : 날짜
+         Examples	: > YTHIPutil.date.inHoliday('20190101')
+         Returns		: true/false
+         Notes		: 현재 일자가 공휴일 인지 true/false
+         */
+        let _inHoliday = function (cDate) {
+            let obj = _getHoliday();
+            let isIn = false;
+            if (cDate == undefined || cDate == '') {
+                isIn = false;
+            } else {
+                if (obj != undefined && obj != '') {
+                    $.each(obj, function (index, data) {
+                        let compData = data.date;
+                        if (compData === cDate) {
+                            isIn = true;
+                        }
+                    })
+                } else {
+                    isIn = false;
+                }
+                ;
+            }
+            return isIn;
+        };
+
+        /**
+         Function	: YTHIPutil.date.inWeekendHoliday(cDate)
+         Description	: 현재 일자가 토요일, 일요일, 공휴일 인지 확인한다.
+         Parameter	: - obj		: YTHIPutil.date.getHoliday()
+         : - cDate : 날짜
+         Examples	: > YTHIPutil.date.inWeekendHoliday('20190106')
+         Returns		: true/false
+         Notes		: 현재 일자가 토요일, 일요일, 공휴일 인지 true/false
+         */
+        let _inWeekendHoliday = function (cDate) {
+            let dayofweek = _getDayOfWeek(cDate);
+
+            if (dayofweek == 0 || dayofweek == 6) {
+                return true;
+            }
+            ;
+
+            return _inHoliday(cDate);
+        };
+
+        /**
+         Function	: YTHIPutil.date.getTodayDate(isMonth)
+         Description	: 현재 날짜를 가져온다.
+         Parameter	: - isMonth	: true
+         Examples	: > YTHIPutil.date.getTodayDate(), YTHIPutil.date.getTodayDate('m')
+         Returns		: true/false
+         Notes		: 현재날짜를 "년월" 또는 "년월일"로 반환한다.
+         */
+        let _getTodayDate = function (isMonth, delimiter) {
+            let toDayObj = new Date();
+            let monthObj = {
+                '0': '01',		//'JAN',
+                '1': '02',		//'FEB',
+                '2': '03',		//'MAR',
+                '3': '04',		//'APR',
+                '4': '05',		//'MAY',
+                '5': '06',		//'JUN',
+                '6': '07',		//'JUL',
+                '7': '08',		//'AUG',
+                '8': '09',		//'SEP',
+                '9': '10',		//'OCT',
+                '10': '11',	//'NOV',
+                '11': '12'		//'DEC'
+            };
+            let year = toDayObj.getFullYear();
+            let month = monthObj[toDayObj.getMonth()];
+            let date = toDayObj.getDate();
+            if (10 > parseInt(date || '')) {
+                date = '0' + date;
+            }
+
+            let lastDelimeter = "";
+            if (delimiter == ".") {
+                lastDelimeter = ".";
+            }
+            if (isMonth) {
+                if (delimiter) return year + delimiter + month + lastDelimeter;
+                return year + month;
+            } else {
+                if (delimiter) return year + delimiter + month + delimiter + date + lastDelimeter;
+                return year + month + date;
+            }
+        };
+
+        /**
+         Function	: YTHIPutil.date.getTime(type)
+         Description	: 현재 시간을 가져온다.
+         Parameter	: - type : 시간형식 ('hh', 'mm', 'ss')
+         Examples	: > YTHIPutil.date.getTime(), YTHIPutil.date.getTime('hh'), YTHIPutil.date.getTime('mm'), YTHIPutil.date.getTime('ss')
+         Returns		: true/false
+         Notes		: 현재 시간을 옵션에 따라 "시분초" 또는 "시", "분", "초"로 반환한다.
+         */
+        let _getTime = function (type) {
+            let date = new Date();
+            let hour = '';
+            let min = '';
+            let sec = '';
+            if (undefined == type) {
+                type = 'hhmmss';
+            }
+            if (type.indexOf('hh') != -1) {
+                hour = date.getHours().toString();
+                hour = hour.length == 1 ? '0' + hour : hour;
+            }
+            if (type.indexOf('mm') != -1) {
+                min = date.getMinutes().toString();
+                min = min.length == 1 ? '0' + min : min;
+            }
+            if (type.indexOf('ss') != -1) {
+                sec = date.getSeconds().toString();
+                sec = sec.length == 1 ? '0' + sec : sec;
+            }
+            return hour + min + sec;
+        };
+
+        /** 현재 날짜,시간 출력
+         * 현재 날짜와 시간을 yyyy.mm.dd hh24:mi:ss 형식으로 출력
+         */
+        let _getDateTime = function () {
+            let date = YTHIPutil.date.getTodayDate();
+            let time = YTHIPutil.date.getTime();
+            let str = '';
+            str += date.substring(0, 4) + '.' + date.substring(4, 6) + '.' + date.substring(6, 8) + '. ';
+            str += time.substring(0, 2) + ':' + time.substring(2, 4) + ':' + time.substring(4, 6);
+            return str;
+        };
+
+        /**
+         Function	: YTHIPutil.date.getDayOfWeek(datestr)
+         Description	: 해당 날짜의 요일 값 리턴
+         Parameter	: - obj		: YTHIPutil.date.getHoliday()
+         : - selDate : 날짜
+         Examples	: > YTHIPutil.date.getDayOfWeek('20190101')
+         Returns		: 0-6
+         Notes		: 당 날짜(YYYYMMDD)의 요일 값 리턴 - 0(일요일) ~ 6(토요일)
+         */
+        let _getDayOfWeek = function (datestr) {
+            let yyyy = parseInt(datestr.substring(0, 4), 10);
+            let mm = parseInt(datestr.substring(4, 6), 10) - 1;
+            let dd = parseInt(datestr.substring(6), 10);
+
+            let date = new Date(yyyy, mm, dd);
+
+            return date.getDay();
+        };
+
+        /**
+         Function	: YTHIPutil.date.addDays(datestr,type,addDate)
+         Description	: 입력받은 날짜에 타입의 수만큼  더하거나 빼고 리턴
+         Parameter	: - datestr		: 비교일자
+         : - type			: type('year','month','day')
+         : - addDate		: 더하거나 뺄(-) 숫자
+         Examples	: > YTHIPutil.date.addDays('20190107', 'day', 1)
+         Returns		: "20190108"
+         Notes		: 일, 월, 년을 모두 비교 할 수 있다.
+         */
+        let _addDays = function (datestr, type, addDate) {
+            if (typeof (addDate) != 'number') return datestr;
+            let yyyy = parseInt(datestr.substring(0, 4), 10);
+            let mm = parseInt(datestr.substring(4, 6), 10) - 1;
+            let dd = parseInt(datestr.substring(6), 10);
+            if (type == 'year') {
+                yyyy += addDate;
+            } else if (type == 'month') {
+                mm += addDate;
+            } else if (type == 'day') {
+                dd += addDate;
+            } else {
+                return datestr;
+            }
+            let date = new Date(yyyy, mm, dd);
+            let rtYyyy = date.getFullYear();
+            let rtMm = date.getMonth() + 1;
+            let rtDd = date.getDate();
+            if (rtMm < 10) {
+                rtMm = '0' + rtMm;
+            }
+            if (rtDd < 10) {
+                rtDd = '0' + rtDd;
+            }
+            return '' + rtYyyy + rtMm + rtDd;
+        };
+
+
+        let _calDate = function (date) {
+            let day = date;
+
+            if (typeof (day) == 'number') {
+                day = String(day);
+            }
+            let choiceday = day;
+            let today = _getTodayDate();
+            choiceday = choiceday.replace(/[.?]/g, '');
+            today = today.replace(/[.?]/g, '');
+            let date1_yy = Number(choiceday.substring(0, 4));
+            let date1_mm = Number(choiceday.substring(4, 6));
+            let date1_dd = Number(choiceday.substring(6, 8));
+            let date2_yy = Number(today.substring(0, 4));
+            let date2_mm = Number(today.substring(4, 6));
+            let date2_dd = Number(today.substring(6, 8));
+            let chw_DAY = "0";
+            if (((date1_yy % 4 == 0) && (date1_yy % 100 != 0)) || (date1_yy % 400 == 0)) {
+                chw_DAY = "29";
+            } else {
+                chw_DAY = "28";
+            }
+            let diff_MM = (date1_yy - date2_yy) * 12 + (date1_mm - date2_mm);
+            let diff_DD = date1_dd - date2_dd;
+
+            if (diff_DD < 0) {
+                diff_MM = diff_MM - 1;
+                diff_DD = diff_DD + new Date(date2_yy, date2_mm, 0).getDate();
+            }
+            return {
+                "MM": diff_MM,
+                "DD": diff_DD
+            };
+        };
+
+        let _getMyAge = function (idNum) {
+            let toDay = _getTodayDate();
+            let year = "";
+            let month = "";
+            let day = "";
+            let myYear = ""; 	//생일
+            let myAge = 0; 	//만 나이
+            year = toDay.substring(0, 4);
+            month = toDay.substring(4, 6);
+            day = toDay.substring(6, 8);
+            if (idNum.charAt(6) == '1' || idNum.charAt(6) == '2' || idNum.charAt(6) == '5' || idNum.charAt(6) == '6') {
+                myYear = "19" + idNum.substring(0, 2);
+            } else {
+                myYear = "20" + idNum.substring(0, 2);
+            }
+            if (Number(month) > Number(idNum.substring(2, 4))) {
+                myAge = Number(year) - Number(myYear);
+            } else if (Number(month) == Number(idNum.substring(2, 4))) {
+                if (Number(day) > Number(idNum.substring(4, 6))) {
+                    myAge = Number(year) - Number(myYear);
+                } else {
+                    myAge = Number(year) - (Number(myYear) + 1);
+                }
+            } else {
+                myAge = Number(year) - (Number(myYear) + 1);
+            }
+            return myAge;
+        };
+
+        let _getDatepicker = function (obj, opt) {
+
+            let titleText = "달력";
+            if (obj.attr('title')) {
+                titleText = obj.attr('title') + " " + titleText;
+            } else if (obj.attr('id')) {
+                titleText = $('label[for="' + obj.attr('id') + '"]').text() + " " + titleText;
+            }
+
+            let _datepickerAddCaption = function () {
+                $('.ui-datepicker-prev, .ui-datepicker-next').attr('href', 'javascript:void(0);');
+                $('.ui-datepicker-calendar').prepend('<caption>달력</caption>');
+                $('.ui-state-active').attr('title', '선택됨');
+                $('.ui-datepicker-today a').attr('title', '오늘');
+                $('.ui-datepicker-today .ui-state-active').attr('title', '오늘(선택됨)');
+                $('.ui-datepicker-year').attr('title', '년');
+                $('.ui-datepicker-month').attr('title', '월');
+                $('.ui-icon-circle-triangle-w').remove();
+                $('.ui-icon-circle-triangle-e').remove();
+                $('#ui-datepicker-div').find('a').first().focus();
+            };
+
+            let _opt = {
+                dateFormat: 'yy.mm.dd.',
+                changeMonth: true,
+                changeYear: true,
+                showMonthAfterYear: true,
+                showOn: "button",
+                buttonText: titleText,
+                buttonImage: "/resources/img/common/ico_datepicker.png",
+                buttonImageOnly: false,
+
+                // 추가 옵션
+                showButtonPanel: true,
+                closeText: "닫기",
+
+                // 한글화
+                prevText: '이전 달',
+                nextText: '다음 달',
+                monthNames: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'],
+                monthNamesShort: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'],
+                dayNames: ['일', '월', '화', '수', '목', '금', '토'],
+                dayNamesShort: ['일', '월', '화', '수', '목', '금', '토'],
+                dayNamesMin: ['일', '월', '화', '수', '목', '금', '토'],
+                yearSuffix: '년',
+                beforeShow: function (input, inst) {
+                    setTimeout(_datepickerAddCaption, 100);
+                    if (inst.settings.setMinMaxDate) inst.settings.setMinMaxDate();
+                },
+                onChangeMonthYear: function () {
+                    setTimeout(_datepickerAddCaption, 100);
+                },
+                onClose: function () {
+                    obj.next('.ui-datepicker-trigger').focus();
+                }
+            };
+
+            if (opt) _opt = $.extend(_opt, opt);
+            obj.wrap('<span class="datepicker"></span>').datepicker(_opt)
+                .next('.ui-datepicker-trigger').children('img').removeAttr('title');
+        };
+
+        let _formatDate = function (date, delimiter, isIncludeTime, timeDelimiter) {
+            let returnValue = "";
+            try {
+                if (!YTHIPutil.isEmpty(date)) {
+                    let str = date.toString().replace(/[\-\:\. ]/g, '');
+                    if ($.isNumeric(date)) str = new String(date);
+                    let y = str.substr(0, 4),
+                        m = str.substr(4, 2),
+                        d = str.substr(6, 2);
+
+
+                    returnValue = (delimiter) ? (y + delimiter + m + delimiter + d) : (y + '.' + m + '.' + d);
+                    if (YTHIPutil.validate.isBoolean(isIncludeTime) && str.length > 8) {
+                        let h = str.substr(8, 2),
+                            i = str.substr(10, 2),
+                            s = str.substr(12, 2);
+
+                        returnValue += ' ' + ((timeDelimiter) ? (h + timeDelimiter + i + timeDelimiter + s) : (h + ':' + i + ':' + s));
+                    }
+                }
+            } catch (e) {
+                console.log(e);
+            }
+            return returnValue;
+        };
+
+        let _parseDate = function (date, delimiter) {
+            let str = date;
+            if ($.isNumeric(date)) str = new String(date);
+            let y = str.substr(0, 4),
+                m = str.substr(4, 2) - 1,
+                d = str.substr(6, 2);
+
+            if (delimiter) {
+                return new Date(y + delimiter + m + delimiter + d);
+            } else {
+                return new Date(y, m, d);
+            }
+        };
+
+        let _fixDateTime = function (dateTime) {
+            return (YTHIPutil.isEmpty(dateTime)) ? null : new Date(+new Date(dateTime) + 3240 * 10000).toISOString().replace('T', ' ').replace(/\..*/, '');
+        }
+
+        let _makeCarlendar = function ($obj, ymChangeFn, clickFn, prmYm) {
+            $obj.empty();
+
+            let toDay = new Date();
+            let [yyyy, mm] = (YTHIPutil.isEmpty(prmYm) ? "" : prmYm).split("-");
+            if (!YTHIPutil.isEmpty(yyyy) && !YTHIPutil.isEmpty(mm) && mm > 0 && mm < 13) toDay = new Date(yyyy + '-' + mm);
+            //console.log("toDay : " + YTHIPutil.date.fixDateTime(toDay));
+            let toDate = {};
+            toDate.YYYY = toDay.getFullYear();
+            toDate.MM = toDay.getMonth();
+            toDate.DD = toDay.getDate();
+            toDay.setDate(1);
+            toDate.startDay = toDay.getDay();
+            toDay.setMonth(toDay.getMonth() + 1); // 1월의 다음달인 2월
+            toDay.setDate(0);
+            toDate.endDay = toDay.getDate();
+            toDate.strYYYY = toDate.YYYY.toString();
+            toDate.strMM = ('0' + (toDate.MM + 1)).slice(-2);
+            toDate.strDD = ('0' + toDate.DD).slice(-2);
+            //console.log(toDate);
+
+            //header
+            $obj.append('<div class="datepicker-head"></div>');
+            $("div", $obj).append('<button type="button" class="btn-cal-move prev"><span class="sr-only">이전 달</span></button>');
+            $("div", $obj).append('<button type="button" class="btn-cal-switch year">' + toDate.strYYYY + '년</button>');
+            $("div", $obj).append('<button type="button" class="btn-cal-switch month">' + toDate.strMM + '월</button>');
+            $("div", $obj).append('<button type="button" class="btn-cal-move next"><span class="sr-only">다음 달</span></button>');
+
+            //body
+            $obj.append('<div class="datepicker-body"><div class="datepicker-tbl-wrap"></div></div>');
+            let $tblObj = $('<table class="datepicker-tbl"><thead><tr><th scope="col">Su</th><th scope="col">Mo</th><th scope="col">Tu</th><th scope="col">We</th><th scope="col">Th</th><th scope="col">Fr</th><th scope="col">Sa</th></tr></thead><tbody></tbody></table>');
+
+            let $html = '';
+            for (let i = 0; i < toDate.endDay + toDate.startDay; i++) {
+                //console.log(i + ' : ' + i%7);
+                if (i % 7 === 0) $html += '<tr>';
+                let thisDay = (i + 1 - toDate.startDay);
+                thisDay = (thisDay < 1) ? 1 : thisDay;
+
+                let strToday = YTHIPutil.date.getTodayDate();
+                let strThisDay = toDate.strYYYY + '' + toDate.strMM + '' + ('0' + thisDay).slice(-2);
+
+                let today = (strToday === strThisDay) ? 'today' : '';
+                let old = (parseInt(strToday) > parseInt(strThisDay)) ? 'old' : '';
+                if (i >= toDate.startDay) $html += '<td class="' + today + ' ' + old + '" data-ymd="' + strThisDay + '"><button type="button" class="btn-set-date">' + thisDay + '</button></td>';
+                else $html += '<td class="old"></td>'
+                if (i % 7 === 6) $html += '</tr>';
+            }
+            //console.log($html);
+            $("tbody", $tblObj).append($html);
+            $("div.datepicker-tbl-wrap", $obj).append($tblObj);
+
+            let $pickerHtml = '';
+            $pickerHtml += '<div class="datepicker-conts datepicker-year-wrap">';
+            $pickerHtml += '    <ul class="sel year">';
+            for (let y = parseInt(YTHIPutil.date.getTodayDate().substr(0, 4)); y >= 2020; y--) {
+                $pickerHtml += '        <li><button type="button" class="btn btn_selyear" data-y="' + y + '">' + y + '</button></li>';
+            }
+            $pickerHtml += '    </ul>';
+            $pickerHtml += '</div>';
+
+            $pickerHtml += '<div class="datepicker-conts datepicker-mon-wrap">';
+            $pickerHtml += '    <ul class="sel month">';
+            for (let m = 1; m <= 12; m++) {
+                $pickerHtml += '        <li><button type="button" class="btn btn_selmonth" data-m="' + (m - 1) + '">' + (('0' + m)).slice(-2) + '월</button></li>';
+            }
+            $pickerHtml += '    </ul>';
+            $pickerHtml += '</div>';
+            $("div.datepicker-body", $obj).append($pickerHtml);
+
+            setTimeout(function () {
+                if ($.type(ymChangeFn) === "function") ymChangeFn();
+            }, 100);
+
+
+            // 키바인딩
+            $('.datepicker-wrap').each(function () {
+                const $e = $(this);
+                const $yearBtn = $e.find('.btn-cal-switch.year');
+                const $monBtn = $e.find('.btn-cal-switch.month');
+                const $nextBtn = $e.find('.btn-cal-move.next'); // next 버튼 선택자
+
+                let activeLayer; // 변수 선언
+
+                $yearBtn.on('click', function () { // 년도 레이어 토글
+                    const $yearLayer = $e.find('.datepicker-year-wrap');
+                    toggleLayer($yearLayer);
+                });
+
+                $monBtn.on('click', function () { // 월 레이어 토글
+                    const $monLayer = $e.find('.datepicker-mon-wrap');
+                    toggleLayer($monLayer);
+                });
+
+                function toggleLayer($layer) {
+                    if (activeLayer && activeLayer.is($layer)) {
+                        // 이미 활성화된 경우 비활성화
+                        activeLayer.removeClass('active').attr('aria-hidden', 'true');
+                        activeLayer = null;
+                    } else {
+                        // 다른 레이어가 활성화되어 있다면 비활성화
+                        if (activeLayer) {
+                            activeLayer.removeClass('active').attr('aria-hidden', 'true');
+                        }
+                        // 새로운 레이어 활성화
+                        activeLayer = $layer.addClass('active').attr('tabindex', '0').attr('aria-hidden', 'false');
+                        setTimeout(() => {
+                            activeLayer.focus();
+                        }, 50);
+                    }
+                }
+
+                // 키보드 네비게이션
+                $('.datepicker-wrap', $obj).on('keydown', function (e) {
+                    if (e.key === 'Tab' && activeLayer) {
+                        const $focusableElements = activeLayer.find('a, button, [tabindex]:not([tabindex="-1"])');
+                        const $firstFocusable = $focusableElements.first();
+                        const $lastFocusable = $focusableElements.last();
+
+                        if (e.shiftKey) { // Shift + Tab
+                            if (document.activeElement === $firstFocusable[0]) {
+                                e.preventDefault();
+                                $nextBtn.focus(); // 첫 번째 포커스 가능 요소에서 Shift + Tab 시 next 버튼으로 이동
+                            }
+                        } else { // Tab
+                            if (document.activeElement === $lastFocusable[0]) {
+                                e.preventDefault();
+                                $nextBtn.focus(); // 마지막 포커스 가능 요소에서 Tab 시 next 버튼으로 이동
+                            }
+                        }
+                    }
+                });
+            });
+
+            $("button.btn-cal-move", $obj).off("click").YTHIPon("click", function () {
+                if ($(this).hasClass('prev')) {
+                    let prevDay = new Date(toDate.YYYY, toDate.MM, 1);
+                    prevDay.setMonth(prevDay.getMonth() - 1);
+                    YTHIPutil.date.makeCarlendar($obj, ymChangeFn, clickFn, prevDay.getFullYear() + '-' + ('0' + (prevDay.getMonth() + 1)).slice(-2));
+                }
+
+                if ($(this).hasClass('next')) {
+                    let nextDay = new Date(toDate.YYYY, toDate.MM, 1);
+                    nextDay.setMonth(nextDay.getMonth() + 1);
+                    YTHIPutil.date.makeCarlendar($obj, ymChangeFn, clickFn, nextDay.getFullYear() + '-' + ('0' + (nextDay.getMonth() + 1)).slice(-2));
+                }
+            });
+
+            $("button.btn_selyear, button.btn_selmonth", $obj).off("click").YTHIPon("click", function () {
+                let yyyy, mm = "";
+                if ($(this).hasClass("btn_selyear")) {
+                    yyyy = $(this).data("y");
+                    mm = toDate.MM;
+                }
+                if ($(this).hasClass("btn_selmonth")) {
+                    yyyy = toDate.YYYY;
+                    mm = $(this).data("m");
+                }
+
+                let selDay = new Date(yyyy, mm, 1);
+                YTHIPutil.date.makeCarlendar($obj, ymChangeFn, clickFn, selDay.getFullYear() + '-' + ('0' + (selDay.getMonth() + 1)).slice(-2));
+            });
+
+            $("table.datepicker-tbl td > button", $obj).off("click").YTHIPon("click", function () {
+                $(this).parents("tbody").find("td").removeClass("period start end");
+
+                if (!$(this).parent("td").hasClass("old")) {
+                    $(this).parent("td").addClass("period start end");
+                    if ($.type(clickFn) === "function") clickFn($(this).parent("td").data("ymd"));
+                }
+            });
+
+        }
+
+        let _getSrchNGDday = function (item) {
+            if (item.aplyPrdSeCd === '0057002') item.aplyPrdSttsCstmNo = '1';
+            else {
+                if (!YTHIPutil.isEmpty(item.aplyPrdEndYmd)) item.aplyPrdSttsCstmNo = '2';
+                else item.aplyPrdSttsCstmNo = '3';
+            }
+            return YTHIPutil.date.getPolicyDday(item);
+        }
+
+        let _getSrchNGPeriod = function (item) {
+            if (item.aplyPrdSeCd === '0057002') item.aplyPrdSttsCstmNo = '1';
+            else {
+                if (!YTHIPutil.isEmpty(item.aplyPrdEndYmd) && new Date(item.aplyPrdEndYmd) > new Date()) item.aplyPrdSttsCstmNo = '2';
+                else item.aplyPrdSttsCstmNo = '3';
+            }
+            return YTHIPutil.date.getPolicyPeriod(item);
+        }
+
+        let _getPolicyDday = function (item) {
+            if (item.aplyPrdSttsCstmNo === '1') return '<span class="d-day">상시</span>';// 상시일경우
+            if (item.aplyPrdSttsCstmNo === '3') return '<span class="d-day">마감</span>'; // 마감상태면 마감
+
+            const closeSDate = item.lastAplyPrdBgngYmd;
+            const closeEDate = item.lastAplyPrdEndYmd;
+
+            const sDate = item.aplyPrdBgngYmd;
+            const eDate = item.aplyPrdEndYmd;
+
+            let today = new Date();
+
+            // 최근 마감건이 존재할경우 오늘이 종료일자 이전일때
+            if (!YTHIPutil.isEmpty(closeSDate) && !YTHIPutil.isEmpty(closeEDate)) {
+                let tmpTarget = new Date(closeEDate.substring(0, 4) + '-' + closeEDate.substring(4, 6) + '-' + closeEDate.substring(6, 8));
+                let tmpTargetDifference = today - tmpTarget;
+                let tmpTargetLeft = Math.ceil(tmpTargetDifference / (1000 * 3600 * 24));
+                if (tmpTargetLeft < 2) return '<span class="d-day">마감</span>';
+            }
+
+            if (!YTHIPutil.isEmpty(sDate) && !YTHIPutil.isEmpty(eDate)) {
+                // 목표 날짜를 Date 객체로 변환
+                let stTarget = new Date(sDate.substring(0, 4) + '-' + sDate.substring(4, 6) + '-' + sDate.substring(6, 8));
+                let edTarget = new Date(eDate.substring(0, 4) + '-' + eDate.substring(4, 6) + '-' + eDate.substring(6, 8));
+
+                // 목표 날짜와 현재 날짜의 차이를 계산 (밀리초 단위)
+                let stTimeDifference = stTarget - today;
+                let edTimeDifference = edTarget - today;
+
+                // 밀리초를 일(day) 단위로 변환
+                let stDaysLeft = Math.ceil(stTimeDifference / (1000 * 3600 * 24));
+                let edDaysLeft = Math.ceil(edTimeDifference / (1000 * 3600 * 24));
+
+                // D-Day 출력
+                //if (stDaysLeft >= 0) return '<span class="d-day">D-' + stDaysLeft + '</span>';
+                //else {
+                //    if(edDaysLeft >= 0) return '<span class="d-day">D-day</span>';
+                //    else return '<span class="d-day">마감</span>';
+                //}
+                if (stDaysLeft > 0) {
+                    return '<span class="d-day wait">오픈예정</span>';
+                } else {
+                    if (edDaysLeft > 0) {
+                        return '<span class="d-day">신청마감 D-' + edDaysLeft + '</span>';
+                    } else if (edDaysLeft === 0) {
+                        return '<span class="d-day">신청마감 D-day</span>';
+                    } else {
+                        return '<span class="d-day">마감</span>';
+                    }
+                }
+            } else {
+                return '<span class="d-day">-</span>';
+            }
+        }
+
+        let _getPolicyDetailDday = function (item) {
+            if (item.aplyPrdSttsCstmNo === '1') return '<span class="btn-state09">상시</span>';// 상시일경우
+            if (item.aplyPrdSttsCstmNo === '3') return '<span class="btn-state09">마감</span>'; // 마감상태면 마감
+
+            const closeSDate = item.lastAplyPrdBgngYmd;
+            const closeEDate = item.lastAplyPrdEndYmd;
+
+            const sDate = item.aplyPrdBgngYmd;
+            const eDate = item.aplyPrdEndYmd;
+
+            let today = new Date();
+
+            // 최근 마감건이 존재할경우 오늘이 종료일자 이전일때
+            if (!YTHIPutil.isEmpty(closeSDate) && !YTHIPutil.isEmpty(closeEDate)) {
+                let tmpTarget = new Date(closeEDate.substring(0, 4) + '-' + closeEDate.substring(4, 6) + '-' + closeEDate.substring(6, 8));
+                let tmpTargetDifference = today - tmpTarget;
+                let tmpTargetLeft = Math.ceil(tmpTargetDifference / (1000 * 3600 * 24));
+                if (tmpTargetLeft < 2) return '<span class="btn-state09">마감</span>';
+            }
+
+            if (!YTHIPutil.isEmpty(sDate) && !YTHIPutil.isEmpty(eDate)) {
+                // 목표 날짜를 Date 객체로 변환
+                let stTarget = new Date(sDate.substring(0, 4) + '-' + sDate.substring(4, 6) + '-' + sDate.substring(6, 8));
+                let edTarget = new Date(eDate.substring(0, 4) + '-' + eDate.substring(4, 6) + '-' + eDate.substring(6, 8));
+
+                // 목표 날짜와 현재 날짜의 차이를 계산 (밀리초 단위)
+                let stTimeDifference = stTarget - today;
+                let edTimeDifference = edTarget - today;
+
+                // 밀리초를 일(day) 단위로 변환
+                let stDaysLeft = Math.ceil(stTimeDifference / (1000 * 3600 * 24));
+                let edDaysLeft = Math.ceil(edTimeDifference / (1000 * 3600 * 24));
+
+                // D-Day 출력
+                //if (stDaysLeft >= 0) return '<span class="btn-state09">D-' + stDaysLeft + '</span>';
+                //else {
+                //    if(edDaysLeft >= 0) return '<span class="btn-state09">D-day</span>';
+                //    else return '<span class=""btn-state09"">마감</span>';
+                //}
+                if (stDaysLeft > 0) {
+                    return '<span class="btn-state02">오픈예정</span>';
+                } else {
+                    if (edDaysLeft > 0) {
+                        return '<span class="btn-state09">신청마감 D-' + edDaysLeft + '</span>';
+                    } else if (edDaysLeft === 0) {
+                        return '<span class="btn-state09">신청마감 D-day</span>';
+                    } else {
+                        return '<span class="btn-state09">마감</span>';
+                    }
+                }
+            } else {
+                return '<span class="btn-state09">-</span>';
+            }
+        }
+
+        let _getPolicyPeriod = function (item) {
+            if (item.aplyPrdSttsCstmNo === '1') return '상시';// 상시일경우
+            if (item.aplyPrdSttsCstmNo === '3') return '마감'; // 마감상태면 마감
+
+            const sDate = item.aplyPrdBgngYmd;
+            const eDate = item.aplyPrdEndYmd;
+
+            let today = new Date();
+            let edTarget = new Date(eDate.substring(0, 4) + '-' + eDate.substring(4, 6) + '-' + eDate.substring(6, 8));
+
+            let edTimeDifference = edTarget - today;
+
+            let edDaysLeft = Math.ceil(edTimeDifference / (1000 * 3600 * 24));
+
+            if (!YTHIPutil.isEmpty(sDate) && !YTHIPutil.isEmpty(eDate)) {
+                if (edDaysLeft < 0) {
+                    return '마감';
+                }
+                return YTHIPutil.format.dashYMD(item.aplyPrdBgngYmd) + '~' + YTHIPutil.format.dashYMD(item.aplyPrdEndYmd);
+            } else {
+                return '-';
+            }
+        }
+
+        return {
+            convertDayFromJumin: _convertDayFromJumin,
+            getHoliday: _getHoliday,
+            inHoliday: _inHoliday,
+            inWeekendHoliday: _inWeekendHoliday,
+            getTodayDate: _getTodayDate,
+            getTime: _getTime,
+            getDateTime: _getDateTime,
+            getDayOfWeek: _getDayOfWeek,
+            addDays: _addDays,
+            calDate: _calDate,
+            getMyAge: _getMyAge,
+            getDatepicker: _getDatepicker,
+            formatDate: _formatDate,
+            parseDate: _parseDate,
+            fixDateTime: _fixDateTime,
+            makeCarlendar: _makeCarlendar,
+            getSrchNGDday: _getSrchNGDday,
+            getSrchNGPeriod: _getSrchNGPeriod,
+            getPolicyDday: _getPolicyDday,
+            getPolicyDetailDday: _getPolicyDetailDday,
+            getPolicyPeriod: _getPolicyPeriod
+        };
+    }();
+    /**========================================================================
+     *                            날짜/시간 관련 유틸 - 끝
+     *========================================================================*/
+
+
+    /**========================================================================
+     *                            유효성 검사 관련 유틸 - 시작
+     *========================================================================*/
+    let _validate = function () {
+
+        /**
+         Function	: YTHIPutil.validate.getOnlyNumber(val)
+         Description	: 숫자를 제외한 모든 문자를 제거
+         Parameter	: - val : 문자열
+         Examples	: > YTHIPutil.validate.getOnlyNumber('가나다123abc456')
+         Returns		: "123456"
+         Notes		: 숫자를 제외한 모든 문자를 제거 후 리턴
+         */
+        let _getOnlyNumber = function (val) {
+            return $.trim(val).replace(/[^\d]/g, '');
+        };
+
+        /**
+         Function	: YTHIPutil.validate.inputNumberCheck($inpObject)
+         Description	: 입력한 데이터의 숫자여부 체크
+         Parameter	: - $inpObject : inputbox selector
+         : - isDate : 날짜여부
+         Examples	: > YTHIPutil.validate.inputNumberCheck($('#_testInputNumberCheck'))
+         Returns		: true/false
+         Notes		: 숫자 이외의 문자 입력시 리턴메세지
+         : 단, '-,.' 의 문자는 예외처리된다. (날짜의 '-', 금액의 천단위 ',' , 이율의 소수점 '.' 등은 예외처리 한다.)
+         */
+        let _inputNumberCheck = function ($inpObject, isDate) {
+            let inpText = $inpObject.val();
+            if (!_isNumeric(inpText.replace(/[-,\.]/g, ''))) {
+                _inputBack(isDate, inpText, $inpObject);
+                let msg = '숫자만 입력하세요.';
+                alert(msg);
+                return false;
+            }
+            return true;
+        };
+
+        /**
+         Function	: YTHIPutil.validate.inputIntegerCheck($inpObject)
+         Description	: 입력한 데이터의 자연수여부 체크
+         Parameter	: - $inpObject : inputbox selector
+         Examples	: > YTHIPutil.validate.inputIntegerCheck($('#_testInputNumberCheck'))
+         Returns		: true/false
+         Notes		: 숫자 이외의 문자 입력시 리턴메세지
+         */
+        let _inputIntegerCheck = function ($inpObject, isDate) {
+            let inpText = $inpObject.val();
+            if (!_isNumeric(inpText) || (inpText.length == 1 && inpText == '0')) {
+                _inputBack(isDate, inpText, $inpObject);
+                let chkMsg = '0 이상의 정수를 입력하세요'
+                alert(chkMsg);
+                return false;
+            }
+            return true;
+        };
+
+        /**
+         Function	: YTHIPutil.validate.inputNumberCheckAmt($inpObject)
+         Description	: 금액 체크
+         Parameter	: - $inpObject : inputbox selector
+         Examples	: > YTHIPutil.validate.inputNumberCheckAmt($('#_testInputNumberCheck'))
+         Returns		: true/false
+         Notes		: 입력한 숫자에 3자리 수마다 ','를 찍어서 변환.
+         */
+        let _inputNumberCheckAmt = function ($inpObject) {
+            let inpText = $inpObject.val() + '';
+            inpText = inpText.replace(/[-,\.]/g, '')
+            if (!_isNumeric(inpText)) {
+                alert('숫자만 입력해주시기 바랍니다.');
+                $inpObject.val(YTHIPutil.format.insertComma(_getOnlyNumber(inpText)));
+                return false;
+            }
+            $inpObject.val(YTHIPutil.format.insertComma(inpText));
+            return true;
+        };
+
+        /**
+         Function : 숫자입력 Key Up
+         Note : 숫자입력시 입력된 값을 확인
+         > YTHIPutil.validate.inputNumberKeyUpEvent($('#_testInputNumberCheck'))
+         */
+        let _inputNumberKeyUpEvent = function ($this, $next, len) {
+            if (_inputNumberCheck($this)) {
+                if (len == undefined) {
+                    return;
+                }
+            }
+        };
+
+        /**
+         Function : 전화번호 숫자입력 Key Up
+         Note : 숫자입력시 입력된 값을 확인. 정수(음수제외)만 가능 (전화번호에서 사용)
+         */
+        let _inputTelNumberKeyUpEvent = function ($inpObject) {
+            let inpText = $inpObject.val();
+            inpText = inpText.replace(/[-]/g, '');
+            if (!_isNumeric(inpText)) {
+                _inputBack(undefined, inpText, $inpObject);
+                let msg = '숫자만 입력하세요.';
+                alert(msg);
+                return false;
+            }
+            return true;
+        };
+
+        /**
+         Function : 숫자여부 체크
+         Note : 입력된 값의 숫자 여부 체크
+         YTHIPutil.validate.isNumeric('12345')
+         */
+        let _isNumeric = function (s) {
+            for (let i = 0; i < s.length; i++) {
+                let c = s.substr(i, 1);
+                if (c < '0' || c > '9') {
+                    return false;
+                }
+            }
+            return true;
+        };
+
+        /**
+         Function : 입력 롤백
+         Note : 입력된 문자열 체크 오류시 입력된 문자 제거
+         YTHIPutil.validate.inputBack
+         */
+        let _inputBack = function (isDate, strValue, $control) {
+            let retValue = _parse.parseNumber(strValue.substr(0, strValue.length - 1), isDate, 'yyyymmdd');
+            $control.val(retValue);
+
+            //mobile 환경에서 문제가 되므로 삭제
+            //$control.focus();
+        };
+
+
+        /**
+         Function : Null check
+         Note : 전달 값이 Null인지 Check 하여, Null이 아닐 경우 추가되는 문구를 포함하여 전달 한다.
+         */
+        let _isNull = function (val, lc, rc) {
+            if (val) {
+                let ret = val;
+                if (lc) {
+                    ret = lc + ret;
+                }
+                if (rc) {
+                    ret = ret + rc;
+                }
+                return ret;
+            } else {
+                return '';
+            }
+        };
+
+        let _isBoolean = function (is) {
+            if (is === undefined || is === null || is === "" || is === false) {
+                return false;
+            } else {
+                return true;
+            }
+        }
+
+        /**
+         Function : 입력값 길이 check
+         Note : 전달받은 JQuery Object의 값의 길이를 체크한다.
+         */
+        let _checkMaxLength = function ($checkObj) {
+            if ($checkObj == undefined || $checkObj == '') {
+                alert('입력값을 확인하시오.');
+                return false;
+            }
+
+            let iValueLen = $checkObj.length;
+            let maxLen = parseInt($checkObj.attr('maxlength'), 10);
+            if (iValueLen != maxLen) {
+                alert('입력값을 확인하시오.');
+                return false;
+            }
+            return true;
+        };
+
+
+        /**
+         Function : 날짜 체크
+         Note : 날짜를 비교한다.
+         */
+        let _checkStartEndDate = function ($startObj, $endObj, sDateMinDate, eDateMaxDate) {
+            let startDate = new Date();
+            let leaveDate = new Date();
+            let tempStartDate;
+            let tempLeaveDate;
+            let dateFormat = $startObj.data('dateFormat');
+            let dilimeter;
+            if (dateFormat)
+                dilimeter = dateFormat.substr(2, 1);
+            else
+                dilimeter = '.';
+
+            let lastDelimeter = "";
+            if (dilimeter == ".") {
+                lastDelimeter = ".";
+            }
+            if ($startObj != undefined) {
+                tempStartDate = _getOnlyNumber($startObj.val());
+                let startYear = tempStartDate.length == 8 ? tempStartDate.substr(0, 4) : '';
+                let startMonth = tempStartDate.length == 8 ? tempStartDate.substr(4, 2) : '';
+                let startDay = tempStartDate.length == 8 ? tempStartDate.substr(6, 2) : '';
+                if (startYear == '' || startMonth == '' || startDay == '') {
+                    alert('시작일 날짜입력 오류입니다.', $startObj);
+                    $startObj.val(YTHIPutil.date.getTodayDate(null, dilimeter));
+                    return false;
+                }
+                $startObj.val(startYear + dilimeter + startMonth + dilimeter + startDay + lastDelimeter);
+            }
+
+            if ($endObj != undefined) {
+                tempLeaveDate = _getOnlyNumber($endObj.val());
+                let endYear = tempLeaveDate.length == 8 ? tempLeaveDate.substr(0, 4) : '';
+                let endMonth = tempLeaveDate.length == 8 ? tempLeaveDate.substr(4, 2) : '';
+                let endDay = tempLeaveDate.length == 8 ? tempLeaveDate.substr(6, 2) : '';
+                if (endYear == '' || endMonth == '' || endDay == '') {
+                    alert('종료일 날짜입력 오류입니다.', $endObj);
+                    $endObj.val(YTHIPutil.date.getTodayDate(null, dilimeter));
+                    return false;
+                }
+                $endObj.val(endYear + dilimeter + endMonth + dilimeter + endDay + lastDelimeter);
+            }
+
+            if (tempStartDate && tempLeaveDate) {
+                if (tempLeaveDate < tempStartDate) {
+                    alert('시작일이 종료일 보다 클 수 없습니다.', $startObj);
+                    $startObj.val(YTHIPutil.date.getTodayDate(null, dilimeter));
+                    $endObj.val(YTHIPutil.date.getTodayDate(null, dilimeter));
+                    return false;
+                }
+            }
+            if (sDateMinDate && sDateMinDate > tempStartDate) {
+                alert('최소 시작일 보다 작을 수 없습니다.', $startObj);
+                $startObj.val(YTHIPutil.date.getTodayDate(null, dilimeter));
+                return false;
+            }
+            if (eDateMaxDate && eDateMaxDate > tempLeaveDate) {
+                alert('최대 종료일 보다 클 수 없습니다.', $endObj);
+                $endObj.val(YTHIPutil.date.getTodayDate(null, dilimeter));
+                return false;
+            }
+            return true;
+        };
+
+
+        /**
+         Function : 날짜 월 유효성 검사
+         Note : 날짜 월 유효성 검사를 한다.
+         YTHIPutil.validate.checkMonthDate('02')
+         */
+        let _checkMonthDate = function (month) {
+            let val = YTHIPutil.parse.parseInt(month);
+            if (0 < val && 13 > val) {
+                return true;
+            } else {
+                return false;
+            }
+        };
+
+        /**
+         Function : 날짜 일 유효성 검사
+         Note : 날짜 일 유효성 검사를 한다.
+         YTHIPutil.validate.checkDayDate('29','02','2020')
+         */
+        let _checkDayDate = function (day, month, year) {
+            let val = YTHIPutil.parse.parseInt(day);
+            let lastDay = 32;
+
+            if (0 >= val) {
+                return false;
+            } else {
+                if (undefined != month && '' != month) {
+
+                    if (undefined != year && '' != year) {
+                        lastDay = new Date(year + '', month + '', 0).getDate();
+                        lastDay += 1;
+                    } else {
+                        if (YTHIPutil.parse.parseInt(month) === 2) {
+                            lastDay = 30;
+                        }
+                    }
+                }
+
+                if (lastDay > val) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+
+
+        };
+
+        /**
+         Function : 날짜 유효성 검사
+         Note : 날짜 유효성 검사를 한다.
+         YTHIPutil.validate.checkDate('20200220','yyyymmdd')
+         arg :
+         ctype
+         - 'yyyymmdd'
+         - 'yyyymm'
+         - 'yymmdd'
+         - 'mmdd'
+         */
+        let _checkDate = function (inDate, cType) {
+            let ret = false;
+            let val = 0;
+            let year = 0;
+            let month = 0;
+            let day = 0;
+
+            if (undefined === inDate || '' === inDate) {
+                YTHIPutil.log('Check Undefined error');
+                return ret;
+            }
+
+            val = _getOnlyNumber(inDate);
+
+            if ('yyyymmdd' === cType) {
+                year = val.substring(0, 4);
+                month = val.substring(4, 6);
+                day = val.substring(6, 8);
+
+                if (_checkMonthDate(month) && _checkDayDate(day, month, year)) {
+                    ret = true;
+                }
+            } else if ('yyyymm' === cType) {
+                year = val.substring(0, 4);
+                month = val.substring(4, 6);
+
+                ret = _checkMonthDate(month);
+            } else if ('mmdd' === cType) {
+                month = val.substring(0, 2);
+                day = val.substring(2, 4);
+
+                if (_checkMonthDate(month) && _checkDayDate(day, month)) {
+                    ret = true;
+                }
+            }
+
+            return ret;
+        };
+
+        /**
+         Function : 현재 날짜 비교 체크
+         Note : 현재 날짜를 비교하여 체크한다.
+         YTHIPutil.validate.checkToDate('20190101','1')
+         arg :
+         ctype
+         - '1' : 현재 날짜 이상 검사
+         - '2' : 현재 날짜 초과 검사
+         - '3' : 현재 날짜 이하 검사
+         - '4' : 현재 날짜 미만 검사
+         */
+        let _checkToDate = function (inDate, cType) {
+            let ret = false;
+            let toDate = YTHIPutil.parse.parseInt(YTHIPutil.date.getTodayDate());
+            let cDate = YTHIPutil.parse.parseInt(inDate);
+
+            if ('1' === cType) {
+                if (toDate <= cDate) {
+                    ret = true;
+                }
+            } else if ('2' === cType) {
+                if (toDate < cDate) {
+                    ret = true;
+                }
+            } else if ('3' === cType) {
+                if (toDate >= cDate) {
+                    ret = true;
+                }
+            } else if ('4' === cType) {
+                if (toDate > cDate) {
+                    ret = true;
+                }
+            }
+
+            return ret;
+        };
+
+        /**
+         Function : 현재 시간 비교 체크
+         Note : 현재 시간을 비교하여 체크한다.
+         YTHIPutil.validate.checkTody('140000','1')
+         arg :
+         cType
+         - '1' : 현재 날짜 이상 검사
+         - '2' : 현재 날짜 초과 검사
+         - '3' : 현재 날짜 이하 검사
+         - '4' : 현재 날짜 미만 검사
+         */
+        let _checkTody = function (inTime, cType) {
+            let ret = false;
+            let toTime = YTHIPutil.parse.parseInt(YTHIPutil.date.getTime());
+            let cTime = YTHIPutil.parse.parseInt(inTime);
+
+            if ('1' === cType) {
+                if (toTime <= cTime) {
+                    ret = true;
+                }
+            } else if ('2' === cType) {
+                if (toTime < cTime) {
+                    ret = true;
+                }
+            } else if ('3' === cType) {
+                if (toTime >= cTime) {
+                    ret = true;
+                }
+            } else if ('4' === cType) {
+                if (toTime > cTime) {
+                    ret = true;
+                }
+            }
+
+            return ret;
+        };
+
+        /**
+         Function: YTHIPutil.validate.typeCheck
+         파라미터의 타입이 원하는 타입인지 체크할 때 사용한다.
+
+         Parameter:
+         - val [all] - 체크하고자하는 변수
+         - type [stirng] - val의 예상되는 타입
+         - valueName [string] - 체크하고자하는 변수의 이름
+
+         Returns:
+         - isMatch [boolean] - 체크하고자하는 변수와 예상값의 일치 여부
+
+         Examples:
+         > YTHIPutil.validate.typeCheck({1:1,2:2}, 'object')
+         :   true
+
+         Notes:
+         - 세번째 파라미터인 valueName은 사용하지 않을 수 있다.
+         - 체크되는 유형은 number, string, boolean, object, function, undefined이다.
+         - 자바스크립트에서 null과 array는 typeof가 object로 반환된다.
+         */
+        let _typeCheck = function (val, type, valueName) {
+            let valType = typeof (val);
+            let isMatch = valType.toLowerCase() == type.toLowerCase();
+
+            if (undefined != valueName && !isMatch) {
+                YTHIPutil.log('[' + valueName + '] type error. [' + valueName + '] 타입은 [' + valType + '] 입니다. 그것은 [' + type + ']이(가) 되어야 합니다.');
+            }
+            return isMatch;
+        };
+
+        /**
+         Spec      : Null Check
+         Parameter : 해당 Object Field.
+         Return    : Boolean - null 이면 true, null 이 아니면 false
+
+         > YTHIPutil.validate.jsNullCheck($('#_testInputNumberCheck').val())
+
+         */
+        let _jsNullCheck = function (Obj, msg) {
+            if (YTHIPutil.validate.typeCheck(Obj, 'object')) {
+                if (Obj == null || Obj.val() == undefined || YTHIPutil.format.trim(Obj.val()) == "") {
+                    if ((typeof msg != 'undefined') && (msg != "")) {
+                        _jsAlert(Obj, msg);
+                    }
+                    return true;
+                } else {
+                    return false;
+                }
+            } else {
+                if (Obj == null || Obj == undefined || YTHIPutil.format.trim(String(Obj)) == "") {
+                    if ((typeof msg != 'undefined') && (msg != "")) {
+                        _jsAlert(Obj, msg);
+                    }
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        };
+
+
+        /**
+         Spec      : 입력필드의 길이체크로직
+         - _jsCheckLenE : Equals 비교
+         - _jsCheckLenB : Big 비교
+         - _jsCheckLenS : Small 비교
+         Parameter : Obj    -> 해당 처리 Obj Field
+         Parameter : len    -> 필드 체크 메세지 길이
+         Parameter : msg    -> 에러 메세지
+         Example   :
+         */
+        let _jsAlert = function (Obj, msg) {
+            alert(msg);
+            if (Obj == null) return;
+
+            if (YTHIPutil.validate.typeCheck(Obj, 'object')) {
+                if (Obj.attr('type') == 'text'
+                    || Obj.attr('type') == 'password'
+                    || Obj.attr('type') == 'tel'
+                    || Obj.attr('type') == 'number') {
+                    Obj.val('');
+                }
+            } else if (YTHIPutil.validate.typeCheck(Obj, 'string')) {
+                Obj = '';
+            }
+
+            return;
+        };
+
+
+        /**
+         * 길이체크 Equals
+         * YTHIPutil.validate.jsCheckLenE('123', 3, '길이가 달라요') <= 메세지 안띄움
+         * YTHIPutil.validate.jsCheckLenE('123', 4, '길이가 달라요') <= 메세지 띄움
+         */
+        let _jsCheckLenE = function (Obj, len, msg) {
+            if (_jsByteLen(Obj) != len) {
+                _jsAlert(Obj, msg);
+                return false;
+            }
+            return true;
+        };
+
+        /**
+         * 길이체크 len 보다 큰 경우 체크
+         * YTHIPutil.validate.jsCheckLenB('123', 3, '입력 길이가 커요') <= 메세지 안띄움
+         * YTHIPutil.validate.jsCheckLenB('123', 2, '입력 길이가 커요') <= 메세지 띄움
+         */
+        let _jsCheckLenB = function (Obj, len, msg) {
+            if (_jsByteLen(Obj) > len) {
+                _jsAlert(Obj, msg);
+                return false;
+            }
+            return true;
+        };
+
+        /**
+         * 길이체크 len 보다 작은 경우 체크
+         * YTHIPutil.validate.jsCheckLenS('123', 2, '입력 길이가 작아요') <= 메세지 안띄움
+         * YTHIPutil.validate.jsCheckLenS('123', 4, '입력 길이가 작아요') <= 메세지 띄움
+         */
+        let _jsCheckLenS = function (Obj, len, msg) {
+            if (_jsByteLen(Obj) < len) {
+                _jsAlert(Obj, msg);
+                return false;
+            }
+            return true;
+        };
+
+        /**
+         * 해당 문자열 바이트 체크
+         * YTHIPutil.validate.jsByteLen('가나다')
+         */
+        let _jsByteLen = function (Obj) {
+            let len = 0;
+            let fbyte;
+            if (YTHIPutil.validate.typeCheck(Obj, 'object')) {
+                fbyte = Obj.val();
+            } else if (YTHIPutil.validate.typeCheck(Obj, 'string')) {
+                fbyte = Obj;
+            }
+
+            let str = '"' + "!,*&^%$#@~;<>()[]{}.:?=\\|`' ";
+            let temp;
+
+            if (fbyte == null) return 0;
+            for (let i = 0; i < fbyte.length; i++) {
+                temp = "" + fbyte.substring(i, i + 1);
+                let c = escape(fbyte.charAt(i));
+                if (c.length == 1) len++;
+                else if (str.indexOf(temp) > -1) len++;
+                else if (c.indexOf("%u") != -1) len += 2;
+            }
+            return len;
+        };
+
+        let _jsCutByte = function (str, maxByte) {
+            if (str && _jsByteLen(str) > maxByte) {
+                let sumLen = 0;
+                let endLen = 0;
+                for (let i = 0; i < str.length; i++) {
+                    let _char = str.charCodeAt(i);
+                    sumLen += _char >> 7 ? 2 : 1;
+                    if (sumLen > maxByte) {
+                        endLen = i;
+                        break;
+                    }
+                }
+                return str.substring(0, endLen);
+            }
+            return str;
+        };
+
+        /**
+         Function  : 특정 문자 삽입
+         Note      : 문자열에 (size-문자열길이) 만큼 특정 문자 삽입
+         > YTHIPutil.validate.jsPushStr('ABC', 10, '@')
+         : "ABC@@@@@@@"
+         */
+        let _jsPushStr = function (str, size, ch) {
+            let len = _jsByteLen(str);
+            let tmp = str;
+            while (size > len) {
+                tmp += ch;
+                len = _jsByteLen(tmp);
+            }
+            return tmp;
+        };
+
+        /**
+         Function    : 특정문자 방지 처리
+         Parameter : 해당 Object Field
+         Parameter : 방지문자열
+         Return    : Boolean  true - 해당 문자열을 포함하는 경우, false - 해당 문자열이 없는경우
+         Example   :
+         YTHIPutil.validate.jsDetectChar('ABC', "!,*&^%$#@~;")
+         */
+        let _jsDetectChar = function (Obj, str) {
+            for (i = 0; i < Obj.length; i++) {
+                if (str.indexOf(Obj.charAt(i)) != -1)
+                    return true;
+            }
+            return false;
+        }
+
+        /**
+         Function  : 값이 '' 또는 ' ' (빈 문자열) 인 경우 체크
+         YTHIPutil.validate.isSpace('') true
+         YTHIPutil.validate.isSpace('   ') true
+         YTHIPutil.validate.isSpace('a') false
+         */
+        let _isSpace = function (strString) {
+            let iBuff
+
+            iBuff = 0;
+            for (let i = 0; i < strString.length; i++) {
+                if (strString.charAt(i) == " ") iBuff = iBuff + 0;
+                else iBuff = iBuff + 1;
+            }
+
+            if (iBuff == 0) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        /**
+         Function  : 한글 입력 Check
+         Note      : 한글이 입력됐는지 Check함(Submit시)
+         Parameter :
+         Return    : Boolean
+         ex) if (!jsCheckHan(frm.sAcctNo, "계좌번호에 한글은 입력할 수 없습니다.")) return false;
+         YTHIPutil.validate.jsCheckHan($inpObject, '한글 입력됨')
+         */
+        let _jsCheckHan = function (Obj, Msg) {
+            let rtn = true;
+            let sTmp = Obj.val();
+
+            for (j = 0; j < sTmp.length; j++) {
+                vAsc = sTmp.charCodeAt(j);
+                if (((vAsc > 47) && (vAsc < 58))   //여기 조건식 문자만 허용
+                    || ((vAsc > 64) && (vAsc < 91))
+                    || ((vAsc > 96) && (vAsc < 123))
+                    || vAsc == 45 || vAsc == 32 || vAsc == 44) { //컴마 : 44
+                    rtn = true;
+                } else { //한글있을때
+                    if (undefined != Msg) {
+                        alert(Msg);
+                    }
+                    Obj.val('');
+
+                    //mobile 환경에서 문제가 되므로 삭제
+                    //Obj.focus();
+                    rtn = false;
+                    break;
+                }
+            }
+            return rtn;
+        };
+
+
+        /**
+         Function : 유효날짜 체크
+         Note     : 날짜를 Check한다 (숫자8자리 입력)
+         Parameter: obj
+         Return   : boolean
+
+         YTHIPutil.validate.jsCheckDate('20190131') true
+         */
+        let _jsCheckDate = function (obj) {
+            let sDate;
+            if (YTHIPutil.validate.typeCheck(obj, 'object')) {
+                sDate = obj.val();
+            } else if (YTHIPutil.validate.typeCheck(obj, 'string')) {
+                sDate = obj;
+            }
+
+            sDate = _getOnlyNumber(sDate);
+
+            if (sDate.length != 8) {
+                return false;
+            }
+            cur_year = sDate.substring(0, 4);
+            cur_mon = sDate.substring(4, 6);
+            cur_day = sDate.substring(6, 8);
+
+            if (cur_mon == "00" || cur_mon > "12") {
+                return false;
+            }
+
+            if (cur_mon == "01" || cur_mon == "03" || cur_mon == "05" || cur_mon == "07" || cur_mon == "08" || cur_mon == "10" || cur_mon == "12") {
+                if (cur_day == "00" || cur_day > "31") {
+                    return false;
+                }
+            } else {
+                if (cur_day == "00" || cur_day > "30") {
+                    return false;
+                }
+            }
+
+            if (cur_mon == "02" && cur_day == "29") {
+                if (!((cur_year % 4 == 0) && ((cur_year % 100 != 0) || (cur_year % 400 == 0)))) {
+                    return false;
+                }
+            } else if (cur_mon == "02" && cur_day > "28") {
+                return false;
+            }
+
+            return true;
+        }
+
+
+        /**
+         Function  : 숫자로만 이루어진 항목여부 체크
+         Parameter : 해당 Object Field
+         Return    : Boolean
+
+         YTHIPutil.validate.jsNumCheck($inpObject, '숫자아님') <= 숫자가 아닐때만 msg 띄움
+         */
+        let _jsNumCheck = function (Obj, msg) {
+
+            let gNumType = /^\d+$/;
+
+            if (undefined == msg || '' == msg) {
+                msg = "숫자만 입력하세요.";
+            }
+
+            if (!gNumType.test(Obj.val())) {
+                _jsAlert(Obj, msg);
+                return false;
+            } else {
+                return true;
+            }
+        }
+        /**
+         * java의 startWith와 같은 기능
+         * 사용 방법
+         * 첫번째 인자 string, 두번째 인자 체크할 문자, 해당하면 true반환 없으면 false 반환
+         *
+         * YTHIPutil.validate.startsWith('01000000000', '010')
+         */
+
+        let _startsWith = function (str, checker) {
+            if (str != null && checker != null && str.length > checker.length) {
+                if (str.toUpperCase().substr(0, checker.toUpperCase().length) == checker.toUpperCase()) {
+                    return true;
+                }
+                return false;
+            } else {
+                return false;
+            }
+        };
+
+        return {
+            getOnlyNumber: _getOnlyNumber,			//
+            inputNumberCheck: _inputNumberCheck,		//
+            inputNumberCheckAmt: _inputNumberCheckAmt,		//
+            inputIntegerCheck: _inputIntegerCheck,		//
+            inputNumberKeyUpEvent: _inputNumberKeyUpEvent,
+            inputTelNumberKeyUpEvent: _inputTelNumberKeyUpEvent,
+            isNumeric: _isNumeric,
+            inputBack: _inputBack,
+            isNull: _isNull,
+            isBoolean: _isBoolean,
+            checkMaxLength: _checkMaxLength,
+            checkStartEndDate: _checkStartEndDate,
+            checkMonthDate: _checkMonthDate,
+            checkDayDate: _checkDayDate,
+            checkDate: _checkDate,
+            checkToDate: _checkToDate,
+            checkTody: _checkTody,
+            typeCheck: _typeCheck,
+            jsNullCheck: _jsNullCheck,
+            jsAlert: _jsAlert,
+            jsCheckLenE: _jsCheckLenE,
+            jsCheckLenB: _jsCheckLenB,
+            jsCheckLenS: _jsCheckLenS,
+            jsByteLen: _jsByteLen,
+            jsPushStr: _jsPushStr,
+            jsDetectChar: _jsDetectChar,
+            isSpace: _isSpace,
+            jsCheckHan: _jsCheckHan,
+            jsCheckDate: _jsCheckDate,
+            jsNumCheck: _jsNumCheck,
+            startsWith: _startsWith,
+            jsCutByte: _jsCutByte
+        };
+
+    }();
+    /**========================================================================
+     *                            유효성 검사 관련 유틸 - 끝
+     *========================================================================*/
+
+
+    /**========================================================================
+     *                            파싱관련 유틸
+     *========================================================================*/
+    let _parse = function () {
+
+        /**
+         parseInt 값 변환시 Nan값 이면 Null을 전달 하거, 두번째 Parameter 값을 전달 한다.
+
+         Parameter : - val : parameter의 val
+         - int : ''일경우 대처 숫자
+
+         Returns : - int형으로 변환한 데이터
+
+         YTHIPutil.parse.parseInt('1412')
+         : 1412
+
+         YTHIPutil.parse.parseInt('abc')
+         : NaN
+
+         */
+        let _int = function (val, intVal) {
+            let ret = 0;
+
+            if (undefined === val || '' === val) {
+                YTHIPutil.log(val);
+                if (undefined != intVal && '' != intVal) {
+                    ret = intVal;
+                } else {
+                    ret = '';
+                }
+            } else {
+                ret = parseInt(val);
+                if (isNaN(ret))
+                    ret = null;
+            }
+
+            return ret;
+        };
+
+        /**
+         parseFloat 값 변환시 Nan값 이면 Null을 전달 하거, 두번째 Parameter 값을 전달 한다.
+         Parameter : - val : parameter의 val
+         - div : 소수점 자리 표시
+         - float : ''일경우 대처 숫자
+
+         Returns: - float형으로 변환한 데이터
+
+         > YTHIPutil.parse.parseFloat('123.11')
+         : 123.11
+
+         > YTHIPutil.parse.parseFloat('abc')
+         : NaN
+         */
+        let _float = function (val, div, floatVal) {
+            let ret = 0;
+
+            if (undefined === val || '' === val) {
+                SUBYTHIPutil.log(val);
+                if (undefined != floatVal && '' != floatVal) {
+                    ret = floatVal;
+                } else {
+                    ret = '';
+                }
+            } else {
+                ret = parseFloat(val);
+                if (undefined != div && '' != div) {
+                    ret = ret / div;
+                }
+            }
+
+            return ret;
+        };
+
+
+        /**
+         Function : 숫자 파싱
+         Note : 숫자를 파싱 한다.
+
+         > YTHIPutil.parse.parseNumber('123-456-789')
+         : "123456789"
+
+         */
+        let _parseNumber = function (val, isDate, dateType) {
+            if (val == undefined || val == '') {
+                return '';
+            }
+            let replaceVal = _validate.getOnlyNumber(val);
+
+            if (isDate && replaceVal.length > 0) {
+                try {
+                    // 이부분은 나중에 Type에 따라 파싱을 다르게 할 수 있도록 바꿔야함.
+                    if (dateType == 'yyyymmdd') {
+                        return replaceVal.substr(0, 4) + '.' + replaceVal.substr(4, 2) + '.' + replaceVal.substr(6, 2);
+                    } else if (dateType == 'mmdd') {
+                        return replaceVal.substr(0, 2) + '.' + replaceVal.substr(2, 2);
+                    } else if (dateType == 'yyyymm') {
+                        return replaceVal.substr(0, 4) + '.' + replaceVal.substr(4, 2);
+                    } else if (dateType == 'yyyy') {
+                        return replaceVal.substr(0, 4);
+                    } else if (dateType == 'yymmdd') {
+                        return replaceVal.substr(2, 2) + '.' + replaceVal.substr(4, 2) + '.' + replaceVal.substr(6, 2);
+                    } else {
+                        return replaceVal;
+                    }
+                } catch (e) {
+                    return replaceVal;
+                }
+            }
+            return replaceVal;
+        };
+
+
+        /**
+         Function : 전화번호 파싱
+         Note :  구분값에 따라 전화번호를 파싱한다.
+         구분값이 없는경우 전화번호에 '-'를 삽입한다.
+         gubun : 0 = 국번
+         1 = 중간번호
+         2 = 끝번호
+
+         > YTHIPutil.parse.parseDisplayTel('01000000000')
+         : "010-0000-0000"
+         */
+        let _parseDisplayTel = function (telNo, gubun) {
+            let retTelNo = '';
+            telNo = _validate.getOnlyNumber(telNo + '');
+
+            if (gubun == undefined || gubun == '') {
+                retTelNo = _telExChgNum(telNo);
+                retTelNo += _validate.isNull(_telMidNum(telNo), '-');
+                retTelNo += _validate.isNull(_telLstNum(telNo), '-');
+            } else {
+                if (gubun == '0') {
+                    retTelNo = _telExChgNum(telNo);
+                } else if (gubun == '1') {
+                    retTelNo = _telMidNum(telNo);
+                } else if (gubun == '2') {
+                    retTelNo = _telLstNum(telNo);
+                } else {
+                    retTelNo = '';
+                }
+            }
+            return retTelNo;
+        };
+
+
+        /**
+         Function : 전화번호 파싱
+         Note : 전화번호 국번을 파싱한다.
+         */
+        let _telExChgNum = function (val) {
+
+            if (val != undefined && val != '') {
+                let replaceTel = _validate.getOnlyNumber(val);
+                replaceTel = '0' + parseInt(replaceTel, 10);
+                if (replaceTel.length > 4 && replaceTel.substring(0, 1) == '0') {
+                    if (replaceTel.length == 12) {
+                        return replaceTel.substring(0, 4);
+                    }
+
+                    let retValue = replaceTel.substring(0, 4);
+
+                    if (retValue == '0130') {
+                        return replaceTel.substring(0, 4);
+                    }
+
+                    retValue = replaceTel.substring(0, 2);
+
+                    if (retValue == '02') {
+                        return replaceTel.substring(0, 2);
+                    } else {
+                        return replaceTel.substring(0, 3);
+                    }
+                }
+            }
+            return '';
+        };
+
+
+        /**
+         Function : 전화번호 파싱
+         Note : 전화번호 앞자리를 파싱한다.
+         */
+        let _telMidNum = function (val) {
+            if (val != undefined && val != '') {
+                let replaceTel = _validate.getOnlyNumber(val);
+                if (replaceTel.length == 9) {
+                    return replaceTel.substring(2, 5);
+                } else if (replaceTel.length == 10) {
+                    if (replaceTel.substring(0, 2) === '02') {
+                        return replaceTel.substring(2, 6);
+                    } else {
+                        return replaceTel.substring(3, 6);
+                    }
+                } else if (replaceTel.length == 11) {
+                    if (replaceTel.substring(0, 4) === '0130') {
+                        return replaceTel.substring(4, 7);
+                    } else {
+                        return replaceTel.substring(3, 7);
+                    }
+                } else if (replaceTel.length == 12) {
+                    return replaceTel.substring(4, 8);
+                }
+            }
+            return '';
+        };
+
+
+        /**
+         Function : 전화번호 파싱
+         Note : 전화번호 뒷자리를 파싱한다.
+         */
+        let _telLstNum = function (val) {
+            if (val != undefined && val != '') {
+                let replaceTel = _validate.getOnlyNumber(val);
+
+                if (replaceTel.length == 9) {
+                    return replaceTel.substring(5, 9);
+                } else if (replaceTel.length == 10) {
+                    return replaceTel.substring(6, 10);
+                } else if (replaceTel.length == 11) {
+                    return replaceTel.substring(7, 11);
+                } else if (replaceTel.length == 12) {
+                    return replaceTel.substring(8, 12);
+                }
+            }
+            return '';
+        };
+
+        /**
+         Function : 주민번호 표시
+         Note : 주민번호 값의 구분자로 '-'을 넣어주며 주민번호 뒷자리를 '*'로 표시한다.
+
+         YTHIPutil.parse.displayRrno('7702101901817')
+
+         */
+        let _displayJumin = function (val) {
+            if (!!val && val.length === 13) {
+                return val.substring(0, 6) + ' - *******';
+            } else {
+                return '';
+            }
+        };
+
+        /**
+         Function : 시간 표시
+         Note : 시간 값의 구분자로 ':'을 넣어준다
+
+         YTHIPutil.parse.displayTime('141200')
+
+         */
+        let _displayTime = function (val) {
+            let replaceVal = _validate.getOnlyNumber(val + '');
+            if (replaceVal) {
+                if (replaceVal.length >= 6) {
+                    return replaceVal.substr(0, 2) + ':' + replaceVal.substr(2, 2) + ':' + replaceVal.substr(4, 2);
+                } else if (replaceVal.length == 4) {
+                    return replaceVal.substr(0, 2) + ':' + replaceVal.substr(2, 2) + ':00';
+                }
+            }
+            return '';
+        };
+
+        /**
+         Function : 우편번호 표시
+         Note : 우편번호 값의 구분자로 '-'을 넣어준다
+         우편번호 체계가 5자리로 변경 되었기때문에 5자일때 어떻게 처리 해야 할것인지 협의 필요
+         */
+        let _displayPsno = function (val) {
+
+            let replaceVal = _validate.getOnlyNumber(val + '');
+
+            if (!!replaceVal && replaceVal.length === 6) {
+                //return replaceVal.substr(0,3) + '-' + replaceVal.substr(3,6);
+                alert('우편번호는 5자리 입니다. \n변경해 주세요.');
+                return;
+            } else {
+                return replaceVal;
+            }
+        };
+
+        return {
+            parseInt: _int,
+            "int": _int,
+            parseFloat: _float,
+            parseNumber: _parseNumber,
+            parseDisplayTel: _parseDisplayTel,
+            displayJumin: _displayJumin,
+            displayTime: _displayTime,
+            displayPsno: _displayPsno
+        };
+    }();
+
+
+    /**========================================================================
+     *
+     *                            포맷관련 유틸
+     *
+     *========================================================================*/
+    let _format = function () {
+
+
+        /**
+         Function	: YTHIPutil.format.insertComma
+         Description	: ',' 문자추가
+         Parameter	: - num [number string] 숫자
+         : - currency [string]
+         : - fixed [boolean] : true/false
+         Examples	: > YTHIPutil.format.insertComma('1000000.00', ' 원', true)
+         :	"1,000,000.00 원"
+         >	YTHIPutil.format.insertComma('1000000.00', ' 원', false)
+         :	"1,000,000 원"
+         Returns		:
+         Notes		: 입력한 숫자에 3자리 수마다 ','를 찍어서 변환.
+         */
+        let _insertComma = function (num, currency, fixed) {
+            num = num + '';
+            let number = '';
+            if (num != undefined && num != null && num != '') {
+                number = parseFloat(num.replace(/,/g, '')) + '';
+
+                let reg = /(^[+-]?\d+)(\d{3})/;
+
+                while (new RegExp(reg).test(number)) {
+                    number = number.replace(reg, '$1' + ',' + '$2');
+                }
+                if ('NaN' === number + '') {
+                    //number = '0';
+                    number = '';
+                }
+
+                if (fixed) { //소수점자리수 강제유지 ex) 1,234.00 = 1,234 -> 1,234.00
+                    if (num.indexOf('.') != -1) {
+                        number = number + num.substring(num.indexOf('.'), num.length);
+                    } else {
+                        number = number;
+                    }
+                }
+            } else {
+                //number = '0';
+                number = '';
+            }
+
+            if (undefined != currency && '' != currency) {
+                number = number + currency;
+            }
+            return number;
+        }
+
+        let _insertDate = function (date, separator) {
+            let val = _validate.getOnlyNumber(date);
+            if (val.length == 6) {
+                return _dashYM(val, separator);
+            } else if (val.length == 8) {
+                return _dashYMD(val, separator);
+            }
+            return val;
+        }
+
+        /**
+         Function : '0'문자추가
+         Note : n 의 자리수가 digit 만큼 될때까지 좌측에 0 추가
+         > YTHIPutil.format.leadingZeros('1000', 10)
+         : "0000001000"
+         */
+        let _leadingZeros = function (n, digits) {
+            let zero = '';
+            let _n = String(n || "");
+            if (_n.length < digits) {
+                let _max = digits - _n.length;
+                for (let i = 0; i < _max; i++)
+                    zero += '0';
+            }
+            return zero + _n;
+        };
+
+        /**
+         Function : 특정문자열추가
+         Note : 원하는 문자열로 정해진길이만큼 뒤에 채우기..
+         > YTHIPutil.format.fillSpaceBack('ASDF', 6) or YTHIPutil.format.fillSpaceBack('ASDF', 6, '')
+         : "ASDF  "
+         > YTHIPutil.format.fillSpaceBack('ASDF', 6, '0')
+         : "ASDF00"
+         > YTHIPutil.format.fillSpaceBack('ASDF', 6, '*')
+         : "ASDF**"
+         */
+        let _fillSpaceBack = function (aNum, len, fill) {
+
+            let str = aNum;
+            let attach = "";
+            let gubun;
+
+            if (fill == null | fill == "") {
+                gubun = " ";
+            } else {
+                //gubun = "0";
+                gubun = fill;
+            }
+
+            if (aNum.length < len) {
+                for (let i = len - aNum.length; i >= 1; i--) {
+                    attach = gubun + attach;
+                }
+                str = str + attach;
+            }
+            return str;
+        }
+
+        /**
+         Function : 특정문자열추가
+         Note : 원하는 문자열로 정해진길이만큼 앞에 채우기..
+         */
+        let _fillSpaceFront = function (aNum, len, fill) {
+
+            let str = aNum;
+            let attach = "";
+            let gubun;
+
+            if (fill == null | fill == "") {
+                gubun = " ";
+            } else {
+                //gubun = "0";
+                gubun = fill;
+            }
+
+            if (aNum.length < len) {
+                for (let i = len - aNum.length; i >= 1; i--) {
+                    attach = gubun + attach;
+                }
+                str = attach + str;
+            }
+            return str;
+        }
+
+        /**
+         Function : 공백제거
+         Note : 공백제거
+         YTHIPutil.format.trim(' ASDF   ')
+         "ASDF"
+         */
+        let _trim = function (str) {
+            if (str == undefined || str == null) {
+                return str;
+            }
+            return str.replace(/^\s\s*/, "").replace(/\s\s*$/, "");
+        };
+
+        /**
+         Function : 특정 문자 치환
+         Note : 특정 문자 치환
+         > YTHIPutil.format.replaceAll('ASDFASDFASDF', 'A', '*')
+         : "*SDF*SDF*SDF"
+         */
+        let _replaceAll = function (str, _char, chgVal) {
+            if (str == null || "" == str || _char === chgVal) return str;
+            while (str.indexOf(_char) >= 0) {
+                str = str.replace(_char, chgVal);
+            }
+            return str;
+        };
+
+        /**
+         * Function : 백분율
+         * Note : TODO // 설명 추가
+         * YTHIPutil.format.decimal('1', 2)
+         */
+        let _decimal = function (ss, num) {
+            if (num == undefined) {
+                num = 2;
+            }
+
+            let s = _removeLZero(ss, "02");
+            let rtnData = '';
+
+            if (num == 2) {
+                if (s == '0') rtnData = '0.00';
+                else if ((s.length < 2) && (s != '0')) rtnData = '0.0' + s;
+                else if (s.length == 2) rtnData = '0' + s.substring(0, s.length - 2) + '.' + s.substring(s.length - 2);
+                else rtnData = s.substring(0, s.length - 2) + '.' + s.substring(s.length - 2);
+            }
+
+            if (num == 3) {
+                if (s == '0') rtnData = '0.000';
+                else if ((s.length < 2) && (s != '0')) rtnData = '0.00' + s;
+                else if (s.length < 3) rtnData = '0.00' + s;
+                else if (s.length == 3) rtnData = '0' + s.substring(0, s.length - 3) + '.' + s.substring(s.length - 3);
+                else rtnData = s.substring(0, s.length - 3) + '.' + s.substring(s.length - 3);
+            }
+
+            if (num == 4) {
+                if (s == '0') rtnData = '0.0000';
+                else if ((s.length < 2) && (s != '0')) rtnData = '0.000' + s;
+                else if (s.length < 3) rtnData = '0.00' + s;
+                else if (s.length < 4) rtnData = '0.0' + s;
+                else if (s.length == 4) rtnData = '0' + s.substring(0, s.length - 4) + "." + s.substring(s.length - 4);
+                else rtnData = s.substring(0, s.length - 4) + "." + s.substring(s.length - 4);
+            }
+
+            if (num == 6) {
+                if (s == '0') rtnData = '0.000000';
+                else if ((s.length < 2) && (s != '0')) rtnData = '0.000' + s;
+                else if (s.length < 3) rtnData = '0.00' + s;
+                else if (s.length < 6) rtnData = '0.0' + s;
+                else if (s.length == 6) rtnData = '0' + s.substring(0, s.length - 6) + "." + s.substring(s.length - 6);
+                else rtnData = s.substring(0, s.length - 6) + "." + s.substring(s.length - 6);
+            }
+
+            return rtnData;
+        }
+
+        /**
+         Function : 왼쪽 '0'삭제
+         Note : TODO // 설명 추가
+         YTHIPutil.format.removeLZero('10000', 2)
+         */
+        let _removeLZero = function (s, gubun) {
+            if (s == undefined || s == '') {
+                return "0";
+            }
+            if (gubun == undefined || gubun == '') {
+                gubun = '01';
+            }
+
+            let temp = YTHIPutil.format.trim(s);
+            if (temp.length == 0) return "0";
+            let len = 0;
+            let nega = 0;
+
+            if (gubun == "01" || gubun == "02")
+                len = temp.length;
+            else {
+                len = temp.length - 3;
+            }
+            for (let i = 0; i < len; i++) {
+                if (temp.charAt(i) == '-') {
+                    nega += 1;
+                } else if (temp.charAt(i) == '0') {
+                    if (i == len - 1) return "0";
+                } else {
+                    temp = temp.substring(0, nega) + temp.substring(i);
+                    break;
+                }
+            }
+
+            s = temp.toString();
+            if (s.indexOf(".") == 0) temp = "0" + temp;
+            else if (s.indexOf("-.") == 0) {
+                temp = "-0." + temp.substring(2);
+            }
+
+            return temp.toString();
+        }
+
+        /**
+         Function : 핸드폰번호 포멧
+         Note : 핸드폰번호 '-' 추가
+         YTHIPutil.format.dashHpNo('01000000000')
+         */
+        let _dashHpNo = function (str) {
+            if (undefined == str || '' == str) {
+                return str;
+            }
+
+            str = str.replace(/ /g, "").replace(/-/g, "");
+
+            if (str == "") {
+                return str;
+            } else if (str.length == 9) {
+                return str.substring(0, 2) + '-' + str.substring(2, 5) + '-' + str.substring(5);
+            } else if (str.length == 10) {
+                if (str.indexOf('02') == 0) {
+                    return str.substring(0, 2) + '-' + str.substring(2, 6) + '-' + str.substring(6);
+                } else {
+                    return str.substring(0, 3) + '-' + str.substring(3, 6) + '-' + str.substring(6);
+                }
+            } else if (str.length == 11) {
+                return str.substring(0, 3) + '-' + str.substring(3, 7) + '-' + str.substring(7);
+            } else {
+                return str
+            }
+        };
+
+        /**
+         Function : 년월일 포맷변경
+         Note : 년월일 '.' 추가
+         YTHIPutil.format.dashYMD('20190101')
+         */
+        let _dashYMD = function (str, retVal) {
+            let _val = _validate.getOnlyNumber(str);
+            if (_val.length == 8) {
+                let _sprt = retVal || ".";
+                let _lastSprt = (_sprt == ".") ? "." : "";
+                return _getDate(_val, "yyyy" + _sprt + "MM" + _sprt + "dd" + _lastSprt);
+            }
+            return _val;
+        }
+
+        /**
+         Function : 년월 포맷변경
+         Note : 년월 '.' 추가
+         YTHIPutil.format.dashYM('201901')
+         */
+        let _dashYM = function (str, retVal) {
+            let _val = _validate.getOnlyNumber(str);
+            if (_val.length == 6) {
+                let _sprt = retVal || ".";
+                let _lastSprt = (_sprt == ".") ? "." : "";
+                return _getDate(_val, "yyyy" + _sprt + "MM" + _lastSprt);
+            }
+            return _val;
+        }
+
+        /**
+         Function : 체크카드 넘버 포맷
+         Note : 상태값33인경우 앞자리제외 전부 ****
+         YTHIPutil.format.markingCard('1111222233334444')
+         */
+        let _markingCard = function (sValue, sMark, sGubun) {
+            let Srtn = "";
+            if (sGubun == '33') {
+                //Srtn = sValue.substr(0,4)+"-"+sMark+"-"+sMark+"-"+sMark;
+                Srtn = sValue.substr(0, 4) + "-" + sMark + "-" + sMark + "-" + sValue.substr(12, 4);
+            } else {
+                Srtn = sValue.substr(0, 4) + "-" + sMark + "-" + sMark + "-" + sValue.substr(12, 4);
+            }
+            return Srtn;
+        };
+
+
+        /**
+         Function : 뒷자리 마킹
+         Note : 정해진 수만큼 뒷자리 * 마킹
+         YTHIPutil.format.markingFormat('ASDF', 2)
+         */
+        let _markingFormat = function (str, num) {
+            str = str + "";
+            let temp = "";
+            if (str.length > num) {
+                temp = str.substring(0, str.length - num);
+                for (let i = 0; i < num; i++) {
+                    temp += "*";
+                }
+            }
+            return temp;
+        };
+
+        /**
+         Function : 휴대번호 뒷자리 마스킹
+         Note : 휴대번호 뒷자리 마스킹
+         YTHIPutil.format.maskingHpNo('ASDF')
+         */
+        let _maskingHpNo = function (str) {
+            if (0 > str.indexOf('-')) {
+                str = _dashHpNo(str);
+            }
+            return _markingFormat(str, 4);
+        };
+
+        /**
+         Function : 만 나이체크
+         Note : 만 나이이상이면 true, 미만이면 false 를 리턴
+         */
+        let _ageCheck = function (rrno, age) {
+            let chkJuminYY = rrno.substr(0, 2);
+            let chkYear = rrno.substring(6, 7);
+            if (chkYear == "1" || chkYear == "2") {
+                chkJuminYY = "19" + chkJuminYY;
+            } else {
+                chkJuminYY = "20" + chkJuminYY;
+            }
+            let today = YTHIPutil.date.getTodayDate();
+            let todayYY = today.substr(0, 4);
+            if (todayYY - chkJuminYY > age) {
+                return true;
+            } else {
+                return false;
+            }
+        };
+
+        // 공백을 띄어쓰기로 변환
+        let _space2nbsp = function (text) {
+            text = text.replace(/\s/g, '&nbsp;');
+            text = text.replace(/\t/g, '&nbsp;&nbsp;');
+            return text;
+        };
+
+        let _setAmtBtn = function (obj) {
+            let amtArray = $(obj).data('amtArray');
+            let amtClass = $(obj).data('amtClass');
+            let amtNumInputId = '#' + $(obj).data('amtNum');
+            let amtHanInputId = '#' + $(obj).data('amtHan');
+            let $amtNumInput = $(amtNumInputId);
+            let $amtHanInput = $(amtHanInputId);
+            let amtInputNum;
+            let amtInputString;
+            for (let i = 0; i < amtArray.length; i++) {
+                let btnText = Number(amtArray[i][1]) / 10000;
+                if (0 < btnText) {
+                    btnText += '만';
+                } else {
+                    btnText = '정정';
+                }
+                let btnHtml = '<button type="button" id="' + amtArray[i][0] + '" class="' + amtClass + '">' + btnText + '</button>'
+                $(obj).append($(btnHtml));
+
+                $('#' + amtArray[i][0]).on("click", {mount: amtArray[i][1]}, function (event) {
+                    if (event.data.mount == '0') {
+                        amtInputNum = 0;
+                        amtInputString = '0';
+                    } else {
+                        amtInputNum = $amtNumInput.val();
+                        mount = event.data.mount - 0;
+                        amtInputNum = YTHIPutil.validate.getOnlyNumber(amtInputNum);
+                        amtInputNum = Number(amtInputNum) + Number(mount);
+                        amtInputString = amtInputNum;
+                    }
+                    let mountId = $amtNumInput.attr("id");
+
+                    $amtNumInput.val(YTHIPutil.format.insertComma(amtInputString));
+
+                    if ($amtHanInput) {
+                        YTHIPutil.format.amountHangle(amtInputString, $amtHanInput);
+                    }
+                });
+
+                $amtNumInput.on("keyup", function (event) {
+                    $amtNumInput.val(YTHIPutil.format.insertComma($(this).val()));
+                    if ($amtHanInput) {
+                        YTHIPutil.format.amountHangle($(this).val(), $amtHanInput);
+                    }
+                });
+            }
+        }
+
+        /**
+         Function	: YTHIPutil.format.hangleReturn(val)
+         Description	: 숫자 금액을 한글 숫자로 리턴
+         Parameter	:
+         - val	: 금액
+         Examples	: > YTHIPutil.format.hangleReturn('248000');
+         > '이십사만팔천원'
+         Returns		: [string]
+         Notes		:
+         */
+        let _hangleReturn = function (val) {
+            let amount = $.trim(val);
+            let amountHan = "";
+            if (amount) {
+                let amountArray1 = ["", "일", "이", "삼", "사", "오", "육", "칠", "팔", "구"];
+                let amountArray2 = ["", "", "십", "백", "천", "만", "십만", "백만", "천만", "억", "십억", "백억", "천억", "조", "십조", "백조", "천조", "경"];
+                for (let i = 0; i < amount.length; i++) {
+                    let tempAmount = amount.substring(i, amount.length);
+                    amountHan += amountArray1[amount[i] * 1];
+                    if (tempAmount[0] == '0')
+                        continue;
+                    let amt1 = amountArray2[tempAmount.length];
+                    let amt2 = amountArray2[tempAmount.length - 1];
+                    if (amountHan.indexOf("조") != -1 && amt1.indexOf("조") != -1) {
+                        amountHan = amountHan.replace("조", "");
+                    }
+                    if (amountHan.indexOf("억") != -1 && amt1.indexOf("억") != -1) {
+                        amountHan = amountHan.replace("억", "");
+                    }
+                    if (amountHan.indexOf("만") != -1 && amt1.indexOf("만") != -1) {
+                        amountHan = amountHan.replace("만", "");
+                    }
+                    if (amt1.substring(amt1.length - 1, amt1.length) == amt2.substring(amt2.length - 1, amt2.length)) {
+                        if (amount.substring(i + 1, amount.length)[0] == '0')
+                            amountHan += amt1;
+                        else
+                            amountHan += amt1.substring(0, 1);
+                    } else {
+                        amountHan += amt1;
+
+                    }
+                }
+            } else {
+                amountHan += '';
+            }
+            return amountHan;
+        };
+
+        /**
+         * Function    : YTHIPutil.format.hangleWithNumberReturn(val)
+         * Description : 숫자를 한국식 단위(억, 만 등)로 변환하여 리턴
+         * Parameter   :
+         * - val       : 금액 (숫자 또는 문자열 형태의 숫자)
+         * Examples    :
+         *   formatKoreanNumber(200000000); // "2억"
+         *   formatKoreanNumber(35000000);  // "3천5백만"
+         *   formatKoreanNumber(123456789); // "1억 2천3백4십5만 6천7백8십9"
+         * Returns    : [string]
+         */
+        let _hangleWithNumberReturn = function (val) {
+            let amount = String(val).trim();
+            if (!/^\d+$/.test(amount)) return '';
+
+            const units = ["", "만", "억", "조", "경"];
+            const placeNames = ["", "십", "백", "천"];
+
+            let result = "";
+            let unitIndex = 0;
+
+            while (amount.length > 0) {
+                let part = amount.slice(-4);
+                amount = amount.slice(0, -4);
+
+                if (part !== "0000") {
+                    let subResult = "";
+                    for (let i = 0; i < part.length; i++) {
+                        let num = parseInt(part[i], 10);
+                        if (num !== 0) {
+                            subResult += num + placeNames[part.length - 1 - i];
+                        }
+                    }
+                    if (subResult) {
+                        result = subResult + units[unitIndex] + (result ? result : "");
+                    }
+                }
+                unitIndex++;
+            }
+
+            return result.trim();
+        };
+
+        /**
+         Function	: YTHIPutil.format.amountHangle(amtVal, $hanObj)
+         Description	: 입력한 금액을 한글로 표시한다.
+         Parameter	:
+         - amtVal	: 금액
+         - $hanObj	: 한글로 표기할 selecter
+         Examples	: >
+         Returns		:
+         Notes		: 입력한 금액을 한글로 표시한다.
+         적용시 이벤트는 keyup으로 적용해야 함.
+         */
+        let _amountHangle = function (amtVal, $hanObj) {
+            let amount = $.trim(amtVal);
+            let amountHan = "";
+            if (1 < amount.split(',').length) {
+                amount = YTHIPutil.format.replaceAll(amount, ',', '');
+            }
+            if (amount * 1) {
+                amountHan += YTHIPutil.format.hangleReturn(amount);
+            } else {
+                amountHan += '영';
+            }
+            if ($($hanObj).prop('tagName') == 'INPUT')
+                $($hanObj).val(amountHan);
+            else
+                $($hanObj).text(amountHan);
+        };
+
+        /**
+         Function	: YTHIPutil.format.amountHangleEvt();
+         Description	: 요소에 지정된 클래스 추가시 입력한 금액을 한글로 표시한다.
+         Parameter	:
+         -
+         Examples	:
+         Returns		:
+         Notes		:
+         - 금액 입력 필드		: _AMTEVT
+         - 금액 입력 필드 	: _AMTIPT
+         - 금액 입력 버튼 	: _AMTBTN	(버튼에는 해당 요소안에 속성으로 금액을 넣어주어야 함 ex: data-amt="100000")
+         - 금액 입력 TEXT 	: _AMTTEXT	(금액이 한글로 표시되는 부분)
+         - _AMTEVENT 클래스로 지정된 요소안에  _AMTINPUT, _AMBUTTON, _AMTTEXT 클래스로 지정된 자식 요소가 포함되어야 함.
+         */
+        let _amountHangleEvt = function () {
+            $('._AMTEVT').each(function () {
+                let $parent = this;
+                $('._AMTIPT', $($parent)).on("keyup", function () {
+                    let $this = this;
+                    if (!$($this).attr('readonly')) {
+                        $($this).CEsecureVal(YTHIPutil.format.insertComma(YTHIPutil.validate.getOnlyNumber($($this).val())), function () {
+                            YTHIPutil.format.amountHangle($($this).val(), $('._AMTTEXT', $($parent)));
+                        });
+                    }
+                });
+                if ($('._AMTIPT', $($parent)).val() != '') {
+                    $('._AMTIPT', $($parent)).keyup();
+                }
+                $('._AMTBTN', $($parent)).on("click", function () {
+                    let $this = this;
+                    let amt;
+                    if ($($this).data('amt') == 'amtClear') {
+                        amt = '';
+                    } else {
+                        if ($($this).data().hasOwnProperty('all')) {
+                            amt = ($($this).data('all') * 1)
+                        } else {
+                            if (($($this).data('amt') * 1)) {
+                                amt = (YTHIPutil.format.replaceAll($('._AMTIPT', $($parent)).val(), ',', '') * 1) + ($($this).data('amt') * 1);
+                            }
+                        }
+                    }
+                    $('._AMTIPT', $($parent)).YTHIPsecureVal(YTHIPutil.format.insertComma(amt, ''), function () {
+                        YTHIPutil.format.amountHangle($('._AMTIPT', $($parent)).val(), $('._AMTTEXT', $($parent)));
+                    });
+                });
+            });
+        };
+
+        let _hanLen = function (str, maxlen) {
+            let i, j = 0;
+            for (i = 0; i < str.length; i++) {
+                val = escape(str.charAt(i)).length;
+                if (val == 6) {
+                    j++;
+                }
+                j++;
+            }
+            if (maxlen < j) return false;
+            else return true;
+        }
+
+        /** 차후 common.js 로 이동 함수
+         Function	: YTHIPutil.format.strCutRet();
+         Description	: 문자를 원하는 길이 기준으로 배열로 담는다
+         Parameter	: - str[string] 	: 절삭할 문자
+         - cutLen[number] 	: 절삭 기준 길이
+         Examples	:
+         > YTHIPutil.format.strCutRet("abcdefg",2);
+         > ['ab','cd','ef','g']
+         Returns		: [array]
+         Notes		:
+         -
+         */
+        let _strCutRet = function (str, cutLen) {
+            let html = str;
+            let index = 0;
+            let retArr = [];
+            while (html.length > 0) {
+                if (html.length > cutLen) {
+                    retArr.push(html.substring(0, cutLen));
+                    html = html.substring(cutLen, html.length);
+                } else {
+                    retArr.push(html);
+                    html = '';
+                }
+                ++index;
+
+            }
+            return retArr;
+        }
+
+        /**
+         * 주민번호 또는 사업자번호에 "-" 삽입
+         * @param str
+         * @return '-'가 삽입된 주민번호 or 사업자번호
+         */
+        let _putJuminDash = function (str) {
+            if (!str) {
+                return str;
+            }
+            str = String(str).trim();
+            //주민번호(13자리) 인경우
+            if (str.length == 13) {
+                let tmp = str.substring(0, 6) + "-" + str.substring(6, 13);
+                return tmp;
+                // 주민사업자번호일(길이 10자리) 경우
+            } else if (str.length == 10) {
+                let tmp2 = str.substring(0, 3) + "-" + str.substring(3, 5) + "-" + str.substring(5, 10);
+                return tmp2;
+            } else {
+                return str;
+            }
+        }
+
+        /**
+         * 사업자번호에 "-" 삽입
+         * @param str
+         * @param useMask true or false true 인경우 사업자번호 마지막 5자리를 '*'로 처리
+         * @return 포멧된 사업자번호
+         */
+        let _putBusDash = function (str, useMask) {
+            if (!str) {
+                return str;
+            }
+            str = String(str).trim();
+            //길이 10자리일경우 세팅
+            if (str.length == 10) {
+                let tmp = "";
+                if (useMask) {
+                    tmp = str.substring(0, 3) + "-" + str.substring(3, 5) + "-*****";
+                } else {
+                    tmp = str.substring(0, 3) + "-" + str.substring(3, 5) + "-" + str.substring(5);
+                }
+                return tmp;
+            } else {
+                return str;
+            }
+        }
+
+        /**
+         * 이율 표시
+         * @param rate
+         * @return 이율로 표기된 값
+         */
+        let _rateForm = function (rate) {
+            rate = parseFloat(rate);
+            if (String(rate).indexOf('.') < 0) {
+                return rate + '.0';
+            } else {
+                return rate;
+            }
+
+        }
+
+        /**
+         * 입력한 날짜 문자열을 date형식으로 변환해준다.
+         * @param str 날짜 문자열
+         * @param format 날짜 형식 (ex: yyyyMMdd, yyyy-MM-dd, yyyy-MM-dd hh:mm:ss...)
+         * @return date형식으로 변환된 문자열
+         */
+        let _getDate = function (_str, format) {
+            if (!_str) return '';
+            let year, month, day, hour, min, sec, dateStr;
+            let str = (_str + "").replace(/[^\d]/g, "");
+            if (str.length == 14)
+                dateStr = str.replace(/(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/, '$1/$2/$3 $4:$5:$6');
+            else if (str.length == 8)
+                dateStr = str.replace(/(\d{4})(\d{2})(\d{2})/, '$1/$2/$3');
+            else if (str.length == 6)
+                dateStr = str.replace(/(\d{4})(\d{2})/, '$1/$2') + "/01";
+            let _isDate = Date.parse(dateStr);
+            if (!isNaN(_isDate)) {
+                let date = new Date(dateStr);
+                return format.replace(/yyyy|yy|MM|dd|hh|mm|ss/g, function ($1) {
+                    switch ($1) {
+                        case 'yyyy':
+                            return date.getFullYear();
+                        case 'yy':
+                            return _leadingZeros(date.getFullYear() % 1000, 2);
+                        case 'MM':
+                            return _leadingZeros(date.getMonth() + 1, 2);
+                        case 'dd':
+                            return _leadingZeros(date.getDate(), 2);
+                        case 'hh':
+                            return _leadingZeros(date.getHours(), 2);
+                        case 'mm':
+                            return _leadingZeros(date.getMinutes(), 2);
+                        case 'ss':
+                            return _leadingZeros(date.getSeconds(), 2);
+                        default:
+                            return $1;
+                    }
+                });
+            }
+            return _str;
+        };
+
+        /**
+         * Function : 계좌번호 '0' 제거
+         */
+        let _trim0AcctNo = function (str) {
+            let strAccno = _trim(str);
+            if (strAccno.length < 11) {
+                return strAccno;
+            }
+            if (strAccno.substring(0, 3) == '000') {
+                return str.substring(3);
+            } else if (strAccno.substring(0, 2) == '00') {
+                return strAccno.substring(2);
+            }
+            return strAccno;
+        };
+
+        /**
+         * Function : 계좌에 '-' 추가
+         */
+        let _acountNoFA = function (str) {
+            let temp;
+            str = _trim0AcctNo(str);
+            let len = str.length;
+            switch (len) {
+                case 10:
+                    temp = "00" + str.substring(0, 1) + "-" + str.substring(1, 4) + "-" + str.substring(4, 10);
+                    break;
+                case 11:
+                    temp = "0" + str.substring(0, 2) + "-" + str.substring(2, 5) + "-" + str.substring(5, 11);
+                    break;
+                case 12:
+                    temp = str.substring(0, 3) + "-" + str.substring(3, 6) + "-" + str.substring(6, 12);
+                    break;
+                case 13:
+                    temp = str.substring(0, 4) + "-" + str.substring(4, 7) + "-" + str.substring(7, 13);
+                    break;
+                case 15:
+                    temp = str.substring(0, 6) + "-" + str.substring(6, 9) + "-" + str.substring(9, 15);
+                    break;
+                default:
+                    temp = str;
+                    break;
+            }
+            return temp;
+        };
+
+        /**
+         * Function : 계좌에 '-' 추가
+         */
+        let _accountNo = function (str) {
+            let temp;
+            if (undefined == str || '' == str) {
+                return str;
+            }
+            if (str.length == 15) {
+                return _acountNoFA(str);
+            }
+            str = _trim0AcctNo(str);
+            let len = str.length;
+            switch (len) {
+                case 9:
+                    temp = '00' + str.substring(0, 1) + '-' + str.substring(1, 3) + '-' + str.substring(3, 9);
+                    break;
+                case 10:
+                    temp = '0' + str.substring(0, 2) + '-' + str.substring(2, 4) + '-' + str.substring(4, 10);
+                    break;
+                case 11:
+                    temp = str.substring(0, 3) + '-' + str.substring(3, 5) + '-' + str.substring(5, 11);
+                    break;
+                case 12:
+                    temp = str.substring(0, 4) + '-' + str.substring(4, 6) + '-' + str.substring(6, 12);
+                    break;
+                case 14:
+                    temp = str.substring(0, 6) + '-' + str.substring(6, 8) + '-' + str.substring(8, 14);
+                    break;
+                default:
+                    temp = str;
+                    break;
+            }
+            return temp;
+        };
+
+        /**
+         * 우체국 계좌 암호화
+         */
+        let _chgAcctForm = function (str) {
+            if (str == undefined || str == null) return '-';
+            if (str.length == 14) {
+                return str.substr(0, 3) + '*********' + str.substr(11, 3);
+            } else {
+                return '-';
+            }
+        };
+
+        /**
+         * 우체국포함 타행 암호화
+         */
+        let _chgAccEtaccForm = function (str) {
+            if (str == undefined || str == null) return '-';
+            if (str.length == 14) {
+                return str.substr(0, 3) + '*********' + str.substr(11, 3);
+            } else {
+                return str.substr(0, 3) + '*********' + str.substr(str.length - 3, 3);
+            }
+        };
+
+        return {
+            insertComma: _insertComma,
+            insertDate: _insertDate,
+            leadingZeros: _leadingZeros,
+            fillSpaceBack: _fillSpaceBack,
+            fillSpaceFront: _fillSpaceFront,
+            trim: _trim,
+            replaceAll: _replaceAll,
+            accountNo: _accountNo,
+            decimal: _decimal,
+            removeLZero: _removeLZero,
+            dashHpNo: _dashHpNo,
+            dashYMD: _dashYMD,
+            dashYM: _dashYM,
+            markingCard: _markingCard,
+            markingFormat: _markingFormat,
+            maskingHpNo: _maskingHpNo,
+            ageCheck: _ageCheck,
+            space2nbsp: _space2nbsp,
+            amountHangle: _amountHangle,
+            hangleReturn: _hangleReturn,
+            hangleWithNumberReturn: _hangleWithNumberReturn,
+            amountHangleEvt: _amountHangleEvt,
+            hanLen: _hanLen,
+            strCutRet: _strCutRet,
+            putJuminDash: _putJuminDash,
+            putBusDash: _putBusDash,
+            setAmtBtn: _setAmtBtn,
+            rateForm: _rateForm,
+            getDate: _getDate,
+            chgAcctForm: _chgAcctForm,
+            chgAccEtaccForm: _chgAccEtaccForm
+        };
+    }();
+
+    let _logCount = 0;
+    let _log = function (...args) {
+        console.group("YTHIPutil.log (" + (++_logCount) + ")");
+        for (let arg of args) {
+            console.log(arg);
+        }
+        console.groupEnd();
+    };
+
+    let _userAgentUtil = function () {
+        let typeList = {
+            kakaotalk: false,
+            naver: false,
+            chrome: false,
+            samsung: false,
+            edge: false,
+            whale: false,
+            ie: false,
+            firefox: false,
+            opera: false,
+            safari: false
+        };
+        let type = navigator.userAgent.toLocaleLowerCase();
+        if (type.indexOf('whale') > -1) {
+            typeList.whale = true;
+        } else if (type.indexOf('edge') > -1) {
+            typeList.firefox = true;
+        } else if (type.indexOf('samsung') > -1) {
+            typeList.samsung = true;
+        } else if (type.indexOf('opera') > -1) {
+            typeList.opera = true;
+        } else if (type.indexOf('safari') > -1) {
+            typeList.safari = true;
+        } else if (type.indexOf('firefox') > -1) {
+            typeList.android_web = true;
+        } else if (type.indexOf('chrome') > -1) {
+            typeList.chrome = true;
+        } else if ((navigator.appName == 'Netscape' && navigator.userAgent.search('Trident') != -1) || (userAgent.indexOf("msie") != -1)) {
+            typeList.ie = true;
+        } else if (type.indexOf('kakaotalk') > -1) {
+            console.log("카카오 인앱 브라우저");
+            typeList.chrome = true;
+        } else if (type.indexOf('naver') > -1) {
+            console.log("네이버 인앱 브라우저");
+            typeList.chrome = true;
+        }
+        return typeList;
+    };
+    let _isIE = function () {
+        return (_userAgentUtil().ie);
+    };
+    let _isInAppBrowsher = function () {
+        return (_userAgentUtil().kakaotalk || _userAgentUtil().naver);
+    };
+
+    let _mobileUtilType = {
+        is_run: false,
+        android: false,
+        android_web: false,
+        ios: false,
+        ios_web: false,
+        pc: false,
+        app: false
+    };
+
+    let _mobileUtil = function () {
+        if (_mobileUtilType["is_run"]) return _mobileUtilType;
+        let type = navigator.userAgent.toLocaleLowerCase();
+        _mobileUtilType["app"] = (top["IS_MOBILE_APP"] == "Y");
+        if (type.indexOf('morpheus') > -1) {
+            _mobileUtilType["app"] = true;
+            if (type.indexOf('android') > -1) {
+                _mobileUtilType["android"] = true;
+            } else if (type.indexOf('ios') > -1 || type.indexOf('iphone') > -1 || type.indexOf('ipad') > -1) {
+                _mobileUtilType["ios"] = true;
+            }
+        } else {
+            if (type.indexOf('android') > -1) {
+                _mobileUtilType["android_web"] = true;
+            } else if (type.indexOf('ios') > -1 || type.indexOf('iphone') > -1 || type.indexOf('ipad') > -1) {
+                _mobileUtilType["ios_web"] = true;
+            } else {
+                _mobileUtilType["pc"] = true;
+            }
+        }
+        _mobileUtilType["is_run"] = true;
+        return _mobileUtilType;
+    };
+
+    // 모바일 인지 체크
+    let _isMobile = function () {
+        return !(_mobileUtil().pc);
+    };
+
+    // iOS 인지 체크
+    let _isiOS = function () {
+        return (_mobileUtil().ios || _mobileUtil().ios_web);
+    };
+
+    let _emailvalidateCheck = function (obj) {
+        let EMAIL_PATTERN = '^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$';
+        let EMAIL_REGEXP = new RegExp(EMAIL_PATTERN, 'i');
+        let EMAIL_VAL = obj;
+
+        if (typeof (obj) == 'object') {
+            EMAIL_VAL = $(obj).val();
+        }
+
+        if (!EMAIL_REGEXP.test(EMAIL_VAL)) {
+            if (typeof (obj) == 'object') {
+                alert("e-mail 주소 형식이 올바르지 않습니다.", $(obj));
+            }
+            return false;
+        } else {
+            return true;
+        }
+    };
+
+    /**
+     * "을","이","은","과","으로" ==> "를","가","는","와","로" 문맥에 맞는 조사로 반환한다.
+     * @param str, josa
+     * @return String
+     */
+    let _JOSA_MAP, _HAN_CODE;
+    (function () {
+        _HAN_CODE = ['가'.charCodeAt(), '힣'.charCodeAt()];
+        _JOSA_MAP = {};
+        $.each([["을", "를"], ["이", "가"], ["은", "는"], ["과", "와"], ["으로", "로"]], function (i, items) {
+            $.each(items, function (i, item) {
+                _JOSA_MAP[item] = items;
+            });
+        });
+    })();
+
+    let _convertJoSa = function (str, josa) {
+        if (!str) return "";
+        let strTrim = $.trim(str);
+        if (!josa || !strTrim) return str;
+        let code = strTrim.charCodeAt(strTrim.length - 1);
+        if (code >= _HAN_CODE[0] && code <= _HAN_CODE[1]) {
+            let selectJosa = _JOSA_MAP[josa];
+            return str + (((code - _HAN_CODE[0]) % 28 == 0) ? selectJosa[1] : selectJosa[0]);
+        }
+        return str;
+    };
+
+
+    let _charToEntity = function (_value) {
+        if ($.type(_value) != "string" || $.trim(_value) == "") return _value;
+        let _charMap = {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            "\"": "&quot;",
+            "'": "&#39;",
+            "/": "&#x2F;",
+            "·": "&middot;",
+            "⋅": "&sdot;",
+            "→": "&rarr;"
+        };
+        return _value.replace(/[&<>"'\/]/g, function (_value) {
+            return _charMap[_value];
+        });
+    };
+
+    let _entityToChar = function (_value) {
+        if ($.type(_value) != "string" || $.trim(_value) == "") return _value;
+        return _value.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, "\"").replace(/&#39;/g, "'").replace(/&#x2F;/g, "/").replace(/&amp;middot;/g, "·").replace(/&middot;/g, "·").replace(/&sdot;/g, "⋅").replace(/&rarr;/g, "→").replace(/&amp;lsquo;/g, "‘").replace(/&amp;rsquo;/g, "’");
+    };
+
+    let _isEmpty = function (s) {
+        return (s === undefined || s == null || s === 'undefined' || s == 'null' || $.trim(s) === "");
+    };
+
+    let _null2Space = function (s, d) {
+        return (YTHIPutil.isEmpty(s)) ? (YTHIPutil.isEmpty(d) ? '' : d) : s;
+    }
+
+    let _file = function () {
+
+        /*
+        let _img = function(str){
+            //return str.replace("C:", YTHIPcomm.API_FILE_URL).replace(/\\/g, '/');
+            return str.replace("C:", YTHIPcomm.API_FILE_URL + "/image?imageName=");
+        }
+         */
+
+        let _imgSrc = function (str) {
+            str = str.replace("C:", '');
+            str = str.replace(/\\/g, '/');
+            str = str.replace(/\/\//g, '/');
+            str = str.replace('/AtchFile', '');
+            str = str.replace('/attach/dev', '');
+            str = str.replace('/attach/prod', '');
+            return YTHIPcomm.API_FILE_URL + "/image?imageName=" + str;
+        }
+
+        let _checkImgSize = function (file, $fileObj, successFn) {
+            let reader = new FileReader();
+            reader.onload = function (e) {
+                let img = new Image();
+                img.src = e.target.result;
+
+                img.onload = function () {
+                    if (!YTHIPutil.isEmpty($fileObj.data("width")) && !YTHIPutil.isEmpty($fileObj.data("height"))) {
+                        if (img.width !== $fileObj.data("width") || img.height !== $fileObj.data("height")) {
+                            YTHIPcomm.alert("입력오류", "이미지 사이즈를 확인해주세요.");
+                            $fileObj.val("");
+                            return false;
+                        }
+                    }
+                    if (successFn && $.type(successFn) === "function") successFn(e.target.result);
+                    return true;
+                }
+                img.onerror = function () {
+                    YTHIPcomm.alert("입력오류", "이미지 유형의 파일이 아닙니다.");
+                    $fileObj.val("");
+                    return false;
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        let _convertSize = function (oriSize) {
+            let retFileSize = "";
+            if (oriSize >= 1048576) {
+                retFileSize = (oriSize / 1048576).toFixed(2) + " MB";
+            } else if (oriSize >= 1024) {
+                retFileSize = (oriSize / 1024).toFixed(2) + " KB";
+            } else {
+                retFileSize = oriSize + " Bytes";
+            }
+            return retFileSize;
+        }
+
+        let _download = function (uri) {
+            YTHIPcomm.promise("GET", YTHIPcomm.API_FILE_URL + "/sur/com/atchFile/atchFileDetInfoCheck/" + uri, {}).then(data => {
+                if (data.result != null) {
+                    window.open(YTHIPcomm.API_FILE_URL + "/sur/com/atchFile/atchFileDetInfo/" + uri, "_self");
+                    return false;
+                    /*
+                    if($("body iframe[name=hiddenFrame]").length === 0) {
+                        $("body").append('<iframe name="hiddenFrame" width="0" height="0"></iframe>');
+                    }
+                    window.open(YTHIPcomm.API_COM_URL + "/sur/com/atchFile/atchFileDetInfo/" + uri, "hiddenFrame");
+                    setTimeout(function(){
+                        $("body iframe[name=hiddenFrame]").remove();
+                    }, 100)
+
+                     */
+                }
+            });
+        }
+
+        let _docViewer = function (filePath, fileName) {
+            filePath = filePath.replace("C:", '');
+            filePath = filePath.replace(/\\/g, '/');
+            filePath = filePath.replace('/AtchFile', '');
+            filePath = filePath.replace('/attach/dev', '');
+            filePath = filePath.replace('/attach/prod', '');
+
+            let param = {};
+            param.filePath = filePath;
+            param.fileName = fileName;
+            YTHIPcomm.promise("POST", YTHIPcomm.API_FILE_URL + "/sur/com/doc-view/job-file-path", param).then(data => {
+                if (data !== null) {
+                    window.open(data.result.callViewUrl, "doc-viewer");
+                }
+            });
+        }
+
+        return {
+            //img : _img,
+            imgSrc: _imgSrc,
+            checkImgSize: _checkImgSize,
+            convertSize: _convertSize,
+            download: _download,
+            docViewer: _docViewer
+        }
+    }();
+
+    let _sns = function () {
+        let _facebook = function (link, title) {
+            link = encodeURIComponent(link);
+            title = encodeURIComponent(title);
+
+            var url = 'http://www.facebook.com/sharer.php?u=' + link + '&t=' + title;
+            window.open(url, '_blank');
+        };
+
+        let _band = function (link, title) {
+            link = encodeURIComponent(link);
+            title = encodeURIComponent(title);
+
+            var url = 'http://band.us/plugin/share?body=' + title + '&route=' + link;
+            window.open(url, '_blank');
+        };
+
+        let _blog = function (link, title) {
+            link = encodeURIComponent(link);
+            title = encodeURIComponent(title);
+
+            var url = 'http://blog.naver.com/openapi/share?url=' + link + '&title=' + title;
+            window.open(url, '_blank');
+        };
+
+        let _twitter = function (link, title) {
+            link = encodeURIComponent(link);
+            title = encodeURIComponent(title);
+
+            var url = 'https://twitter.com/share?url=' + link + '&text=' + title;
+            window.open(url, '_blank');
+        };
+
+        let _kakao = function (link, title) {
+            if (!Kakao.isInitialized()) {
+                Kakao.init(YTHIPcomm.KEY_API_KAKAO); // 운영용
+            }
+            Kakao.Link.sendDefault({
+                objectType: "feed",
+                content: {
+                    title: title,
+                    description: "",
+                    imageUrl: YTHIPcomm.API_FRT_URL + "/images/mps/layout/logo.svg",
+                    link: {
+                        mobileWebUrl: link
+                    }
+                },
+                buttons: [{
+                    title: "온통청년에서 보기",
+                    link: {
+                        mobileWebUrl: link
+                    }
+                }]
+            });
+        };
+
+        return {
+            facebook: _facebook
+            , band: _band
+            , blog: _blog
+            , twitter: _twitter
+            , kakao: _kakao
+        }
+    }();
+
+    let _str = function () {
+
+        let _ctpvFix = function (str) {
+            if (YTHIPutil.isEmpty(str)) return YTHIPutil.null2Space(str);
+            str = str.replace('특별시', '');
+            str = str.replace('광역시', '');
+            str = str.replace('특별자치시', '');
+            str = str.replace('특별자치도', '');
+            str = str.replace('충청남도', '충남');
+            str = str.replace('충청북도', '충북');
+            str = str.replace('전라남도', '전남');
+            str = str.replace('전라북도', '전북');
+            str = str.replace('경상남도', '경남');
+            str = str.replace('경상북도', '경북');
+            str = str.replace('경기도', '경기');
+            return str;
+        }
+
+        return {
+            ctpvFix: _ctpvFix
+        }
+    }();
+
+
+    const _search = function () {
+        const _get = function ($this) {
+            let param = [];
+            $("input, select", $this).each(function (i, v) {
+                console.log($(this).prop("tagName"));
+                if ("INPUT" === $(this).prop("tagName")) {
+                    if ($(this).prop("type") !== "button") {
+                        param.push($(this).prop("id") + ':' + $(this).val());
+                    }
+                }
+                if ("SELECT" === $(this).prop("tagName")) {
+                    param.push($(this).prop("id") + ':' + $(this).find("option:selected").val());
+                }
+            });
+            //param.push('curPageNum:'+curPageNum);
+            //param.push('pstSeSn:'+pstSeSn);
+
+            return param.join(';');
+        };
+
+        const _set = function ($this, srchParam, callbackFn) {
+            if (!YTHIPutil.isEmpty(srchParam)) {
+                const srchParamArr = srchParam.split(';');
+                $.each(srchParamArr, function (i, v) {
+                    const tmpParam = v.split(':');
+                    //if (tmpParam[0] === 'curPageNum') curPageNum = tmpParam[1];
+                    //if (tmpParam[0] === 'pstSeSn'){
+                    //categoryList(tmpParam[1]);
+                    //}
+                    //else {
+                    console.log(tmpParam[0] + " : " + $("#" + tmpParam[0], $this).length);
+                    //if($("" + tmpParam[0], $this).hasClass("_initCmnCdSbx")){
+                    $("[data-objid=" + tmpParam[0] + "]", $this).data("comcd", tmpParam[1]);
+                    //}else {
+                    $("#" + tmpParam[0], $this).val(tmpParam[1]);
+                    //}
+                    //}
+                })
+            }
+            if (callbackFn != null && $.type(callbackFn) === "function") {
+                setTimeout(function () {
+                    callbackFn();
+                }, 500);
+            }
+        }
+
+        return {
+            get: _get
+            , set: _set
+        }
+    }();
+
+    return {
+        date: _date,
+        validate: _validate,
+        parse: _parse,
+        format: _format,
+        log: _log,
+        isIE: _isIE,
+        isInAppBrowsher: _isInAppBrowsher,
+        isMobile: _isMobile,
+        isiOS: _isiOS,				//iOS 인지 체크
+        emailvalidateCheck: _emailvalidateCheck,	//이메일 유효성 체크
+        convertJoSa: _convertJoSa,			//문맥에 맞는 조사로 반환
+        charToEntity: _charToEntity,			//char를 entity로
+        entityToChar: _entityToChar,			//entity를 char로
+        isEmpty: _isEmpty,       // 문자열의 undefined null 공백 여부 리턴
+        null2Space: _null2Space,     // null 일때 공백으로 치환
+        file: _file,
+        sns: _sns,
+        str: _str,
+        search: _search
+    };
+})();

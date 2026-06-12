@@ -1,0 +1,808 @@
+// AI 채팅봇 아이콘 스크립트
+
+// 상태 관리 변수들 (클로저 내에서만 사용)
+var isWidgetCreated = false;
+var isStylesAdded = false;
+var isSettingsLoading = false;
+var isSettingsLoaded = false;
+var isLast2ScriptLoading = false;
+var isLast2ScriptLoaded = false;
+var chatWidgetElements = null;
+var last2ScriptElement = null;
+var lastChatExpand = null;
+
+// last2.js 로드 함수 (최상단에 배치하여 함수 호이스팅 보장)
+function loadLast2Script() {
+	if (isLast2ScriptLoading || isLast2ScriptLoaded) return;
+	if (last2ScriptElement) {
+		console.log('last2.js가 이미 로드됨');
+		return;
+	}
+
+    const lastJsPos = localStorage.getItem('chat_widget_pos');
+    if (lastJsPos) {
+        try {
+            const pos = JSON.parse(lastJsPos);
+            //last2.js 형식으로 변환 (문자열에 px 포함)
+            if (pos.right !== undefined && pos.bottom !== undefined) {
+                const migratedPos = {
+                    right: pos.right + 'px',
+                    bottom: pos.bottom + 'px'
+                };
+                // last2.js에 저장할 키 이름
+                localStorage.setItem('chat_float_pos', JSON.stringify(migratedPos));
+                console.log('[이동] last.js 위치 → last2.js:', migratedPos);
+            }
+        } catch(e) {
+            console.error('[이동] 위치 정보 파싱 실패:', e);
+        }
+    } else {
+        // 저장된 위치가 없으면 last2.js의 기존 위치를 읽어보기
+        const last2Pos = localStorage.getItem('chat_float_pos');
+        if (last2Pos) {
+            console.log('[이동] last2.js 기존 위치 유지:', last2Pos);
+        }
+    }
+    // ===== 이동끝 =====
+
+
+	// 기존 아이콘 제거 (중복 방지)
+	const existingWidgets = document.querySelectorAll('.chat-widget');
+	existingWidgets.forEach(widget => {
+		console.log('[user_chaticon-last.js] 기존 chat-widget 제거');
+		widget.remove();
+	});
+	chatWidgetElements = null;
+	isWidgetCreated = false;
+
+	isLast2ScriptLoading = true;
+	const script2 = document.createElement('script');
+	script2.src = `${chatURL}/chat/js/user_chaticon-last2.js`;
+	script2.type = 'text/javascript';
+	script2.onload = function() {
+		isLast2ScriptLoading = false;
+		isLast2ScriptLoaded = true;
+		last2ScriptElement = script2;
+		console.log('user_chaticon-last2.js 로드 완료');
+	};
+	script2.onerror = function() {
+		isLast2ScriptLoading = false;
+		console.error('user_chaticon-last2.js 로드 실패');
+	};
+	document.head.appendChild(script2);
+}
+
+// last2.js 제거 함수 (loadLast2Script와 함께 최상단에 배치)
+// Promise를 반환하여 제거 완료 후 다음 작업을 할 수 있음
+function unloadLast2Script() {
+	return new Promise((resolve) => {
+		if (!isLast2ScriptLoaded || !last2ScriptElement) {
+			resolve();
+			return;
+		}
+
+		// 1. last2.js에 의해 생성된 DOM 요소 제거
+		const chatWidgets = document.querySelectorAll('.chat-widget');
+		chatWidgets.forEach(widget => {
+			// iframe이 있는 widget만 제거 (last2.js에서 생성한 것)
+			if (widget.querySelector('iframe')) {
+				widget.remove();
+			}
+		});
+
+		// 2. touches, borderss, chbClose 등 last2.js에서 생성한 요소 제거
+		const touches = document.querySelectorAll('.touches');
+		touches.forEach(el => el.remove());
+
+		const borderss = document.querySelectorAll('.borderss');
+		borderss.forEach(el => el.remove());
+
+		const chbClose = document.querySelectorAll('.chbClose');
+		chbClose.forEach(el => el.remove());
+
+		const chatIconTalk = document.querySelectorAll('.chat-icon-talk');
+		chatIconTalk.forEach(el => el.remove());
+
+		const fakeChatIcon = document.getElementById('fake-chatIcon');
+		if (fakeChatIcon) fakeChatIcon.remove();
+
+		// 3. last2.js에 의해 등록된 이벤트 리스너 제거
+		// last2.js에서 window.addEventListener('message', ...)로 등록한 이벤트는
+		// 특정 handler를 알지 못하므로, message 이벤트를 재등록하여 오버라이드
+
+		// 4. 스크립트 제거
+		try {
+			if (last2ScriptElement.parentNode === document.head) {
+				document.head.removeChild(last2ScriptElement);
+			}
+		} catch (e) {}
+
+		last2ScriptElement = null;
+		isLast2ScriptLoaded = false;
+		isLast2ScriptLoading = false;
+		console.log('[user_chaticon-last.js] user_chaticon-last2.js 제거 완료');
+		
+		setTimeout(resolve, 100); // DOM이 완전히 제거될 시간을 주고 resolve
+	});
+}
+
+// last.js를 다시 로드하는 함수 (Promise 반환)
+function reloadLastScript() {
+	return new Promise((resolve, reject) => {
+
+		// 모든 last.js 제거
+		document.querySelectorAll('script[src*="user_chaticon-last.js"]')
+			.forEach(el => el.remove());
+
+		const script = document.createElement('script');
+
+		script.type = 'text/javascript';
+		script.src = `${window.chatURL || chatURL}/chat/js/user_chaticon-last.js?reload=${Date.now()}`;
+		script.async = true;
+
+		script.onload = () => {
+			console.log('[user_chaticon-last.js] user_chaticon-last.js 재로드 완료');
+			resolve();
+		};
+
+		script.onerror = reject;
+
+		document.head.appendChild(script);
+	});
+}
+
+// fullReset: last2.js 제거 후 last.js 재로드
+function fullResetToPopupMode() {
+	return new Promise(async (resolve) => {
+		try {
+			await unloadLast2Script();
+			// last.js 재로드는 현재 스크립트가 실행 중이므로 setTimeout으로 비동기 실행
+			setTimeout(() => {
+				reloadLastScript().then(resolve).catch(() => resolve());
+			}, 150);
+		} catch (e) {
+			console.error('[user_chaticon-last.js] fullResetToPopupMode 실패:', e);
+			resolve();
+		}
+	});
+}
+
+// localStorage 만료 체크
+function checkLocalStorageAndLoad() {
+	const savedChatExpand = localStorage.getItem('chat_expand');
+	const expireTime = localStorage.getItem('chat_expand_expire');
+	
+	// chat_expand가 저장되어 있고, expire가 설정되어 있지 않거나 아직 만료되지 않은 경우
+	const hasValidSetting = savedChatExpand && (
+		!expireTime || Date.now() <= parseInt(expireTime)
+	);
+	
+	if (hasValidSetting) {
+		lastChatExpand = savedChatExpand;
+		
+		// chat_expand가 'off'이면 last2.js 즉시 로드
+		if (lastChatExpand === 'off' && !isLast2ScriptLoaded) {
+			console.log('[user_chaticon-last.js] localStorage에 chat_expand=off 저장됨, last2.js 즉시 로드');
+			loadLast2Script();
+		}
+	}
+}
+
+// DOM이 이미 로드된 경우 즉시 실행, 아니면 DOMContentLoaded 이벤트 기다리기
+// checkLocalStorageAndLoad()를 동기적으로 실행하여 isLast2ScriptLoading 플래그가 먼저 설정되도록 함
+if (document.readyState === 'loading') {
+	document.addEventListener('DOMContentLoaded', checkLocalStorageAndLoad);
+} else {
+	// loadLast2Script 함수가 정의될 때까지 대기
+	const waitForLoadLast2Script = () => {
+		if (typeof loadLast2Script === 'function') {
+			checkLocalStorageAndLoad();
+		} else {
+			setTimeout(waitForLoadLast2Script, 10);
+		}
+	};
+	waitForLoadLast2Script();
+}
+
+// ✅ FIX: 잠금 변수 (흔들림 방지) (✅ 수정: 잠금 변수 - 흔들림 방지)
+var isFixing = false;
+var originalBottom = null; // 원본 bottom 값 저장 (원본 bottom 값 저장)
+
+// 랜덤 콜백 이름 생성 함수 (랜덤 콜백 이름 생성 함수)
+function generateCallbackName() {
+	return 'chatCallback_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+}
+
+// 서버 상태 확인 (chatDataLoader.php 사용)
+async function checkServerStatus() {
+	return new Promise((resolve) => {
+		try {
+			// script 태그 생성
+			const script = document.createElement('script');
+			const callbackName = generateCallbackName();
+			script.src = `${chatURL}/chat/chatDataLoader.php?chatID=${chatID}&callback=${callbackName}`;
+			script.type = 'text/javascript';
+
+			const removeScript = () => {
+				try { if (script.parentNode === document.head) document.head.removeChild(script); } catch (e) {}
+			};
+
+			window[callbackName] = function() { resolve(true); removeScript(); delete window[callbackName]; };
+			script.onload = function() { if (typeof window[callbackName] === 'function') window[callbackName](); else { resolve(true); removeScript(); } };
+			script.onerror = function() { resolve(true); removeScript(); delete window[callbackName]; };
+			document.head.appendChild(script);
+		} catch (error) { resolve(true); }
+	});
+}
+
+// 쿠키 관련 함수
+function setCookie(name, value, hours) {
+	const date = new Date();
+	date.setHours(23, 59, 59, 999);
+	const expires = date.toUTCString();
+	document.cookie = `${name}=${value}; expires=${expires}; path=/`;
+}
+function getCookie(name) {
+	const encodedName = encodeURIComponent(name) + '=';
+	const cookies = document.cookie.split(';');
+	for (let i = 0; i < cookies.length; i++) {
+		let cookie = cookies[i].trim();
+		if (cookie.indexOf(encodedName) === 0) return decodeURIComponent(cookie.substring(encodedName.length));
+	}
+	return null;
+}
+
+// 스타일 추가 함수
+function addChatWidgetStyles() {
+	if (isStylesAdded) return;
+	isStylesAdded = true;
+	const style = document.createElement('style');
+	style.textContent = ".chat-widget{position:fixed!important;bottom:0;right:0;z-index:99999;min-width:max-content;display:flex;flex-direction:column;align-items:flex-end;}.chat-widget .k-open{cursor:pointer;display:block;width:fit-content;align-self: center;}.chat-widget .say-hello-box{position:absolute;bottom:0;left:0;transform:none;margin-bottom:8px;z-index:99999;}.chat-widget .say-hello{border-radius:10px;display:flex;align-items:center;padding:8px 20px;position:absolute;bottom:0;right:100%;word-wrap:break-word;box-sizing:border-box;white-space:pre;}.chat-widget .chb-close{width:20px;height:20px;display:block;}.chat-widget .chb-close img{background:#fff;border-radius:100%;}.chat-widget .touches{width:max-content;position:absolute;left:50%;transform:translateX(-50%);bottom:101%;z-index:15;border-radius:31px;display:flex;justify-content:center;}.chat-widget .touches img{display:none;}.chat-widget .touches::before{content:'위치 이동';display:flex;justify-content:center;align-items:center;height:30px;color:#000;font-size:14px;border-radius:31px;background:rgba(255,255,255,0.3);padding:0 10px;box-shadow:rgb(221 221 221) 0px 0px 2px;max-width:90px;position:absolute;left:50%;transform:translateX(-50%);white-space:nowrap;bottom:101%;}.touches.icon::before{display:none;}.chat-widget.aabbccdd .touches::before{display:none;}.chat-widget .p_chat_drag_icon{display:none;}.touches.icon img{pointer-events:none;max-height:100%;display:block;}#balloonText{white-space:pre!important;}.chat-widget .chb-time input[type=\"checkbox\"]{position: static !important;width: auto !important;height:auto !important;margin: 0 !important;margin-right: 2px !important;overflow: inherit !important;}";
+	document.head.appendChild(style);
+}
+
+// ✅ 수정된 fixWidgetInView 함수 (✅ 수정된 fixWidgetInView 함수)
+function fixWidgetInView(container, dragArea, isDragging) {
+	if (!container || isFixing) return;
+
+	// 드래그 중이면 아무 작업도 하지 않음 (드래그 중이면 아무 작업도 하지 않음)
+	if (isDragging) return;
+
+	isFixing = true;
+
+	const rect = container.getBoundingClientRect();
+	const hasNoClass = dragArea.classList.contains('no');
+
+	// touches에 no 클래스가 없을 때 top = 40px, 있을 때 top = 0px (touches에 no 클래스가 없을 때 top = 40px, 있을 때 top = 0px)
+	const topLimit = !hasNoClass ? 40 : 0;
+
+	// 현재 top 값이 설정되어 있는지 확인 (현재 top 값이 설정되어 있는지 확인)
+	const isTopSet = container.style.top !== '' && container.style.top !== 'auto';
+
+	// top이 limit보다 작거나 같은 경우 (top이 limit보다 작거나 같은 경우)
+	if (rect.top <= topLimit) {
+		// top 값 고정 (bottom은 auto로) (top 값 고정 - bottom은 auto로)
+		if (!isTopSet || parseInt(container.style.top) !== topLimit) {
+			container.style.top = topLimit + 'px';
+			container.style.bottom = 'auto';
+		}
+	} else {
+		// top 값이 limit 이상이고, 이전에 top이 설정되어 있었다면 해제 (top 값이 limit 이상이고, 이전에 top이 설정되어 있었다면 해제)
+		if (isTopSet) {
+			container.style.top = 'auto';
+			if (originalBottom !== null && originalBottom !== 'auto') {
+				container.style.bottom = originalBottom;
+			}
+		}
+	}
+
+	isFixing = false;
+}
+
+function isMobileDevice() {
+	return /Mobi|Android|iPhone|iPad|iPod|Opera Mini|IEMobile|Mobile/i.test(navigator.userAgent);
+}
+
+// 메인 실행
+(async () => {
+	// 채팅 아이콘 숨김 확인
+	const chatIconHideTime = getCookie('chat_icon_hide_time') || '';
+	if (chatIconHideTime == '24') {
+		console.log('채팅창 아이콘을 하루동안 숨깁니다.');
+		return;
+	}
+
+	// last2.js가 로드 중이거나 이미 로드된 경우 chat-widget을 생성하지 않음
+	if (isLast2ScriptLoading || isLast2ScriptLoaded) {
+		console.log('[user_chaticon-last.js] last2.js가 로드 중이거나 이미 로드되어 chat-widget 생성 스킵');
+		return;
+	}
+
+	// 서버 상태 확인
+	const isServerAvailable = await checkServerStatus();
+	if (!isServerAvailable) {
+		return;
+	}
+
+	// 아이콘 설정 가져오기
+	let iconSettings = {};
+	let settingsLoaded = false;
+
+	// JSONP 콜백 이름 생성
+	const iconSettingsCallback = generateCallbackName();
+
+	// JSONP 함수 생성
+	window[iconSettingsCallback] = function(data) {
+		if (settingsLoaded) return;
+		iconSettings = data;
+		settingsLoaded = true;
+		delete window[iconSettingsCallback];
+		const isMobile = isMobileDevice();
+
+		// localStorage 값이 있을 때만 override
+		if (lastChatExpand !== null && lastChatExpand !== undefined) {
+			iconSettings.chat_expand = lastChatExpand;
+		}
+
+		if (!isMobile && iconSettings?.chat_expand === 'on') {
+			// chat_expand이 on이면 현재 스크립트의 기본 동작 사용
+			if (!isStylesAdded) addChatWidgetStyles();
+			if (!isWidgetCreated) createChatWidget();
+			applyIconSettings(iconSettings);
+		} else {
+			// 모바일이거나 chat_expand이 off이면 user_chaticon-last2.js 로드
+			if (!isLast2ScriptLoading && !isLast2ScriptLoaded) {
+				isLast2ScriptLoading = true;
+				const script2 = document.createElement('script');
+				script2.src = `${chatURL}/chat/js/user_chaticon-last2.js`;
+				script2.type = 'text/javascript';
+				script2.onload = function() { isLast2ScriptLoading = false; isLast2ScriptLoaded = true; console.log('user_chaticon-last2.js 로드 완료'); }; // user_chaticon-last2.js 로드 완료
+				script2.onerror = function() { isLast2ScriptLoading = false; console.error('user_chaticon-last2.js 로드 실패'); if (!isStylesAdded) addChatWidgetStyles(); if (!isWidgetCreated) createChatWidget(); applyIconSettings(iconSettings); }; // user_chaticon-last2.js 로드 실패
+				document.head.appendChild(script2);
+			}
+		}
+	};
+
+	function createChatWidget() {
+		if (isWidgetCreated) return;
+		isWidgetCreated = true;
+
+		const container = document.createElement('div');
+		const openLink = document.createElement('a');
+		const iconImg = document.createElement('img');
+		const balloonBox = document.createElement('span');
+		const balloonText = document.createElement('pre');
+		const closeBox = document.createElement('div');
+		const closeLink = document.createElement('a');
+		const closeImg = document.createElement('img');
+		const timeBox = document.createElement('span');
+		const timeCheckbox = document.createElement('input');
+		const timeLabel = document.createTextNode(' 하루 동안 안 보기 ');
+		const timeCloseLink = document.createElement('a');
+		const timeCloseImg = document.createElement('img');
+		const dragArea = document.createElement('div');
+		const dragIcon = document.createElement('img');
+
+		// 컨테이너 스타일
+		container.className = 'chat-widget';
+		container.style.cssText = 'position: fixed; right: 20px; bottom: 20px; z-index: 99999;min-width: max-content;';
+
+		// 열기 링크
+		openLink.href = '#n';
+		openLink.className = 'k-open';
+		openLink.id = 'icon_oc';
+		openLink.title = '';
+		openLink.style.cssText = 'text-align:center;';
+
+		// 아이콘 이미지
+		iconImg.className = 'p_chat_oc_icon';
+		iconImg.id = 'pre_p_chat_oc_icon';
+		iconImg.style.cssText = 'max-width:100%; height:100%; object-fit:cover;';
+
+		// 말풍선 박스
+		balloonBox.className = 'say-hello-box';
+
+		// 말풍선 텍스트
+		balloonText.id = 'balloonText';
+		balloonText.className = 'say-hello';
+
+		// 닫기 박스
+		closeBox.className = 'chbClose';
+		closeBox.style.cssText = 'position: absolute;left: 100%; bottom: calc(100% - 20px); width: 20px; height: 20px; display: flex;z-index: 50;';
+
+		// 닫기 링크
+		closeLink.href = '#n';
+		closeLink.className = 'chb-close';
+		closeLink.id = 'chbClose';
+		closeLink.style.cssText = 'width: 20px; height: 20px;';
+
+		// 닫기 이미지
+		closeImg.src = 'https://chatty.kr/images/chb_close.png';
+		closeImg.alt = '아이콘 끄기';
+		closeImg.style.cssText = 'display: block;';
+
+		// 시간 박스
+		timeBox.className = 'chb-time';
+		timeBox.style.cssText = 'background-color: rgb(249, 249, 249); color: rgb(0, 0, 0); padding: 5px 10px; border-radius: 10px; box-sizing: border-box; align-items: center; overflow: hidden; overflow-wrap: break-word; word-break: break-all; width: max-content; display: none; position: absolute; right: 24px; top: -10px; white-space: nowrap; z-index: 25; height: 38px;font-size:13px;';
+
+		// 시간 체크박스
+		timeCheckbox.type = 'checkbox';
+		timeCheckbox.style.cssText = 'margin-right: 2px;';
+
+		// 시간 닫기 링크
+		timeCloseLink.href = '#n';
+		timeCloseLink.style.cssText = 'margin-left: 2px; position: absolute; right: -30px; z-index: 30; top: 10px;';
+
+		// 시간 닫기 이미지
+		timeCloseImg.src = 'https://chatty.kr/images/chb_close.png';
+		timeCloseImg.alt = '아이콘 끄기';
+		timeCloseImg.style.cssText = 'width: 20px; height: 20px; display: block;';
+
+		// 드래그 영역
+		dragArea.className = 'touches';
+		dragArea.style.cssText = 'width: max-content;position: absolute;left: 50%;transform: translateX(-50%);bottom: 101%; z-index: 15; border-radius: 31px; display: flex; justify-content: center;';
+
+		// 드래그 아이콘
+		dragIcon.src = '';
+		dragIcon.className = 'p_chat_drag_icon';
+		dragIcon.alt = '위치 이동';
+		dragIcon.style.cssText = 'display: none;';
+
+		// DOM 구조 구성
+		closeLink.appendChild(closeImg);
+		timeCloseLink.appendChild(timeCloseImg);
+		timeBox.appendChild(timeCheckbox);
+		timeBox.appendChild(timeLabel);
+		timeBox.appendChild(timeCloseLink);
+		closeBox.appendChild(closeLink);
+		closeBox.appendChild(timeBox);
+		openLink.appendChild(iconImg);
+		balloonBox.appendChild(balloonText);
+		dragArea.appendChild(dragIcon);
+		container.appendChild(openLink);
+		container.appendChild(balloonBox);
+		container.appendChild(closeBox);
+		container.appendChild(dragArea);
+		document.body.appendChild(container);
+
+		let chatPopup = null;
+		let isDragging = false;
+		let startX, startY;
+		let startRight, startBottom;
+		let dragStartTopFixed = false;
+		let dragStartTopValue = 0;
+
+		let savedRight = 20;
+		let savedBottom = 20;
+
+		try {
+			const saved = localStorage.getItem('chat_widget_pos');
+			if (saved) { const pos = JSON.parse(saved); savedRight = pos.right ?? 20; savedBottom = pos.bottom ?? 20; }
+		} catch (e) {}
+
+		container.style.right = savedRight + 'px';
+		container.style.bottom = savedBottom + 'px';
+		originalBottom = savedBottom + 'px';
+
+		const openChatPopup = () => {
+			const popupSize = (iconSettings?.chat_expand === 'on') ? 'width=1500,height=900' : 'width=600,height=900';
+			const isLocal = location.protocol === 'file:';
+			
+			// localStorage에서 설정값을 읽어서 URL 매개변수로 전달
+			const savedBorder = localStorage.getItem('chat_border');
+			const savedBorderColor = localStorage.getItem('chat_border_color');
+			const borderParam = savedBorder ? `&chatBorder=${encodeURIComponent(savedBorder)}` : '';
+			const borderColorParam = savedBorderColor ? `&chatBorderColor=${encodeURIComponent(savedBorderColor)}` : '';
+			
+			let popupUrl = isLocal 
+				? `${location.href.substring(0, location.href.lastIndexOf('/'))}/_ai_/chat.html?chatID=${chatID}${borderParam}${borderColorParam}` 
+				: `${(iconSettings?.siteBasePath || '').replace(/\/+$/, '')}/_ai_/chat.html?chatID=${chatID}${borderParam}${borderColorParam}`;
+			chatPopup = window.open(popupUrl, 'chatPopup', `${popupSize},scrollbars=no,resizable=yes,status=no,toolbar=no,menubar=no`);
+		};
+
+
+		// 이벤트 리스너 등록 (한 번만)
+		openLink.addEventListener('click', (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			if (!chatPopup || chatPopup.closed) openChatPopup(); else chatPopup.focus();
+		});
+
+		closeLink.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); timeBox.style.display = timeBox.style.display === 'none' ? 'flex' : 'none'; });
+		timeCloseLink.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); timeBox.style.display = 'none'; });
+		timeCheckbox.addEventListener('change', (e) => { if (e.target.checked) { setCookie('chat_icon_hide_time', '24', 24); container.style.display = 'none'; } });
+		container.addEventListener('mouseenter', () => { if (settingsLoaded && iconSettings.chat_balloon === 'on') balloonBox.style.display = 'block'; });
+		container.addEventListener('mouseleave', () => { balloonBox.style.display = 'none'; });
+
+		// ✅ 수정된 드래그 시작 함수 (✅ 수정된 드래그 시작 함수)
+		const handleDragStart = (e) => {
+			if (!iconSettings || iconSettings.chat_drag_icon_use !== 'on') return;
+			e.preventDefault();
+			e.stopPropagation();
+
+			isDragging = true;
+			startX = e.clientX;
+			startY = e.clientY;
+
+			// 현재 위치 기록 (현재 위치 기록)
+			const rect = container.getBoundingClientRect();
+			const winW = window.innerWidth;
+			const winH = window.innerHeight;
+
+			startRight = winW - rect.right;
+			startBottom = winH - rect.bottom;
+
+			// top 고정 상태 기록 (top 고정 상태 기록)
+			dragStartTopFixed = (container.style.top !== '' && container.style.top !== 'auto');
+			if (dragStartTopFixed) {
+				dragStartTopValue = parseInt(container.style.top);
+			}
+
+			document.body.style.cursor = 'grabbing';
+		};
+
+		// ✅ 수정된 드래그 이동 함수 (✅ 수정된 드래그 이동 함수)
+		const handleDragMove = (e) => {
+			if (!isDragging) return;
+			e.preventDefault();
+
+			const deltaX = e.clientX - startX;
+			const deltaY = e.clientY - startY;
+
+			// top 고정 상태인 경우 (top 고정 상태인 경우)
+			if (dragStartTopFixed) {
+				// 명확한 아래쪽 드래그인지 확인 (아래로 50px 이상 이동, 수직 이동이 수평 이동보다 큰 경우) (명확한 아래쪽 드래그인지 확인 - 아래로 50px 이상 이동, 수직 이동이 수평 이동보다 큰 경우)
+				const isIntentionalDown = deltaY > 50 && Math.abs(deltaY) > Math.abs(deltaX);
+
+				// 명확한 아래쪽 드래그: top 고정 해제 (명확한 아래쪽 드래그: top 고정 해제)
+				if (isIntentionalDown) {
+					// 해제 표시만 하고 즉시 스타일을 설정하지 않음 - 아래 정상 드래그 로직이 처리하도록 함 (해제 표시만 하고 즉시 스타일을 설정하지 않음 - 아래 정상 드래그 로직이 처리하도록 함)
+					dragStartTopFixed = false;
+					// 참고: 여기서 container.style.top과 bottom을 설정하지 않음 (참고: 여기서 container.style.top과 bottom을 설정하지 않음)
+					// 아래 코드에서 통합 처리됨 (아래 코드에서 통합 처리됨)
+				} else {
+					// 다른 경우 (위쪽, 손떨림, 좌우): 좌우만 이동 (다른 경우 - 위쪽, 손떨림, 좌우: 좌우만 이동)
+					let newRight = startRight - deltaX;
+					const winW = window.innerWidth;
+					const w = container.offsetWidth || 70;
+					newRight = Math.max(20, Math.min(newRight, winW - w - 20));
+					container.style.right = newRight + 'px';
+					// top과 bottom은 유지 (top과 bottom은 유지)
+					return;
+				}
+			}
+
+			// 정상 드래그 계산 (top 고정 해제된 경우 포함) (정상 드래그 계산 - top 고정 해제된 경우 포함)
+			let newRight = startRight - deltaX;
+			let newBottom = startBottom - deltaY;
+
+			const winW = window.innerWidth;
+			const winH = window.innerHeight;
+			const w = container.offsetWidth || 70;
+			const h = container.offsetHeight || 70;
+
+			newRight = Math.max(20, Math.min(newRight, winW - w - 20));
+			const maxBottom = winH - h - 45;
+			newBottom = Math.max(0, Math.min(newBottom, maxBottom));
+
+			container.style.right = newRight + 'px';
+			container.style.bottom = newBottom + 'px';
+
+			// 이전에 top 고정 상태였고 지금 해제된 경우 top을 auto로 설정 (이전에 top 고정 상태였고 지금 해제된 경우 top을 auto로 설정)
+			if (dragStartTopFixed === false && container.style.top !== 'auto') {
+				container.style.top = 'auto';
+			}
+		};
+
+		// ✅ 수정된 드래그 종료 함수 (✅ 수정된 드래그 종료 함수)
+		const handleDragEnd = () => {
+			if (!isDragging) return;
+
+			isDragging = false;
+			document.body.style.cursor = '';
+
+			// top 고정 상태가 아닌 경우에만 위치 저장 (top 고정 상태가 아닌 경우에만 위치 저장)
+			if (!dragStartTopFixed) {
+				const finalRight = parseInt(container.style.right);
+				const finalBottom = parseInt(container.style.bottom);
+				if (!isNaN(finalRight) && !isNaN(finalBottom)) {
+					originalBottom = finalBottom + 'px';
+					try {
+						localStorage.setItem('chat_widget_pos', JSON.stringify({
+							right: finalRight,
+							bottom: finalBottom
+						}));
+						localStorage.setItem('chat_float_pos', JSON.stringify({
+							right: finalRight + 'px',
+							bottom: finalBottom + 'px'
+						}));
+					} catch (e) {}
+				}
+			}
+
+			// top 고정 필요 여부 다시 확인 (top 고정 필요 여부 다시 확인)
+			setTimeout(() => {
+				fixWidgetInView(container, dragArea, false);
+			}, 10);
+		};
+
+		// 리사이즈 이벤트 (리사이즈 이벤트)
+		let resizeTimer;
+		window.addEventListener('resize', () => {
+			clearTimeout(resizeTimer);
+			resizeTimer = setTimeout(() => {
+				fixWidgetInView(container, dragArea, isDragging);
+			}, 120);
+		});
+
+		dragArea.addEventListener('mousedown', handleDragStart);
+		document.addEventListener('mousemove', handleDragMove);
+		document.addEventListener('mouseup', handleDragEnd);
+		document.addEventListener('mouseleave', handleDragEnd);
+
+		chatWidgetElements = {
+			container, openLink, iconImg, balloonBox, balloonText,
+			closeBox, closeLink, closeImg, timeBox, timeCheckbox,
+			timeLabel, timeCloseLink, timeCloseImg, dragArea, dragIcon
+		};
+	}
+
+	// 설정 로드
+	try {
+		if (!isSettingsLoading && !isSettingsLoaded) {
+			isSettingsLoading = true;
+			const script = document.createElement('script');
+			script.src = `${chatURL}/chat/chatDataLoader.php?chatID=${chatID}&callback=${iconSettingsCallback}`;
+			script.type = 'text/javascript';
+			script.onload = function() { isSettingsLoading = false; isSettingsLoaded = true; try { document.head.removeChild(script); } catch(e){} };
+			script.onerror = function() { isSettingsLoading = false; try { document.head.removeChild(script); } catch(e){} if (!settingsLoaded) { if (!isStylesAdded) addChatWidgetStyles(); if (!isWidgetCreated) createChatWidget(); applyIconSettings(iconSettings); settingsLoaded = true; } };
+			document.head.appendChild(script);
+		}
+	} catch (error) {
+		isSettingsLoading = false;
+		if (!settingsLoaded) { if (!isStylesAdded) addChatWidgetStyles(); if (!isWidgetCreated) createChatWidget(); applyIconSettings(iconSettings); settingsLoaded = true; }
+	}
+
+	function applyIconSettings(settings) {
+		if (!chatWidgetElements) return;
+		const { container, openLink, iconImg, balloonBox, balloonText, closeBox, dragArea, dragIcon } = chatWidgetElements;
+		const isMobile = isMobileDevice();
+
+		// 모바일 환경에서 mcoi 설정 확인
+		if (isMobile && settings.mcoi === 'off') {
+			openLink.style.display = 'none';
+			return;
+		}
+
+		openLink.style.display = settings.coi === 'on' ? 'block' : 'none';
+		
+		// 모바일 여닫기 아이콘 설정 적용
+		if (isMobile && settings.mcoi === 'on' && settings?.chat_mobile_oc_icon?.trim()) {
+			iconImg.src = `${chatURL}/chat/uploaded_files/${settings.chat_mobile_oc_icon}`;
+		} else {
+			iconImg.src = (settings?.chat_oc_icon?.trim()) ? `${chatURL}/chat/uploaded_files/${settings.chat_oc_icon}` : `${chatURL}/chat/images/sub/k_open.png`;
+		}
+		
+		iconImg.alt = settings?.chat_oc_icon_alt || '';
+
+		// 모바일 아이콘 크기 설정 적용
+		if (isMobile && settings.mcoi === 'on') {
+			if (settings.chat_mobile_oc_icon_size_type === '2') {
+				if (settings.chat_mobile_oc_icon_width) openLink.style.width = settings.chat_mobile_oc_icon_width + 'px';
+				if (settings.chat_mobile_oc_icon_height) openLink.style.height = settings.chat_mobile_oc_icon_height + 'px';
+			} else {
+				openLink.style.width = '';
+				openLink.style.height = '';
+			}
+		} else if (settings.chat_oc_icon_size_type === '2') {
+			if (settings.chat_oc_icon_width) openLink.style.width = settings.chat_oc_icon_width + 'px';
+			if (settings.chat_oc_icon_height) openLink.style.height = settings.chat_oc_icon_height + 'px';
+		} else {
+			openLink.style.width = '';
+			openLink.style.height = '';
+		}
+
+		if (settings.chat_drag_icon_init === 'on') {
+			if (settings.chat_drag_icon_init_x) container.style.right = settings.chat_drag_icon_init_x + 'px';
+			if (settings.chat_drag_icon_init_y) container.style.bottom = settings.chat_drag_icon_init_y + 'px';
+			originalBottom = container.style.bottom;
+		}
+
+		if (settings.chat_balloon === 'on' && settings.chat_balloon_text) {
+			const textWithLineBreaks = settings.chat_balloon_text.replace(/\\n/g, '\n');
+			balloonText.textContent = textWithLineBreaks;
+			if (settings.chat_balloon_font_family) balloonText.style.fontFamily = settings.chat_balloon_font_family + ', Malgun Gothic'; else balloonText.style.fontFamily = 'Malgun Gothic';
+			if (settings.chat_balloon_font_size) balloonText.style.fontSize = settings.chat_balloon_font_size;
+			if (settings.chat_balloon_foreground_color) balloonText.style.color = settings.chat_balloon_foreground_color;
+			if (settings.chat_balloon_background_color) balloonText.style.backgroundColor = settings.chat_balloon_background_color;
+			balloonBox.style.display = 'none';
+		} else { balloonBox.style.display = 'none'; }
+
+		closeBox.style.display = settings.chat_oc_icon_close === 'on' ? 'flex' : 'none';
+
+		if (settings.chat_drag_icon_use === 'on') {
+			if (settings.chat_drag_icon) { dragIcon.src = `${chatURL}/chat/uploaded_files/${settings.chat_drag_icon}`; dragIcon.style.display = 'inline-block'; dragArea.className = 'touches icon'; }
+			else { dragIcon.style.display = 'none'; dragArea.className = 'touches no-drag-icon'; }
+		} else { dragIcon.style.display = 'none'; dragArea.style.display = 'none'; dragArea.className = 'touches no'; }
+
+		if (!dragArea.classList.contains('no')) { container.style.minWidth = '76px'; container.style.paddingRight = '0px'; } else { closeBox.style.left = '100%'; }
+
+		try {
+			const saved = localStorage.getItem('chat_widget_pos');
+			if (saved) { const pos = JSON.parse(saved); container.style.right = pos.right + 'px'; container.style.bottom = pos.bottom + 'px'; originalBottom = container.style.bottom; }
+		} catch (e) {}
+
+		const hasCloseBoxClass = closeBox.classList.contains('chbClose');
+		const hasNoClass = dragArea.classList.contains('no');
+
+
+		if (hasCloseBoxClass && !hasNoClass) {
+			dragArea.style.left = '50%';
+		} else {
+			dragArea.style.left = '50%';
+		}
+
+
+		// 초기 위치 조정 (초기 위치 조정)
+		setTimeout(() => {
+			if (chatWidgetElements) {
+				fixWidgetInView(container, dragArea, false);
+			}
+		}, 10);
+	}
+
+	// postMessage 리스너
+	window.addEventListener('message', function(e) {
+		// debug 로그
+		console.log('[user_chaticon-last.js] 메시지 수신:', e.origin, e.data);
+
+		// 출처 확인 조건 완화 - 모든 출처에서 수신 (개발/운영 환경 대응)
+		// if (!chatURL || !e.origin.includes(chatURL.replace('http://', '').replace('https://', ''))) {
+		//     console.log('무시된 메시지:', e.origin);
+		//     return;
+		// }
+
+		if (e.data && e.data.type === 'chatExpandChanged') {
+			const newChatExpand = e.data.value;
+			
+			// chat_expand='on'인 경우: last2.js 제거 후 last.js 재로드 (popup 모드로 전환)
+			if (newChatExpand === 'on' && isLast2ScriptLoaded) {
+				console.log('[user_chaticon-last.js] chat_expand=on으로 변경 - popup 모드로 전환');
+				fullResetToPopupMode();
+				lastChatExpand = newChatExpand;
+				return;
+			}
+			console.log('[user_chaticon-last.js] chatExpandChanged 수신:', newChatExpand);
+
+			// 스크립트 로드/제거
+			if (newChatExpand === 'off') {
+				// last2.js 로드
+				if (!isLast2ScriptLoaded) {
+					console.log('[user_chaticon-last.js] last2.js 로드 시도');
+					loadLast2Script();
+				} else {
+					console.log('[user_chaticon-last.js] last2.js 이미 로드됨');
+				}
+			} else {
+				// last2.js 제거
+				console.log('[user_chaticon-last.js] last2.js 제거 시도');
+				unloadLast2Script();
+			}
+
+			lastChatExpand = newChatExpand;
+		}
+		
+		// chatSettingsSave 처리 (사용자 도메인 localStorage에 저장)
+		if (e.data && e.data.type === 'chatSettingsSave') {
+			console.log('[user_chaticon-last.js] chatSettingsSave 수신:', e.data);
+			
+			// 사용자 도메인 localStorage에 저장
+			localStorage.setItem('chat_expand', e.data.chat_expand);
+			localStorage.setItem('chat_border', e.data.chat_border);
+			localStorage.setItem('chat_border_color', e.data.chat_border_color);
+			localStorage.setItem('chat_expand_expire', e.data.chat_expand_expire);
+			
+			lastChatExpand = e.data.chat_expand;
+		}
+	});
+})();

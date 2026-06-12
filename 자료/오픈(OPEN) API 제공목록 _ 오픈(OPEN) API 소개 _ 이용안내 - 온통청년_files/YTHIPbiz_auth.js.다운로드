@@ -1,0 +1,849 @@
+const YTHIPbiz_auth = function () {
+    let isLogined = false;
+    let userNm = "";
+    let userId = "";
+    let userTaskSeCd = "";
+    let tokenExpiresIn = 0;
+    let ssoLoginServerDisabledYn = "N";
+
+    // 화면 URL 상수 정의 (각 URL에 로그인 필요 여부 추가)
+    const ROUTES = {
+        /* 메인 */
+        MAIN: {key: "MAIN", url: "/main", requiredLogin: false},
+
+        LOGIN: {key: "LOGIN", url: "/login", requiredLogin: false},
+
+        /* 마이페이지 */
+        MY_PAGE: {key: "MY_PAGE", url: "/myPage", requiredLogin: true},
+        /* 내가 스크랩한 정책 */
+        MY_PLCY_SCRAP: {key: "MY_PLCY_SCRAP", url: "/myPage/myPlcyScrap", requiredLogin: true},
+        /* 내게 맞는 정책 */
+        MY_POLICY: {key: "MY_POLICY", url: "/myPage/myPolicy", requiredLogin: true},
+        /*  마이 꾸러미 */
+        MY_GGRUMI: {key: "MY_GGRUMI", url: "/myPage/myPackage", requiredLogin: true},
+
+        /*  내 정보 수정 */
+        MY_PRIVACY_EDIT: {key: "MY_PRIVACY_EDIT", url: "/myPage/privacy/edit", requiredLogin: true},
+        /* 회원탈퇴 */
+        MY_PRIVACY_WITHDRAWAL: {key: "MY_PRIVACY_WITHDRAWAL", url: "/myPage/privacy/withdrawal", requiredLogin: true},
+        /* 회원탈퇴 */
+        WITHDRAWAL_COMPLETION: {
+            key: "WITHDRAWAL_COMPLETION",
+            url: "/myPage/privacy/withdrawal/completion",
+            requiredLogin: false
+        },
+
+
+        /* 일반 - ID/PW 로그인 */
+        // INDIVIDUALS_LOGIN: { key: "INDIVIDUALS_LOGIN", url: "/login/individuals", requiredLogin: false },
+        INDIVIDUALS_LOGIN: {key: "INDIVIDUALS_LOGIN", url: "/login/individuals", requiredLogin: false},
+        /* 특수 - ID/PW 로그인 */
+        AUTHORITY_LOGIN: {key: "AUTHORITY_LOGIN", url: "/login/special", requiredLogin: false},
+        /* 일반 - 로그인 수단 선택 */
+        METHOD_INDIVIDUALS_LOGIN: {key: "METHOD_INDIVIDUALS_LOGIN", url: "/login", requiredLogin: false},
+        /* 특수 - 로그인 수단 선택 */
+        METHOD_AUTHORITY_LOGIN: {key: "METHOD_AUTHORITY_LOGIN", url: "/login/method/special", requiredLogin: false},
+
+        /* 가입 - 일반 - 1. 약관동의 */
+        TERMS: {key: "TERMS", url: "/join/terms", requiredLogin: false},
+        /* 가입 - 일반 - 2. 본인인증 */
+        CERTIFICATION: {key: "CERTIFICATION", url: "/join/certification", requiredLogin: false},
+        /* 가입 - 일반 - 3. 기본정보입력 */
+        INFORMATION: {key: "INFORMATION", url: "/join/information", requiredLogin: false},
+        /* 가입 - 일반 - 4. 가입완료 */
+        COMPLETION: {key: "COMPLETION", url: "/join/completion", requiredLogin: false},
+
+        /* 특수 - 목적검토 */
+        METHOD_AUTHORITY: {key: "METHOD_AUTHORITY", url: "/join/special/purpose", requiredLogin: false},
+
+        /* 특수 : 상담사 */
+        SPECIAL_COUNSELOR: {key: "SPECIAL_COUNSELOR", url: "/join/special/counselor", requiredLogin: false},
+        /* 특수 : 정책책임관 */
+        SPECIAL_POLICY: {key: "SPECIAL_POLICY", url: "/join/special/policy", requiredLogin: false},
+        /* 아이디 비밀번호 찾기 */
+        SEARCH_ACCOUNT: {key: "SEARCH_ACCOUNT", url: "/search/account", requiredLogin: false},
+    };
+
+    const ADMIN_ROLE_SCOPES = ["0051004", "0051005"];
+    const APPLY_PENDING_CODES = ["0048001", "0048002"];
+    // let SPECIAL_ACCESS = false;
+
+    // 공통 응답
+    const Response = function (code, message, data = {}) {
+        return {code, message, data};
+    };
+
+    const _idSave = {
+        init: function (input, checkbox) {
+            const savedUserId = YTHIPcomm.locStorage.get("savedUserId");
+            try {
+                const parsed = JSON.parse(savedUserId);
+                if (typeof parsed === "object" && Object.keys(parsed).length === 0) {
+                    // 빈 객체인 경우 삭제
+                    YTHIPcomm.locStorage.remove("savedUserId");
+                    checkbox.prop("checked", false);
+                    return;
+                }
+            } catch (e) {
+                // JSON이 아니면 무시
+            }
+
+            if (typeof savedUserId === "string" && savedUserId.trim() !== "") {
+                // 저장된 값이 문자열이고 비어있지 않을 때만 입력
+                input.val(savedUserId);
+                checkbox.prop("checked", true);
+            } else {
+                checkbox.prop("checked", false);
+            }
+        },
+        handleUserIdSave: function (userId, isSaveChecked) {
+            if (isSaveChecked) {
+                // 체크박스가 체크되었으면 아이디 저장
+                YTHIPcomm.locStorage.set("savedUserId", userId);
+            } else {
+                // 체크박스가 해제되었으면 아이디 삭제
+                YTHIPcomm.locStorage.remove("savedUserId");
+            }
+        },
+    }
+
+    const _anyidAdaptor = {
+        ssoLoginPageSub: function (baseUrl, endPoint, acrValues) {
+            console.log("ssoLoginPageSub")
+            //debugger;
+            var subUrl = "";
+
+            if (endPoint && endPoint.trim() !== "") {
+                subUrl = "?endPoint=" + encodeURIComponent(endPoint);
+            }
+
+            if (!acrValues || acrValues.trim() === "") {
+                acrValues = "3";
+            }
+
+            if (acrValues && acrValues.trim() !== "") {
+                if (subUrl === "") {
+                    subUrl = "?";
+                } else {
+                    subUrl = subUrl + "&";
+                }
+                subUrl = subUrl + "acrValues=" + acrValues;
+            }
+            authorityYn = YTHIPcomm.sessStorage.get('authority')
+            if (authorityYn && authorityYn == "Y") {
+                subUrl = subUrl + "&" + "special=" + "Y"
+            }
+            console.log("===============" + baseUrl + subUrl)
+            window.location.replace(baseUrl + subUrl);
+        },
+        ssoLoginPage: function (endPoint, acrValues) {
+            if (YTHIPbiz_auth.ssoLoginServerDisabledYn == "Y") {
+                authorityYn = YTHIPcomm.sessStorage.get('authority')
+                if (authorityYn && authorityYn == "Y") {
+                    location.href = "/login?special=Y"
+                } else {
+                    YTHIPbiz_auth.route.go(YTHIPbiz_auth.ROUTES.LOGIN);
+                }
+                return;
+            } else {
+                console.log("ssoLoginPage")
+                console.log(endPoint, acrValues)
+                endPoint = typeof endPoint !== 'undefined' ? endPoint : "/";
+                var baseUrl = window.location.origin + "/oidc/auth";
+                _anyidAdaptor.ssoLoginPageSub(baseUrl, endPoint, acrValues);
+            }
+
+        },
+        ssoLogout: function (endPoint) {
+            endPoint = typeof endPoint !== 'undefined' ? endPoint : "/";
+            var baseUrl = window.location.origin + "/oidc/ssoLogout";
+            baseUrl = baseUrl + "?endPoint=" + encodeURIComponent(endPoint);
+            YTHIPcomm.sessStorage.remove("ssoState");
+            window.location.replace(baseUrl);
+        },
+    }
+
+    // 접근 제어 함수 모음 (_accessControl 객체)
+    const _access = {
+        /**
+         * 메뉴 접근 권한을 확인하고 필요한 경우 리다이렉트 처리
+         * @param {Array} requiredRoles - 접근 가능한 권한 목록
+         */
+        handle: function () {
+            // !localStorage.getItem("debugMode")
+            if (serverProfile == "prod" && !localStorage.getItem("debugMode")) {
+                console.log = function () {
+                };
+            }
+
+            YTHIPcomm.locStorage.remove('guestToken');
+            YTHIPcomm.locStorage.remove('accessToken');
+            YTHIPcomm.locStorage.remove('refreshToken');
+            YTHIPcomm.locStorage.remove('scope');
+
+            // _access.checkLogoutFlag();
+
+            // sso 로그인 토큰 발급
+            const url = new URL(window.location.href);
+            const tx = url.searchParams.get("tx");
+            if (window.location.pathname.startsWith('/main') || window.location.pathname.startsWith('/join/special/purpose')) {
+                if (tx) {
+                    history.replaceState({}, document.title, window.location.pathname);
+                }
+            }
+
+            const ssoErrorCheck = url.searchParams.get("error");
+            if (ssoErrorCheck == "invalidState") {
+                _anyidAdaptor.ssoLoginPage("/main", "3")
+            }
+
+            // 특수사용자 페이지 접근 일 경우
+            if (window.location.pathname == "/login/method/special") {
+                YTHIPcomm.sessStorage.set('authority', 'Y')
+                _anyidAdaptor.ssoLoginPage("/main", "3")
+                return;
+            }
+
+            let _roles = [];
+
+            if (Array.isArray(YTHIPcomm.REQUIRED_ROLES)) {
+                _roles.push(...YTHIPcomm.REQUIRED_ROLES);
+            }
+            // console.log("[현재메뉴URL] : ", window.location.href);
+            //console.log("[메뉴접근권한] :", _roles);
+            let scope = "";
+            if (!_roles || _roles.length === 0) {
+                YTHIPbiz_auth.access.logging(false, YTHIPcomm.CURR_MENU);
+                // console.log("이 메뉴는 모든 사용자에게 접근 가능합니다.");
+            } else {
+                if (_auth.isLogined()) {
+                    scope = _auth.getLoginedScope();
+                    // 나의 권한이 requiredRoles 배열에 포함되어 있는지 확인
+                    if (!_roles.includes(scope)) {
+                        YTHIPbiz_auth.access.logging(true, YTHIPcomm.CURR_MENU);
+                        window.location.href = "/error/403";
+                        return;
+                    } else {
+                        YTHIPbiz_auth.access.logging(false, YTHIPcomm.CURR_MENU);
+                    }
+                } else {
+                    YTHIPbiz_auth.access.logging(true, YTHIPcomm.CURR_MENU);
+                    //window.location.href = "/error/401?code=unauthorization";
+                    let noticeMessage = "로그인이 필요한 화면입니다. \n로그인을 진행해주세요.";
+                    alert(noticeMessage);
+                    window.location.href = "/main";
+                    return;
+                }
+            }
+        },
+        logging: function (isError, menu) {
+            try {
+                if (!YTHIPbiz_auth.auth.isLogined()) {
+                    return;
+                }
+                const data = _auth.getPayloadFromToken();
+                // 메뉴 접근 로깅 데이터 생성
+                const logData = {
+                    userId: data.data.userId || "unknown",
+                    sysCd: "0002001",
+                    userInstCd: "",
+                    userInstCdNm: "",
+                    userNm: data.data.userNm || "unknown",
+                    userTaskSeCd: data.data.userTaskSeCd,
+                    menuNm: menu,
+                    cntnIpAddr: YTHIPcomm.locStorage.get("cip") || "",
+                    cntnInfoCd: isError ? "0015002" : "0015001"
+                };
+                // 서버로 비동기 POST 요청 전송
+                const url = YTHIPcomm.API_COM_URL + "/sur/com/log"
+                $.ajax({
+                    url: url,
+                    method: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify(logData),
+                    success: function (response) {
+                    },
+                    error: function (error) {
+                    }
+                });
+            } catch (e) {
+                return e;
+
+            }
+        },
+        loggingMethod: function (isError, methodName) {
+            try {
+                const data = YTHIPbiz_auth.auth.getPayloadFromToken();
+                // 메뉴 접근 로깅 데이터 생성
+                const logData = {
+                    userId: data.data.userId || "unknown",
+                    sysCd: "0002001",
+                    userInstCd: "",
+                    userInstCdNm: "",
+                    userNm: data.data.userNm || "unknown",
+                    userTaskSeCd: data.data.userTaskSeCd,
+                    menuNm: methodName,
+                    cntnIpAddr: YTHIPcomm.locStorage.get("cip") || "",
+                    cntnInfoCd: isError ? "0015002" : "0015001"
+                };
+                // 서버로 비동기 POST 요청 전송
+                const url = YTHIPcomm.API_COM_URL + "/sur/com/log/method"
+
+                $.ajax({
+                    url: url,
+                    method: "POST",
+                    contentType: "application/json",
+                    data: JSON.stringify(logData),
+                    success: function (response) {
+                    },
+                    error: function (error) {
+                    }
+                });
+            } catch (e) {
+                console.log(e + " " + "오류 발생");
+                return e;
+
+            }
+        },
+        checkLogoutFlag: function () {
+
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const [name, value] = cookies[i].trim().split('=');
+                if (name === "logoutFlag" && value === "true") {
+                    console.log("로그아웃 감지됨. 자동 로그아웃 처리...");
+                    // 쿠키 삭제
+                    document.cookie = "logoutFlag=false; Path=/; Max-Age=0;";
+                    _auth.logout();
+                }
+            }
+        },
+        storeClientIp: function () {
+            const cip = YTHIPcomm.locStorage.get("cip");
+            if (cip) {
+                return;
+            }
+
+            try {
+                // 동기적 요청 생성
+                const xhr = new XMLHttpRequest();
+                xhr.open("GET", "https://api.ipify.org?format=json", false); // 동기 요청 (false)
+                xhr.send();
+
+                if (xhr.status === 200) {
+                    const data = JSON.parse(xhr.responseText);
+                    YTHIPcomm.locStorage.set("cip", data.ip);
+                } else {
+                    console.error("IP 가져오기 실패: 상태 코드", xhr.status);
+                }
+            } catch (error) {
+                console.error("예외 발생:", error);
+            }
+        }
+
+
+    };
+
+    // 화면 이동 관련 함수 모음 (_route 객체)
+    const _route = {
+        /**
+         * 경로 상수를 받아 화면으로 이동
+         * @param {object} routeConst - ROUTES 객체 중 하나 (예: YTHIPbiz_auth.ROUTES.LOGIN)
+         */
+        go: function (routeConst) {
+            if (!routeConst || !routeConst.url) {
+                console.error("유효하지 않은 경로 상수입니다.");
+                return;
+            }
+            // 로그인 필요 여부 확인
+            if (routeConst.requiredLogin && !YTHIPbiz_auth.auth.isLogined()) {
+                console.log("로그인이 필요합니다. 로그인 화면으로 이동합니다.");
+                YTHIPbiz_auth.anyidAdaptor.ssoLoginPage("/main", '3')
+            } else {
+                location.href = routeConst.url; // 해당 페이지로 이동
+            }
+        },
+        check: function () {
+            console.log("check ssss");
+            console.log(window);
+            console.log("호출한 곳 : ", document.referrer);
+
+            if ((document.referrer == "http://local.ythip.co.kr:8080/main") || (document.referrer == "http://localhost:8080/main") || (document.referrer == "https://ythip.planidx.co.kr/main")) {
+                //location.href = "/login/individuals"
+
+            }
+
+            console.log("check eee")
+
+        },
+
+
+    };
+
+    /**
+     * 인증 관련 메서드 모음
+     * @type {{init: _init}}
+     * @private
+     */
+    const _auth = function () {
+
+        const _storeTokens = (tokens) => {
+            YTHIPcomm.locStorage.set('accessToken', tokens.access_token);
+            // YTHIPcomm.locStorage.set('refreshToken', tokens.refresh_token);
+            if (tokens.scope) {
+                YTHIPcomm.locStorage.set('scope', tokens.scope);
+            }
+        };
+        const _storeGuestToken = (token) => {
+            YTHIPcomm.locStorage.set('guestToken', token.access_token);
+        };
+
+        const _removeTokens = () => {
+            YTHIPcomm.locStorage.remove('accessToken');
+            YTHIPcomm.locStorage.remove('refreshToken');
+            YTHIPcomm.locStorage.remove('scope');
+        };
+
+        // 로그인 여부 확인 함수
+        let _isLogined = function () {
+            return YTHIPbiz_auth.isLogined;
+        };
+
+        // 로그인 된 스코프
+        const _getLoginedScope = function () {
+            const scope = YTHIPbiz_auth.userTaskSeCd;
+            return scope
+        };
+
+
+        /**
+         * 로그인 요청을 통해 토큰을 가져오는 함수
+         * @param {string} userId - 사용자 ID
+         * @param {string} userPswd - 사용자 비밀번호
+         * @returns {Promise}
+         * @private
+         */
+        const _login = async function (userId, userPswd) {
+
+            const url = `${YTHIPcomm.API_FRT_URL}/oauth/token`;
+            const headers = {
+                "Content-Type": "application/json" // JSON으로 Content-Type 설정
+            };
+
+            // JSON 형식의 body로 변경
+            const body = JSON.stringify({
+                grantType: "password",
+                username: userId,
+                password: userPswd,
+            });
+
+            try {
+                const response = await _promiseWithHeaders("POST", url, body, headers);
+
+                // 성공 응답에 알림 메시지가 있는 경우 표시
+                // if (response.data && response.data.alertMessage) {
+                //     //alert(response.data.alertMessage);
+                //     await new Promise((resolve) => {
+                //         YTHIPcomm.alert({title: "알림", msg: response.data.alertMessage}, $(this), function () {
+                //
+                //             resolve();
+                //         });
+                //     })
+                //
+                // }
+
+                await _access.storeClientIp();
+                return response;
+            } catch (error) {
+                return error;
+            }
+        };
+
+        const _userCheck = async function (userId, userPswd) {
+            const url = `${YTHIPcomm.API_COM_URL}/sur/com/user/check`;
+            const headers = {
+                "Content-Type": "application/json", // JSON으로 Content-Type 설정
+            };
+
+            // JSON 형식의 body로 변경
+            const body = JSON.stringify({
+                userId: userId,
+                userPswdNm: userPswd,
+            });
+
+            try {
+                const response = await _promiseWithHeaders("POST", url, body, headers);
+                console.log(response)
+                //_storeTokens(response.data);
+
+
+                return response;
+            } catch (error) {
+                return error;
+            }
+        };
+        /**
+         * 로그인 요청을 통해 토큰을 가져오는 함수
+         * @param {string} userId - 사용자 ID
+         * @param {string} userPswd - 사용자 비밀번호
+         * @returns {Promise}
+         * @private
+         */
+        const _credencialLogin = async function (tx, flag) {
+            const url = `${YTHIPcomm.API_FRT_URL}/oauth/token`;
+            const headers = {
+                "Content-Type": "application/json" // JSON으로 Content-Type 설정
+            };
+
+            // JSON 형식의 body로 변경
+            const body = JSON.stringify({
+                grantType: "password",
+                username: "",
+                password: "",
+                tx: tx
+            });
+
+            try {
+                const response = await _promiseWithHeaders("POST", url, body, headers);
+                if (response) {
+                    await _access.storeClientIp();
+                    YTHIPbiz_auth.tokenExpiresIn = response.data.tokenExpiresIn;
+                    updateHeader();
+                }
+                history.replaceState({}, document.title, window.location.pathname);
+                return response;
+            } catch (error) {
+                return error;
+            }
+        };
+
+
+        /**
+         * 리프레시 토큰을 사용해 새로운 액세스 토큰을 발급받는 함수
+         * @returns {Promise}
+         * @private
+         */
+        const _refreshAccessToken = async function () {
+
+            const url = `${YTHIPcomm.API_FRT_URL}/oauth/token`; // 엔드포인트 URL 확인
+            const headers = {
+                "Content-Type": "application/json" // JSON 형식으로 Content-Type 설정
+            };
+
+            const body = JSON.stringify({
+                grantType: "refresh_token",
+            });
+
+            try {
+                const response = await _promiseWithHeaders("POST", url, body, headers);
+                if (response) {
+                    YTHIPbiz_auth.tokenExpiresIn = response.data.tokenExpiresIn;
+                    updateHeader();
+                    isExtendPopOpen = false;
+                    YTHIPcomm.alert({title: "알림", msg: "로그인이 연장되었습니다."}, $(this));
+                } else {
+                    YTHIPcomm.alert({title: "알림", msg: "로그인을 연장할 수 없습니다."}, $(this));
+                }
+            } catch (error) {
+                console.error("액세스 토큰 갱신 실패:", error);
+                return null;
+            }
+        };
+
+
+        /**
+         * 로그아웃 함수: 로컬 스토리지에서 토큰을 제거
+         * @returns {void}
+         * @private
+         */
+        const _logout = async function (target) {
+            const url = `${YTHIPcomm.API_FRT_URL}/oauth/logout`;
+            const headers = {
+                "Content-Type": "application/json" // JSON으로 Content-Type 설정
+            };
+
+            if (!target || target == "") {
+                target = "/main"
+            }
+            try {
+                const response = await _promiseWithHeaders("POST", url, {}, headers);
+                if (response.status == 200) {
+                    // updateHeader();
+                    if (response.data.ssoLogoutFlag == "Y") {
+                        YTHIPbiz_auth.anyidAdaptor.ssoLogout(target);
+                    } else {
+                        location.href = target
+                    }
+                }
+            } catch (error) {
+                console.error("로그인 실패:", error);
+                return error;
+            }
+        };
+
+        /**
+         * 토큰이 유효한지 체크하고 userid를 리턴
+         * @param {string} token
+         * @returns {object|null}
+         * @private
+         */
+        const _getUserIdByToken = function () {
+            data = {
+                userId: null,
+                userNm: null,
+                userTaskSeCd: null,
+            };
+            // 토큰의 만료 여부를 확인
+            if (!_isLogined()) {
+                // _logout(); // 만료된 토큰을 삭제
+                // YTHIPcomm.confirm({title:"로그인 알림", msg:"로그인이 필요합니다.", submsg:"로그인 하시겠습니까?"}, $(this), function () {
+                // 	YTHIPbiz_auth.route.go(YTHIPbiz_auth.ROUTES.METHOD_INDIVIDUALS_LOGIN);
+                // }, function () {
+                // 	YTHIPbiz_auth.route.go(YTHIPbiz_auth.ROUTES.MAIN);
+                // }, "로그인하기", "메인으로");
+                //YTHIPbiz_auth.route.go(YTHIPbiz_auth.ROUTES.MAIN);
+                //console.error(Response(401, "토큰이 만료되었습니다."));
+                return Response(401, "토큰이 만료되었습니다.", data);
+            }
+
+            if (YTHIPbiz_auth.userId) {
+                data["userId"] = YTHIPbiz_auth.userId;
+                data["userNm"] = YTHIPbiz_auth.userNm;
+                data["userTaskSeCd"] = YTHIPbiz_auth.userTaskSeCd;
+                return Response(200, "정상", data)
+            }
+        };
+        /**
+         * 토큰이 유효한지 체크하고 userdata 리턴
+         * @param
+         * @returns {object|null}
+         * @private
+         */
+        const _getPayloadFromToken = function () {
+            data = {
+                userId: null,
+                userNm: null,
+                userTaskSeCd: null,
+            };
+            // 토큰의 만료 여부를 확인
+            if (!_isLogined()) {
+                // _logout(); // 만료된 토큰을 삭제
+                // YTHIPcomm.confirm({title:"로그인 알림", msg:"로그인이 필요합니다.", submsg:"로그인 하시겠습니까?"}, $(this), function () {
+                // 	YTHIPbiz_auth.route.go(YTHIPbiz_auth.ROUTES.METHOD_INDIVIDUALS_LOGIN);
+                // }, function () {
+                // 	YTHIPbiz_auth.route.go(YTHIPbiz_auth.ROUTES.MAIN);
+                // }, "로그인하기", "메인으로");
+                //YTHIPbiz_auth.route.go(YTHIPbiz_auth.ROUTES.MAIN);
+                //console.error(Response(401, "토큰이 만료되었습니다."));
+                return Response(401, "토큰이 만료되었습니다.", data);
+            }
+
+            if (YTHIPbiz_auth.userId) {
+                data["userId"] = YTHIPbiz_auth.userId;
+                data["userNm"] = YTHIPbiz_auth.userNm;
+                data["userTaskSeCd"] = YTHIPbiz_auth.userTaskSeCd;
+                return Response(200, "정상", data)
+            }
+        };
+
+
+        /**
+         * 토큰을 디코딩하는 함수
+         * @param {string} token - 디코딩할 JWT 토큰
+         * @returns {object|null}
+         * @private
+         */
+        const _decodeToken = function (token) {
+            if (!token) {
+                console.error("토큰이 존재하지 않습니다.");
+                return null;
+            }
+
+            try {
+                const parts = token.split('.');
+                if (parts.length !== 3) {
+                    console.error("유효하지 않은 토큰 형식입니다. 전달된 토큰:", token);
+                    return null;
+                }
+
+                const payloadBase64Url = parts[1]; // 페이로드 부분 추출
+                const payload = JSON.parse(_base64UrlDecode(payloadBase64Url)); // 디코딩 및 JSON 변환
+                //console.log("디코드된 페이로드:", payload); // 디코드된 payload 출력
+                return payload;
+            } catch (error) {
+                console.error("토큰 디코딩 중 오류 발생:", error);
+                return null;
+            }
+        };
+
+        /**
+         * 토큰의 유효 시간 확인
+         * @param {string} token - 유효 시간을 확인할 JWT 토큰
+         * @returns {string} yyyyMMddHHmmss
+         * @private
+         */
+        const _printTokenExpiry = function (token) {
+            const decodedToken = _decodeToken(token);
+            if (!decodedToken) {
+                console.error("토큰이 유효하지 않습니다.");
+                return;
+            }
+
+            const expiryTime = new Date(decodedToken.exp * 1000);
+            //console.log("토큰 만료 시간:", expiryTime.toLocaleString());
+
+            // yyyymmddhhmmss 형식으로 포맷된 만료 시간
+            const formattedExpiryTime = _formatDateToYyyyMMddHHmmss(expiryTime);
+            //console.log("포맷된 토큰 만료 시간:", formattedExpiryTime);
+            return formattedExpiryTime;
+        };
+
+        /**
+         * 토큰 만료 시간까지 남은 시간을 MM:SS 형식으로 반환하는 함수
+         * @param {number} expiryTimestamp - 만료 시간을 초 단위로 나타낸 Unix 타임스탬프
+         * @returns {string} - 남은 시간이 MM:SS 형식의 문자열 또는 "토큰이 만료되었습니다" 메시지
+         * @private
+         */
+        const _getRemainingTime = function (expiryTimestamp) {
+            const currentTime = Date.now(); // 현재 시간을 밀리초로 가져옴
+            const remainingTime = expiryTimestamp * 1000 - currentTime; // 남은 시간을 밀리초로 계산
+
+            if (remainingTime <= 0) {
+                return "토큰이 만료되었습니다.";
+            }
+
+            const minutes = Math.floor((remainingTime / 1000 / 60) % 60); // 남은 분
+            const seconds = Math.floor((remainingTime / 1000) % 60); // 남은 초
+
+            // MM:SS 형식으로 변환
+            return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        };
+
+
+        /**
+         * 날짜를 yyyyMMddHHmmss 형식으로 변환하는 함수
+         * @param {Date} date - 변환할 날짜 객체
+         * @returns {string} - yyyyMMddHHmmss 형식의 문자열
+         * @private
+         */
+        const _formatDateToYyyyMMddHHmmss = function (date) {
+            const yyyy = date.getFullYear().toString();
+            const MM = String(date.getMonth() + 1).padStart(2, '0');
+            const dd = String(date.getDate()).padStart(2, '0');
+            const HH = String(date.getHours()).padStart(2, '0');
+            const mm = String(date.getMinutes()).padStart(2, '0');
+            const ss = String(date.getSeconds()).padStart(2, '0');
+
+            return `${yyyy}${MM}${dd}${HH}${mm}${ss}`;
+        };
+
+
+        /**
+         * 토큰 만료 여부를 확인하는 함수
+         * @param {string} token - 만료 여부를 확인할 JWT 토큰
+         * @returns {boolean}
+         * @private
+         */
+        const _isTokenExpired = function (token) {
+
+            const decodedToken = _decodeToken(token);
+            if (!decodedToken) return true;
+
+            const now = Math.floor(Date.now() / 1000);
+            return decodedToken.exp < now;
+        };
+
+        const _base64UrlDecode = function (base64Url) {
+            // Base64 URL Safe 형식 -> 일반 Base64 형식으로 변환
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            // 패딩 처리
+            const paddedBase64 = base64.padEnd(base64.length + (4 - base64.length % 4) % 4, '=');
+            // 디코딩
+            return decodeURIComponent(
+                atob(paddedBase64)
+                    .split('')
+                    .map(c => '%' + c.charCodeAt(0).toString(16).padStart(2, '0'))
+                    .join('')
+            );
+        };
+
+        // 공통 함수: 헤더에 Authorization 토큰을 추가
+        const _addAuthorizationHeader = function (headers) {
+
+            headers["user_id"] = YTHIPbiz_auth.userId;
+            headers["X-CSRF-Token"] = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+            return headers;
+        };
+
+        let _promiseWithHeaders = async (type, url, param, headers = {}) => {
+            //YTHIPcomm.indicator(true);
+
+            let dataType = type.toUpperCase();
+            headers["X-CSRF-Token"] = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+            try {
+                let _opt = {
+                    url: url,
+                    type: type,
+                    dataType: "json",
+                    async: true,
+                    cache: false,
+                    contentType: "application/x-www-form-urlencoded",
+                    "xhrFields": {
+                        withCredentials: true  // ✅ 브라우저가 자동으로 `HttpOnly` 쿠키 포함
+                    },
+                    data: param,
+                    headers: headers
+                };
+
+                // status와 response 객체를 포함하여 반환
+                const response = await $.ajax(_opt).then((data, textStatus, jqXHR) => {
+                    return {status: jqXHR.status, data: data};
+                });
+                return response;
+            } catch (e) {
+                return e;
+            }
+        };
+
+
+        return {
+            login: _login,
+            userCheck: _userCheck,
+            credencialLogin: _credencialLogin,
+            logout: _logout,
+            refreshAccessToken: _refreshAccessToken,
+            decodeToken: _decodeToken,
+            isTokenExpired: _isTokenExpired,
+            promiseWithHeaders: _promiseWithHeaders,
+            printTokenExpiry: _printTokenExpiry,
+            getRemainingTime: _getRemainingTime,
+            formatDateToYyyyMMddHHmmss: _formatDateToYyyyMMddHHmmss,
+            addAuthorizationHeader: _addAuthorizationHeader,
+            getUserIdByToken: _getUserIdByToken,
+            getPayloadFromToken: _getPayloadFromToken,
+            isLogined: _isLogined,
+            getLoginedScope: _getLoginedScope,
+            storeTokens: _storeTokens,
+
+
+        };
+    }();
+
+
+    return {
+        auth: _auth,
+        route: _route,
+        access: _access,
+        ROUTES: ROUTES,
+        idSave: _idSave,
+        anyidAdaptor: _anyidAdaptor,
+        ADMIN_ROLE_SCOPES: ADMIN_ROLE_SCOPES,
+        APPLY_PENDING_CODES: APPLY_PENDING_CODES,
+        isLogined: isLogined,
+        userId: userId,
+        userNm: userNm,
+        userTaskSeCd: userTaskSeCd,
+        tokenExpiresIn: tokenExpiresIn,
+        ssoLoginServerDisabledYn: ssoLoginServerDisabledYn,
+    };
+}();

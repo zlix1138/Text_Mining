@@ -1,0 +1,330 @@
+/*-------------------------------------------------
+title       : 플러그인 모음
+-------------------------------------------------*/
+
+// 주메뉴
+$.fn.gnb = function (options) {
+    var settings = $.extend ({
+        'actionType': 'click',     // 메뉴가 동작하는 액션 (mouseenter focusin, click)
+        'target': '#header',       // 활성화 시 클래스가 추가되는 요소 (공란일 경우 오버되는 a 링크 부모 li에만 클래스 추가됨)
+        'class': 'active',         // 추가할 클래스명 (target에 추가됨)
+        'depth2': '.submenu',      // 서브메뉴
+        'closeBtn': '.close'       // 닫기 버튼이 별도로 존재하는 경우 (닫기 버튼은 클릭시에만)
+    },
+        options);
+
+    return this.each(function () {
+        var $selecter = $(this);
+
+        $selecter.find('a').on(settings.actionType, function () {
+            if ($(this).parent('li').hasClass('active') == false) {
+                $(this).parents('li').addClass('active');
+                $("#gnb > li > a").find(".sr-only").text("열기");
+                $(this).find(".sr-only").text("닫기");
+                $(this).parents('li').siblings('li').removeClass('active');
+                $(this).parents('li').siblings('li').find('li').removeClass('active');
+
+                if (settings.target != '') {
+                    $(settings.target).addClass(settings.class);
+                }
+            }else{
+                if($(this).next(".submenu").length){
+                    $(this).closest('li').removeClass('active');
+                    $(this).find(".sr-only").text("열기");
+                    $(settings.target).removeClass(settings.class);
+                }
+            }
+
+            if (settings.actionType == 'click') {
+                if ($(this).next('*').length > 0) {
+                    return false;
+                }
+            }
+            menuH();
+        });
+
+        $("#gnb > li > a").on("click",function(){
+            if(!$(this).closest("li").find(".submenu > ul > li").is(".active")){
+                //$(this).closest("li").find(".submenu > ul > li").eq(0).addClass(settings.class);
+            }else if($(this).closest("li").find(".submenu > ul > li.on").length){
+                $(this).closest("li").find(".submenu > ul > li").removeClass(settings.class);
+                $(this).closest("li").find(".submenu > ul > li.active").addClass(settings.class);
+            }
+
+        	$(this).closest("li").find(".submenu > ul > li").each(function(){
+        		if($(this).hasClass("active")){
+        			$(this).addClass(settings.class);
+        		}
+        	});
+            menuH();
+            if($(this).closest("li").find(".submenu").length){
+                return false;
+            }
+        });
+
+        function menuH(){
+            let d2H = 0;
+            let d3H = 0;
+
+            d2H = $(".topmenu").find("> li.active .submenu").innerHeight();
+            d3H = $(".topmenu").find("> li.active .submenu .active .depth3").innerHeight();
+
+            if(d2H < d3H){
+                $(".topmenu").find("> li.active .submenu").removeAttr("style");
+                $(".topmenu").find("> li.active .submenu").height(d3H);
+            }
+        }
+
+        if ($selecter.find(settings.closeBtn).length == 1) {
+            $selecter.find(settings.closeBtn).on('click', function () {
+                $selecter.find('li').removeClass(settings.class);
+                $("#gnb > li > a").find(".sr-only").text("열기");
+                $(settings.target).removeClass(settings.class);
+
+                return false;
+            });
+        }
+        else {
+            $(document).on("click",function(e){
+                if(!$(e.target).parents().is(".header-gnb") || $(e.target).is(".submenu")){
+                    closeMenu();
+                }
+            });
+        }
+
+        function closeMenu(){
+            $selecter.find('li').removeClass(settings.class);
+            $("#gnb > li > a").find(".sr-only").text("열기");
+            $(settings.target).removeClass(settings.class);
+        }
+
+        // 탭 아웃
+        window.addEventListener("keyup", (e) => {
+            if(!e.target.closest("#gnb")) {
+                closeMenu();
+            }
+        });
+
+        // 역탭 아웃
+        $selecter.find('a:first').keydown(function (e) {
+            if (e.keyCode === 9 && e.shiftKey) {
+                closeMenu();
+            }
+        });
+    });
+};
+
+// 전체메뉴
+$.fn.gnb2 = function (options) {
+    var settings = $.extend
+        ({
+            'btnOpen': '.open',      // 최초 메뉴를 여는 버튼
+            'btnClose': '.close',     // 닫기 버튼이 별도로 존재하는 경우
+            'classAdd': '#gnb2',      // 활성화 시 클래스가 추가되는 요소
+            'className': 'active',     // 추가할 클래스명 (classAdd에 추가됨)
+            'siblings': true,		    // active 될 때 형제요소의 반응 여부
+            'responsive': true,         // 반응형일 때 (true 시 반응형일때 가로 사이즈 이하에서만 / false 시 반응형 아닐 때도 클릭 동작함)
+            'responsiveWidth': '1210',       // 반응형 가로 사이즈
+            'menuactive': true          // 열기 버튼 눌렀을 때 첫번째 메뉴 활성화 여부(반응형일 때)
+        },
+            options);
+
+    return this.each(function () {
+        var $selecter = $(this);
+
+        // 열기
+        $selecter.find(settings.btnOpen).on('click', function () {
+            if ($selecter.find(settings.btnClose).length > 0) {
+                $(settings.classAdd).addClass(settings.className);
+
+                $('html').css('overflow', 'hidden');
+                $('#header').addClass("menu_on");
+            }
+            else {
+                if ($(settings.classAdd).hasClass(settings.className) == false) {
+                    $(settings.classAdd).addClass(settings.className);
+                }
+                else {
+                    $(settings.classAdd).removeClass(settings.className);
+                }
+            }
+
+            if (settings.menuactive == true) {
+                if (settings.responsive == true) {
+                    if ($(window).width() <= settings.responsiveWidth) {
+                        $selecter.find('li:first').addClass('active');
+                    }
+                }
+            }
+
+            return false;
+        });
+
+        // 닫기
+        if ($selecter.find(settings.btnClose).length > 0) {
+            $selecter.find(settings.btnClose).on('click', function () {
+                $selecter.find('li').removeClass('active');
+                $(settings.classAdd).removeClass(settings.className);
+
+                $('html').css('overflow', '');
+                $('#header').removeClass("menu_on");
+
+                return false;
+            });
+        };
+
+        // 메뉴 클릭 이벤트
+        function menuAction($this) {
+            if ($this.next('*').length > 0 && $this.next('*').css('display') != 'none') {
+                if ($this.parent('li').hasClass('active') == false) {
+                    $this.parent('li').addClass('active');
+
+                    if (settings.siblings == true) {
+                        $this.parent('li').siblings('li').removeClass('active');
+                    }
+
+                    event.preventDefault();
+                }
+                else {
+                    if (settings.menuactive == false) {
+                        $this.parent('li').removeClass('active');
+                        event.preventDefault();
+                    }
+                }
+            }
+        }
+
+        // 메뉴
+        $selecter.find('li a').on('click', function (e) {
+            if (settings.responsive == true) {
+                if ($(window).width() <= settings.responsiveWidth) {
+                    menuAction($(this));
+                }
+            }
+            else {
+                menuAction($(this));
+            }
+        });
+
+        // 탭 아웃
+        $selecter.find('a:last').keydown(function (e) {
+            if ($(window).width() > settings.responsiveWidth) {
+                if (e.keyCode === 9) {
+                    $selecter.find('li').removeClass(settings.className);
+                    $(settings.classAdd).removeClass(settings.className);
+                }
+            }
+        });
+
+        // 역탭 아웃
+        $selecter.find('ul a:first').keydown(function (e) {
+            if ($(window).width() > settings.responsiveWidth) {
+                if (e.keyCode === 9 && e.shiftKey) {
+                    $selecter.find('li').removeClass(settings.className);
+                    $(settings.classAdd).removeClass(settings.className);
+                }
+            }
+        });
+    });
+};
+
+// 클래스토글
+$.fn.classtoggle = function (options) {
+    var settings = $.extend
+        ({
+            'button': '.open',      // 이벤트 받을 타겟 선택
+            'action': 'click',      // 액션 선택 (click | over)
+            'classname': 'active',     // 추가할 클래스명
+            'accordion': false,		// active 될 때 형제요소의 반응 여부
+            'latest': false,        // 탭으로 사용할 때 활성화 된 요소 누르면 비활성화 되는 부분 방지
+            'respond': false,        // 반응형일 때 (true 시 반응형일때 가로 사이즈 이하에서만 / click 일때만)
+            'respondWidth': '768',        // 반응형 가로 사이즈
+            'close': '.close',     // 닫기 버튼이 별도로 존재하는 경우 (닫기 버튼은 클릭시에만)
+            'tabout': false         // 탭 아웃 시 클래스 삭제 여부
+        },
+            options);
+
+    return this.each(function () {
+        var $selecter = $(this);
+
+        function clickActive() {
+            if ($selecter.hasClass(settings.classname) == false) {
+                $selecter.addClass(settings.classname);
+
+                if (settings.accordion == true) {
+                    $selecter.siblings().removeClass(settings.classname);
+                }
+            }
+            else {
+                // 닫기 버튼 존재할 경우, 탭으로 사용할 때 토글되지 않음
+                if ($selecter.find(settings.close).length == 0 && settings.latest == false) {
+                    $selecter.removeClass(settings.classname);
+                }
+            }
+        }
+
+        if (settings.action == 'click') {
+            $selecter.find(settings.button).on(settings.action, function () {
+                if (settings.respond == false) {
+                    clickActive();
+
+                    return false;
+                }
+                else {
+                    if ($(window).width() <= settings.respondWidth) {
+                        clickActive();
+
+                        return false;
+                    }
+                    else {
+                        $selecter.find(settings.button).off();
+                    }
+                }
+            });
+        }
+        else {
+            $selecter.find(settings.button).on
+                ({
+                    mouseenter: function () {
+                        $selecter.addClass(settings.classname);
+                    },
+                    focusin: function () {
+                        $selecter.addClass(settings.classname);
+                    },
+                    mouseleave: function () {
+                        $selecter.removeClass(settings.classname);
+                    },
+                    focusout: function () {
+                        $selecter.removeClass(settings.classname);
+                    }
+                });
+        }
+
+        // 닫기 버튼이 별도로 존재하는 경우
+        if ($selecter.find(settings.close).length > 0) {
+            $selecter.find(settings.close).on('click', function () {
+                $selecter.removeClass(settings.classname);
+
+                return false;
+            });
+        }
+
+        // 탭 아웃 시 클래스 삭제 여부
+        if (settings.tabout == true) {
+            // 탭
+            $selecter.find('a:last').keydown(function (e) {
+                if (e.keyCode === 9) {
+                    $selecter.removeClass(settings.classname);
+                }
+            });
+
+            // 역탭
+            $selecter.find('ul a:first').keydown(function (e) {
+                if (e.keyCode === 9 && e.shiftKey) {
+                    $selecter.removeClass(settings.classname);
+                }
+            });
+        }
+    });
+};
+

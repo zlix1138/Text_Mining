@@ -1,0 +1,11 @@
+const botList = [{"bot_id":"use_rag","name":"RAG 검색","descr":"자체로 학습한 자료를 기반으로 맞춤형 답변을 제공합니다.","exp":"김한국 과장에 대해 알려줘","type":"Y"},
+    {"bot_id":"llm_source","name":"LLM 검색","descr":"거대언어모델(LLM)에 학습된 일반 지식을 기반으로 답변을 제공합니다.","exp":"트랜스포머 알고리즘에 대해 알려줘","type":"Y"},
+    {"bot_id":"use_websearch","name":"Web 검색","descr":"실시간으로 인터넷 사이트를 검색하여 답변을 제공합니다.","exp":"내일 서울 날씨가 어때?","type":"Y"}]
+
+const botSpamPrevention = {
+    "spam_prevention":"N","time_window":"10","input_threshold":"30","ban_duration":"60"
+}
+
+const botFiltering = {
+    "personal_info_filter":"Y","harmful_content_filter":"Y","harmful_content_keyword":""
+}

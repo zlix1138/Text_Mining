@@ -1,0 +1,3548 @@
+const Chatting = {
+    template: `
+<div :class="['chat-container chat-bot-box big', { talk: hasAskedQuestion }]" :style="theme.end_background_color">
+	<div v-show="if_config.head" class="tp" :style="theme.begin_background_color">
+		<div class="photo">
+			<a :href="chat_hp_url" target="_blank" title="새 창 열림">
+				<img v-if="cwl === 'on'" :src="chat_window_logo" alt="" />
+				<strong id="syncedName" :style="[theme.header_title_font_family, theme.header_title_font_size, theme.header_title_color]"><em>{{ chat_name }}</em> <i :style="[theme.header_desc_font_family, theme.header_desc_font_size, theme.header_desc_color]">{{ chat_desc }}</i></strong>
+			</a>
+		</div>
+
+		<div class="baBar barTop">
+			<button v-if="chatFontSize === 'on' && isAuth" id="tT" @click="toggleFontPanel" title="글자 크기">
+				<svg t="1774319504982" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="5480" width="15" height="15"><path d="M0.56 438.936001h437.888535v146.127998H292.488354V1023.44H146.520181V585.063999H0.56V438.936001z m1021.737251-292.248003H735.235569V1023.44H579.57401V146.687998H292.512327V0.56h729.808898l-0.023974 146.127998z" p-id="5481" :fill="chatIconColor"></path></svg>
+			</button>
+			<div class="font-size-controls font-position" v-show="menuOptions.fontPanelVisible">
+				<input type="range" class="fontSizeRange" min="12" max="24" v-model="currentFontSize" @input="updateFontSize">
+				<span class="fontSizeValue">{{currentFontSize}}px</span>
+				<div class="preset-buttons">
+					<button @click="adjustFontSize('decrease')" style="display: none;" title="작게">작게</button>
+					<strong><button @click="adjustFontSize('l1')" class="lever l1" title="아주 작은 글자"><span style="font-size:7px;">가</span></button></strong>
+					<strong><button @click="adjustFontSize('l2')" class="lever l2" title="작은 글자"><span style="font-size:10px;">가</span></button></strong>
+					<strong><button @click="adjustFontSize('l3')" class="lever l3" title="보통 글자"><span style="font-size:12px;">가</span></button></strong>
+					<strong><button @click="adjustFontSize('l4')" class="lever l4" title="큰 글자"><span style="font-size:14px;">가</span></button></strong>
+					<strong><button @click="adjustFontSize('l5')" class="lever l5" title="아주 큰 글자"><span style="font-size:16px;">가</span></button></strong>
+					<button @click="adjustFontSize('increase')" style="display: none;" title="크게">크게</button>
+				</div>
+			</div>
+			<button v-if="refresh === 'on'" id="refresh" @click="reloadPage">
+				<svg t="1774319608233" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="7586" width="20" height="20"><path d="M962.074 490.554L647.271 355.638l125.831-89.881c-65.56-69.108-157.968-112.493-260.747-112.493-174.244 0-319.503 123.884-352.634 288.369l-83.949-34.777C123.56 209.825 300.628 63.32 512.355 63.32c132.973 0 252.063 58.09 334.393 149.833l115.326-82.375v359.776z m-710.47 269.773c65.556 69.108 157.973 112.488 260.752 112.488 174.918 0 320.546-124.873 352.931-290.307l83.868 35.874c-47.481 197.458-224.77 344.377-436.799 344.377-132.973 0-252.068-58.086-334.398-149.828l-115.322 82.37V535.525L377.44 670.441l-125.836 89.886z" :fill="chatIconColor" p-id="7587"></path></svg>
+			</button>
+			<button v-if="chatHistory === 'on'" id="history" title="히스토리" @click="getHistory">
+				<svg t="1774319746722" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="9656" width="20" height="20"><path d="M512 959.7C265.2 959.7 64.3 758.9 64.3 512S265.2 64.3 512 64.3 959.7 265.1 959.7 512 758.8 959.7 512 959.7z m0-833.6c-212.8 0-385.9 173.1-385.9 385.9S299.2 897.9 512 897.9 897.9 724.8 897.9 512 724.8 126.1 512 126.1z" p-id="9657" :fill="chatIconColor"></path><path d="M774.4 589.2H434.8V265h61.8v262.4h277.8z" p-id="9658" :fill="chatIconColor"></path></svg>
+			</button>
+			<button v-if="study === 'on'" id="study" title="학습관리" @click="toStudy">
+				<svg t="1775010415485" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1733" width="24" height="24"><path d="M800 64l-192 0c-52.48 0-98.56 25.6-128 65.28C450.56 89.6 404.48 64 352 64l-192 0C106.88 64 64 106.88 64 160l0 512C64 725.12 106.88 768 160 768l192 0C405.12 768 448 810.88 448 864 448 881.92 462.08 896 480 896 497.92 896 512 881.92 512 864 512 810.88 554.88 768 608 768l192 0c53.12 0 96-42.88 96-96l0-512C896 106.88 853.12 64 800 64zM448 736C421.12 716.16 387.84 704 352 704l-192 0C142.08 704 128 689.92 128 672l0-512C128 142.08 142.08 128 160 128l192 0C405.12 128 448 170.88 448 224L448 736zM832 672c0 17.92-14.08 32-32 32l-192 0c-35.84 0-69.12 12.16-96 32l0-512C512 170.88 554.88 128 608 128l192 0C817.92 128 832 142.08 832 160L832 672z" p-id="1734" :fill="chatIconColor"></path></svg>
+			</button>
+			<button v-if="sysConfig.config === 'on'" id="tools" @click="toggleMenu" @click.stop title="환경설정">
+				<svg t="1774319975035" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="12483" width="24" height="24"><path d="M645.5296 932.62336h-0.01024c-16.19968 0-31.9488-6.70208-42.12224-17.92512-13.86496-15.20128-57.7792-54.72256-93.73184-54.72256-35.70176 0-80.29696 39.75168-93.1072 53.67296-10.14784 11.02848-25.78944 17.61792-41.84064 17.61792-7.63904 0-14.85824-1.46944-21.44256-4.36224l-1.14688-0.50688-109.27616-61.1072-1.08032-0.75776c-19.89632-13.93152-27.45856-41.1648-17.60768-63.35488 0.0768-0.17408 10.07616-23.24992 10.07616-44.29824 0-63.86688-51.95264-115.82464-115.83488-115.82464h-3.8656l-0.71168 0.01024c-18.28864 0-33.18784-16.256-37.94944-41.41568-0.37376-1.99168-9.3184-49.69984-9.3184-87.29088 0-37.59104 8.94464-85.2992 9.3184-87.31648 4.81792-25.472 20.03968-41.83552 38.66112-41.38496h3.8656c63.87712 0 115.83488-51.968 115.83488-115.84 0-21.03296-9.98912-44.11904-10.09664-44.3392-9.84576-22.17984-2.2272-49.40288 17.74592-63.28832l1.13152-0.78336 115.32288-63.34976 1.19808-0.50688c6.49216-2.76992 13.60896-4.1728 21.14048-4.1728 16.01536 0 31.67744 6.44096 41.92256 17.23904 13.64992 14.28992 56.79616 51.456 91.7248 51.456 34.57536 0 77.45536-36.43392 91.06944-50.47296 10.17856-10.5728 25.74848-16.90624 41.6-16.90624 7.69024 0 14.93504 1.45408 21.5296 4.3264l1.16736 0.50688 111.3856 61.88544 1.1008 0.76288c19.92704 13.91104 27.50464 41.14432 17.65888 63.35488-0.08704 0.16384-10.08128 23.25504-10.08128 44.29312 0 63.872 51.95264 115.84 115.82464 115.84h3.87584c18.59072-0.42496 33.82784 15.90784 38.65088 41.38496 0.37888 2.01216 9.32864 49.72032 9.32864 87.31136 0 37.5808-8.94976 85.2992-9.32864 87.30112-4.81792 25.48224-20.06016 41.7792-38.65088 41.40544h-3.87584c-63.872 0-115.82464 51.95776-115.82464 115.82464 0 21.0432 9.99424 44.11392 10.09664 44.34944 9.8304 22.14912 2.24256 49.38752-17.70496 63.28832l-1.12128 0.77312-113.25952 62.60224-1.1776 0.50688c-6.48192 2.80064-13.57312 4.21376-21.06368 4.21376z m-3.44064-53.36576c0.51712 0.33792 1.94048 0.90112 3.44064 0.90112l0.16896-0.00512 105.8304-58.48576c-2.55488-5.9392-14.24384-34.72896-14.24384-64.768 0-89.84064 70.76352-163.47136 159.47776-168.06912 1.26976-7.05024 8.20224-46.70976 8.20224-76.47232 0-29.75744-6.93248-69.4016-8.20224-76.47232-88.71424-4.60288-159.47776-78.22848-159.47776-168.06912 0-30.08 11.71456-58.91072 14.25408-64.79872l-104.10496-57.84064c-0.11264-0.00512-0.27136-0.01536-0.4352-0.01536-1.77152 0-3.4304 0.64-3.97312 1.01376-1.75616 1.79712-16.8448 17.09568-38.51264 32.34816-32.09216 22.5792-62.42816 34.0224-90.17856 34.0224-28.032 0-58.624-11.6736-90.91072-34.69824-21.79584-15.54432-36.97152-31.13472-38.71232-32.96256-0.55808-0.37888-2.23232-1.03936-4.02432-1.03936l-0.37888 0.01024-107.8272 59.22304c2.58048 6.01088 14.22848 34.74944 14.22848 64.73728 0 89.84064-70.75328 163.46624-159.47264 168.07424-1.28 7.05536-8.21248 46.70976-8.21248 76.47232 0 29.75232 6.93248 69.39136 8.21248 76.47232 88.71936 4.59776 159.47264 78.21824 159.47264 168.05888 0 30.14656-11.76064 59.0336-14.26944 64.8448l102.05696 57.06752a7.1168 7.1168 0 0 0 3.63008-0.8704c1.90976-2.048 17.15712-18.18112 39.1168-34.26816 32.72192-23.9872 63.8208-36.1472 92.42624-36.1472 28.88192 0 60.22144 12.3904 93.1328 36.82816 22.08256 16.39936 37.39648 32.83968 39.28576 34.90816z" :fill="chatIconColor" p-id="12484"></path><path d="M510.03904 666.03008c-85.05344 0-154.25024-69.20192-154.25024-154.25536 0-85.05344 69.1968-154.25024 154.25024-154.25024 85.0688 0 154.26048 69.1968 154.26048 154.25024s-69.19168 154.25536-154.26048 154.25536z m0-256.04608c-56.12032 0-101.7856 45.66528-101.7856 101.7856 0 56.12544 45.66016 101.7856 101.7856 101.7856 56.13568 0 101.80096-45.66016 101.80096-101.7856 0-56.12032-45.66528-101.7856-101.80096-101.7856z" :fill="chatIconColor" p-id="12485"></path></svg>
+			</button>
+			<ul 
+			v-if="sysConfig.sys_font_size === 'on' || sysConfig.sys_ai_model === 'on' || sysConfig.sys_search_range === 'on' || sysConfig.sys_expand === 'on' || sysConfig.sys_theme === 'on' ||
+			sysConfig.sys_answer_instruction === 'on' || sysConfig.download_chat === 'on' "
+			class="tools-depth1" v-show="menuOptions.isMenuOpen"
+			>
+				<li v-if="sysConfig.sys_font_size === 'on'" @mouseenter="showSubmenu(0, $event)" @mouseleave="hideSubmenu()" tabindex="0" @focusin="showSubmenu(0, $event)" @focusout="hideSubmenu()">
+					<a>글자 크기 설정</a>
+					<div class="font-size-controls" v-show="menuOptions.activeSubmenu === 0">
+						<input type="range" class="fontSizeRange" min="12" max="24" v-model="currentFontSize" @input="updateFontSize">
+						<span class="fontSizeValue">{{currentFontSize}}px</span>
+						<div class="preset-buttons">
+							<button @click="adjustFontSize('decrease')" style="display: none;">작게</button>
+							<strong><button @click="adjustFontSize('l1')" class="lever l1" title="아주 작은 글자"><span style="font-size:7px;">가</span></button></strong>
+							<strong><button @click="adjustFontSize('l2')" class="lever l2" title="작은 글자"><span style="font-size:10px;">가</span></button></strong>
+							<strong><button @click="adjustFontSize('l3')" class="lever l3" title="보통 글자"><span style="font-size:12px;">가</span></button></strong>
+							<strong><button @click="adjustFontSize('l4')" class="lever l4" title="큰 글자"><span style="font-size:14px;">가</span></button></strong>
+							<strong><button @click="adjustFontSize('l5')" class="lever l5" title="아주 큰 글자"><span style="font-size:16px;">가</span></button></strong>
+							<button @click="adjustFontSize('increase')" style="display: none;">크게</button>
+						</div>
+					</div>
+				</li>
+				<li v-if="sysConfig.sys_ai_model === 'on'" @mouseenter="showSubmenu(4, $event)" @mouseleave="hideSubmenu()" tabindex="0" tabindex="0" @focusin="showSubmenu(4, $event)" @focusout="hideSubmenu()">
+					<a>AI 모델 설정</a>
+					<ul class="tools-depth2 aiModel" v-show="menuOptions.activeSubmenu === 4">
+						<li v-for="itemModel in modelList" :key="itemModel.model">
+							<input type="radio" :id="'itemModel-' + itemModel.model" :value="itemModel.model" v-model="model.model"
+							@change="selectModel(itemModel)">
+							<label :for="'itemModel-' + itemModel.model"><img :src="itemModel.image" alt="">{{ itemModel.model_name }}</label>
+						</li>
+					</ul>
+				</li>
+				<li v-if="sysConfig.sys_search_range === 'on'" @mouseenter="showSubmenu(3, $event)" @mouseleave="hideSubmenu()" tabindex="0" @focusin="showSubmenu(3, $event)" @focusout="hideSubmenu()">
+					<a>검색 범위 설정</a>
+					<ul class="tools-depth2 aiBotselect" v-show="menuOptions.activeSubmenu === 3">
+						<li v-for="itembot in botList" :key="itembot.bot">
+							<input type="checkbox" :id="itembot.bot" v-model="itembot.type" true-value="Y" false-value="N">
+							<label :for="itembot.bot">{{ itembot.bot_name }}</label>
+						</li>
+					</ul>
+				</li>
+				<li v-if="sysConfig.sys_expand === 'on'" @mouseenter="showSubmenu(5, $event)" @mouseleave="hideSubmenu()" tabindex="0" @focusin="showSubmenu(5, $event)" @focusout="hideSubmenu()">
+					<a>펼침 설정</a>
+					<ul class="tools-depth2 expandSetting" v-show="menuOptions.activeSubmenu === 5">
+						<li class="expand-section">
+							<h4>채팅창 펼침</h4>
+							<div class="expand-radio-group">
+								<label>
+									<input type="radio" name="expandUse" value="on" v-model="expandUse">
+									<span>사용</span>
+								</label>
+								<label>
+									<input type="radio" name="expandUse" value="off" v-model="expandUse">
+									<span>미사용</span>
+								</label>
+							</div>
+						</li>
+						<li class="border-section">
+							<h4>테두리</h4>
+							<div class="border-radio-group">
+								<label :class="{ disabled: true }">
+									<input type="radio" name="borderType" value="color" v-model="borderType" disabled>
+									<span>색상</span>
+									<input type="text" id="borderColorPicker" v-model="borderColor" class="color-input" disabled>
+								</label>
+								<label :class="{ disabled: true }">
+									<input type="radio" name="borderType" value="none" v-model="borderType" disabled>
+									<span>없음</span>
+								</label>
+							</div>
+						</li>
+					</ul>
+				</li>
+				<li v-if="sysConfig.sys_theme === 'on'" @mouseenter="showSubmenu(1, $event)" @mouseleave="hideSubmenu()" tabindex="0" @focusin="showSubmenu(1, $event)" @focusout="hideSubmenu()">
+					<a>테마 설정</a>
+					<ul class="tools-depth2" v-show="menuOptions.activeSubmenu === 1">
+						<li v-for="itemTheme in themeList" :key="itemTheme.id">
+							<input type="radio" :id="'itemTheme-' + itemTheme.id" :value="itemTheme.id" v-model="theme.id"
+							@change="selectTheme(itemTheme)">
+							<label :for="'itemTheme-' + itemTheme.id">{{ itemTheme.name }}</label>
+						</li>
+					</ul>
+				</li>
+				<li v-if="sysConfig.sys_answer_instruction === 'on'" @mouseenter="showSubmenu(2, $event)" @mouseleave="hideSubmenu()" tabindex="0" @focusin="showSubmenu(2, $event)" @focusout="hideSubmenu()">
+					<a>답변 지침 설정</a>
+					<ul class="tools-depth2" v-show="menuOptions.activeSubmenu === 2">
+						<li v-for="itemInstruction in instructionList" :key="itemInstruction.id">
+							<input type="radio" :id="'itemInstruction-' + itemInstruction.id" :value="itemInstruction.id" v-model="instruction.id"
+							@change="selectInstruction(itemInstruction)">
+							<label :for="'itemInstruction-' + itemInstruction.id">{{ itemInstruction.name }}</label>
+						</li>
+					</ul>
+				</li>
+				<li v-if="sysConfig.sys_download_chat === 'on'">
+					<a class="conInside" href="#n">대화내역 다운</a>
+					<div class="conInside-box">
+						<div class="conInside-con">
+							<h3>대화 내역 다운로드</h3>
+							<h4>기간설정</h4>
+							<div class="conInsideTime">
+								<div style="position: relative; display: inline-block;">
+									<input type="date" id="downstartDate" class="date-input" style="position: relative; z-index: 1; opacity: 0.9;" :min="mindate" :max="maxdate" :value="valuedate">
+<!-- 									<span class="placeholder-span" style="position: absolute; left: 6px; top: 4px; z-index: 2; font-size: 12px; height: calc(100% - 7px); pointer-events: none; color: #222; background: #fff;">
+									  YYYY – MM – DD
+									</span> -->
+								  </div> ~ 
+								  <div style="position: relative; display: inline-block;">
+									<input type="date" id="downendDate" class="date-input" style="position: relative; z-index: 1; opacity: 0.9;" :min="valuedate" :max="maxdate" :value="maxdate">
+<!-- 									<span class="placeholder-span" style="position: absolute; left: 6px; top: 4px; z-index: 2; font-size: 12px; height: calc(100% - 7px); pointer-events: none; color: #222; background: #fff;">
+									  YYYY – MM – DD
+									</span> -->
+								  </div>
+							</div>
+							<div style="
+							  display: flex;
+							  width: 100%;
+							  margin: 10px 0;
+							  gap: 5px; 
+							  font-size: 14px;
+							  height:26px;
+							">
+
+							  <!-- XLSX -->
+							  <label style="
+								flex: 1;
+								text-align: center;
+								padding: 1px 0;
+								background: white;
+								color: #222;
+								border: 1px solid #ddd;
+								border-radius: 4px;
+								cursor: pointer;
+								user-select: none;
+								transition: all 0.2s;
+							  "
+							  :style="selectedFormat === '.xlsx' ? {
+								'background': '#000',
+								'color': 'white'
+							  } : {}"
+							  @click="selectedFormat = '.xlsx'">
+								<input type="radio" name="format" value=".xlsx" v-model="selectedFormat" style="display:none;">
+								.xlsx
+							  </label>
+
+							  <!-- TXT -->
+							  <label style="
+								flex: 1;
+								text-align: center;
+								padding: 1px 0;
+								background: white;
+								color: #222;
+								border: 1px solid #ddd;
+								border-radius: 4px;
+								cursor: pointer;
+								user-select: none;
+								transition: all 0.2s;
+							  "
+							  :style="selectedFormat === '.txt' ? {
+								'background': '#000',
+								'color': 'white'
+							  } : {}"
+							  @click="selectedFormat = '.txt'">
+								<input type="radio" name="format" value=".txt" v-model="selectedFormat" style="display:none;">
+								.txt
+							  </label>
+							</div>
+							<div class="conInsideBtn">
+								<a href="#n" class="conInsideDown" @click.prevent="downloadData">다운로드</a>
+								<a href="#n" class="conInsideCancel">취소하기</a>
+							</div>
+							<a href="#" class="conInsideClose">X</a>
+						</div>
+					</div>
+				</li>
+			</ul>
+			<button v-if="zoom === 'on'" @click="windowbs" id="windowbs" title="채팅창 크기 확대">
+				<svg t="1774320071124" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="13594" width="20" height="20"><path d="M852.68743 966.232318 171.311547 966.232318c-62.714867 0-113.562988-50.846038-113.562988-113.558335L57.748558 171.324994c0-62.712297 50.848122-113.558335 113.562988-113.558335l681.376907 0c62.714867 0 113.562988 50.846038 113.562988 113.558335l0 681.348989C966.250418 915.38628 915.40332 966.232318 852.68743 966.232318zM909.469948 171.324994c0-31.356149-25.424061-56.779168-56.781494-56.779168L171.311547 114.545826c-31.357433 0-56.781494 25.423019-56.781494 56.779168l0 681.348989c0 31.357172 25.424061 56.779168 56.781494 56.779168l681.376907 0c31.358457 0 56.781494-25.423019 56.781494-56.779168L909.469948 171.324994zM824.297706 483.610416c-15.665413 0-28.390747-12.697183-28.390747-28.389584l0.887243-186.638771L604.102866 461.264479l-40.145947-40.144302 193.023924-193.016015L568.782006 228.104161c-15.693044 0-28.390747-12.697183-28.390747-28.389584s12.697704-28.389584 28.390747-28.389584l254.711349 0c7.929925 0 15.082105 3.27151 20.238756 8.53949 5.490263 4.657067 8.955319 11.449773 8.955319 19.850094l0 255.506255C852.68743 470.913233 839.989727 483.610416 824.297706 483.610416zM455.219017 852.673983 200.506645 852.673983c-7.929925 0-15.082105-3.270487-20.239779-8.538467-5.489239-4.65809-8.955319-11.423167-8.955319-19.850094L171.311547 568.779168c0-15.692401 12.726357-28.389584 28.390747-28.389584 15.69202 0 28.390747 12.697183 28.390747 28.389584l-0.887243 186.6664 192.690312-192.710047 40.173577 40.143279-193.050531 193.016015 188.198837 0c15.69202 0 28.390747 12.697183 28.390747 28.389584C483.608741 839.9768 470.911038 852.673983 455.219017 852.673983z" :fill="chatIconColor" p-id="13595"></path></svg>
+			</button>
+			
+			<i class="tooltip"></i>
+		</div>
+	</div>
+
+	<div v-if="showConfirmModal" class="confirm-modal-overlay" @click.self="closeConfirmModal">
+		<div class="confirm-modal">
+			<p class="confirm-modal-message">{{ confirmModalMessage }}</p>
+			<div class="confirm-modal-buttons">
+				<button class="confirm-btn-yes" @click="handleConfirmYes">예</button>
+				<button class="confirm-btn-no" @click="handleConfirmNo">아니오</button>
+			</div>
+		</div>
+	</div>
+
+	<div id="chatbox" class="chatbox" ref="chatbox" :style="theme.index_background_color">
+		<div v-if="chat_first_msg && !hasAskedQuestion" id="history_first" class="message bot" :style="[
+		ads === 'on' ? { paddingBottom: '65px', minWidth: '280px' } : {},
+		theme.ai_font_size + theme.ai_color + theme.ai_background_color
+		]">
+			<p v-html="decodeHtml(chat_first_msg)"></p>
+			<a v-if="ads === 'on'" href="https://chatty.kr/" target="_blank" class="advs no-copy" rel="noopener noreferrer"
+			style="pointer-events: auto">
+				<img src="https://admin.nara1.kr/images/adv/chattyb.png" alt="채팅" />
+				<i style="font-size: 14px; color: #333333">나를 위한 맞춤형 AI</i>
+			</a>
+			<span class="times no-copy" :style="theme.ai_color">{{ formattedTime }}</span>
+			<div class="eva-container">
+				<div class="evaluate clearfix">			
+					<a  v-if="re_tts === 'on' && re_tts_icon"
+						class="ttsdiv no-copy"
+						id="tts-chat-first-message"
+						title="음성" href="#n"
+						style="pointer-events: auto;background-color: transparent;"
+						@click.prevent="toggleTTS({ id: 'chat-first-message', text_data: chat_first_msg })"
+						:style="theme.btn_font_family + theme.btn_font_size + theme.ai_color"
+					>
+						<img class="re-icon" :src="re_tts_icon" alt="음성" />
+					</a>
+					<a v-if="re_copy === 'on' && re_copy_icon" href="#n" class="copydiv1 no-copy" rel="noopener noreferrer" style="pointer-events: auto" title="복사"
+					:style="theme.btn_font_size + theme.ai_color">
+						<img class="re-icon" :src="re_copy_icon" alt="복사" />
+					</a>
+				</div>
+			</div>
+		</div>
+		<template v-for="message in messageList" :key="message.id">
+			<template v-if="message.type === 'q'">
+				<div class="message user text-to-adjust"
+				:style="theme.user_font_size + theme.user_color + theme.user_background_color">
+				{{message.text_data}}
+				</div>
+				<p class="timer" :style="theme.ai_color">{{message.created_at}}</p>
+			</template>
+			
+			<template v-if="message.type === 'user'">
+				<div class="message user text-to-adjust"
+				:class="{ 'stt-temp-message': message.isSTTTemp }"
+				:style="theme.user_font_size + theme.user_color + theme.user_background_color">
+				<span v-if="message.isSTTTemp" v-html="message.text_data"></span>
+				<span v-else>{{message.text_data}}</span>
+				</div>
+				<p class="timer" :style="theme.ai_color">{{message.created_at}}</p>
+			</template>
+
+			<div class="message_bot_box" :id="'message_' + message.id" v-if="message.type === 'a' && message.text_data != ''">
+				<div class="message bot text-to-adjust"
+				style="padding-bottom: 65px; min-width: 280px"
+				:style="theme.ai_font_size + theme.ai_color + theme.ai_background_color">
+					<span class="times no-copy" :style="theme.ai_color">{{message.created_at}}</span>
+					<p v-html="formatMessage(message.text_data,message.source)" @click="handleAClick"></p>
+					<!-- add 250627 추천질문 -->
+					<div v-if="message.suggested_questions && message.suggested_questions.length > 0"
+						 class="message bot suggested-questions no-bot-icon"
+						 :style="theme.ai_font_size + theme.ai_color + theme.ai_background_color">
+						<div style="font-weight:bold; margin-bottom:8px;">추천질문</div>
+						<ul style="padding:0; margin:0; list-style:disc;">
+							<li v-for="(question, qidx) in message.suggested_questions" :key="qidx" style="border-bottom:1px solid #eee;">
+								<a href="#"
+								   @click.prevent="sendSuggestedQuestion(question)"
+								   style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;color:#222;text-decoration:none;font-size:15px;">
+									<span>{{ question }}</span>
+									<span style="color:#bbb;font-size:18px;">›</span>
+								</a>
+							</li>
+						</ul>
+					</div>
+					<div class="ai-model-alls" v-if="sysConfig.ai_model === 'on'">
+						<img v-if="message.model?.image" :src="message.model.image" />
+						<div class="ai-model-info" style="
+						color: rgb(51, 51, 51);
+						font-size: 12px;
+						font-family: 'Pretendard GOV';
+						" v-html="message.model?.name"></div>
+					</div>
+					<a v-if="if_config.memory && message.hasOwnProperty('is_memory') && false" class="memodiv no-copy"
+					rel="noopener noreferrer" style="pointer-events: auto" @click.prevent="memory(message)"  :style="theme.btn_background_color + theme.btn_font_size + theme.btn_color">기억</a>
+					<a v-if="ads === 'on'" href="https://chatty.kr/" target="_blank" class="advs no-copy">
+						<img src="./images/adv/chattyb.png" alt="채팅" />
+						<span style="font-size: 14px; color: #333333">나를 위한 맞춤형 AI</span>
+					</a>
+				</div>
+
+				<div v-if="(eva === 'on' || re_tts === 'on' || re_copy === 'on' ) && message.isComplete && !message.isVoiceTransient" class="eva-container">
+					<div class="evaluate clearfix">
+						<a v-if="re_tts === 'on' && re_tts_icon " :class="['ttsdiv', 'no-copy']" :id="'tts-' + message.id" rel="noopener noreferrer" style="pointer-events: auto; background-color: transparent;" @click.prevent="toggleTTS(message)" :style=" theme.btn_font_size + theme.ai_color" title="음성" href="#n	">
+							<img class="re-icon" :src="re_tts_icon" alt="음성" />
+						</a>
+						<a v-if="re_copy === 'on' && re_copy_icon" href="#n" class="copydiv2 no-copy"
+						:style="theme.btn_font_size + theme.ai_color" title="복사">
+							<img class="re-icon" :src="re_copy_icon" alt="복사" />
+						</a>
+						<a v-if="eva === 'on'  && re_like === 'on' && re_like_icon" href="#n"
+							:class="{ 
+							'good': !re_like_icon, 
+							'active': !re_like_icon && re_like_reverse === 'on' && message.eva_type === 'good', 
+							'reverse': message.showMainEvalPanel && message.eva_type === 'good' 
+							}"
+							class="goodss"
+							:style="theme.ai_color"
+							@click.prevent="setEvaluation(message, 'good')"
+							:title = "re_like_reverse === 'on' && message.eva_type === 'good' ? '좋아요 선택됨' : '좋아요' "
+							>
+							<img :id="'good-icon-' + message.id" class="re-icon" :src="re_like_reverse === 'on' && message.eva_type === 'good' ? re_like_reverse_icon : re_like_icon" :alt="re_like_reverse === 'on' && message.eva_type === 'good' ? '좋아요 선택됨' : '좋아요' ">
+						</a>
+						<a v-if="eva === 'on' && re_dislike === 'on' && re_dislike_icon" href="#n"
+							:class="{ 'bad': !re_dislike_icon, 'active': !re_dislike_icon && re_dislike_reverse === 'on' && message.eva_type === 'bad', 'reverse': message.showMainEvalPanel && message.eva_type === 'bad' }"
+							class="badss"
+							:style="theme.ai_color"
+							@click.prevent="setEvaluation(message, 'bad')"							
+							:title="re_dislike_reverse === 'on' && message.eva_type === 'bad' ? '싫어요 선택됨' : '싫어요' " 
+							>
+							<img :id="'bad-icon-' + message.id" class="re-icon" :src="re_dislike_reverse === 'on' && message.eva_type === 'bad' ? re_dislike_reverse_icon : re_dislike_icon" :alt="re_dislike_reverse === 'on' && message.eva_type === 'bad' ? '싫어요 선택됨' : '싫어요' ">
+						</a>
+					</div>
+
+					<div class="eval-panel" v-if="message.eva_type">
+						<!-- 히스토리 평가 패널 -->
+						<div v-if="message.isHistory && (message.eva_items !== '[]' || message.eva_comment)" class="history-eval-panel">
+							<div class="history-eval-content"
+									:class="{ 'good-class': message.eva_type === 'good',
+												  'bad-class': message.eva_type === 'bad' }">
+								<div class="history-items-container">
+									<p class="ttxt">
+										{{ message.eva_type === 'good' ? '답변이 마음에 들었습니다.' : '답변이 마음에 들지 않습니다.' }}
+									</p>
+									<!-- 평가 항목이 있는 경우에만 표시 -->
+									<ul class="history-items-list" v-if="message.eva_items && message.eva_items !== '[]'">
+										<li v-for="item in (message.eva_type === 'good' ? goodItems : badItems)" :key="item"
+											:class="{ 'check': message.eva_items.includes(item) }">
+											{{ item }}
+										</li>
+									</ul>
+									<!-- 직접 입력한 경우 -->
+									<p v-if="message.eva_comment" class="history-comment">{{ message.eva_comment }}</p>
+								</div>
+							</div>
+						</div>
+
+						<!-- 일반 평가 패널 -->
+						<div v-if="!message.isHistory && message.eva_type && (message.showMainEvalPanel || message.showDirectInput)">
+							<!-- 긍정 평가 패널 -->
+							<div class="panel1" v-if="message.eva_type === 'good' && message.showMainEvalPanel"  :style="theme.ai_font_size" tabindex="0">
+								<p class="ttxt"  :style="theme.ai_font_size">답변이 마음에 들었습니다.</p>
+								<ul class="assess-list" v-if="goodItems.length > 0">
+									<li v-for="(item, index) in goodItems" :key="item">
+										<input type="checkbox"
+														:id="'assessY' + message.id + index"
+														name="assessY"
+														:value="item"
+														v-model="message.eva_items"
+														@change="submitEva(message.id)">
+										<label :for="'assessY' + message.id + index">
+											<span  :style="theme.ai_font_size">{{ item }}</span>
+										</label>
+									</li>
+									<li v-if="goodSubjective === '1'"><a href="#n" class="go-direct pos1" @click.prevent="showDirectInputPanel(message)" :style="theme.ai_font_size">직접입력</a></li>
+								</ul>
+								<div v-else-if="goodSubjective === '1'" class="ta-box">
+									<textarea
+										v-model="message.eva_comment"
+										cols="30"
+										rows="10"
+										placeholder="구체적으로 입력해주세요." title="구체적으로 입력해주세요."></textarea>
+									<a href="#n" class="send-btn" @click.prevent="submitEva(message.id)" :style="theme.ai_font_size">제출하기</a>
+								</div>
+								<a href="#n" class="close-btn" @click.prevent="closeEvaluationPanel(message)">
+									<img src="https://chatty.kr/images/icon_close_res_bm_field.png" alt="좋아요 닫기">
+								</a>
+							</div>
+
+							<!-- 부정 평가 패널 -->
+							<div class="panel2" v-if="message.eva_type === 'bad' && message.showMainEvalPanel"  tabindex="0">
+								<p class="ttxt" :style="theme.ai_font_size">답변이 마음에 들지 않습니다.</p>
+								<ul class="assess-list" v-if="badItems.length > 0">
+									<li v-for="(item, index) in badItems" :key="item">
+										<input type="checkbox"
+														:id="'assessN' + message.id + index"
+														name="assessN"
+														:value="item"
+														v-model="message.eva_items"
+														@change="submitEva(message.id)">
+										<label :for="'assessN' + message.id + index">
+											<span :style="theme.ai_font_size">{{ item }}</span>
+										</label>
+									</li>
+									<li v-if="badSubjective === '1'"><a href="#n" class="go-direct pos2" @click.prevent="showDirectInputPanel(message)" :style="theme.ai_font_size">직접입력</a></li>
+								</ul>
+								<div v-else-if="badSubjective === '1'" class="ta-box">
+									<textarea
+										v-model="message.eva_comment"
+										cols="30"
+										rows="10"
+										placeholder="구체적으로 입력해주세요." title="구체적으로 입력해주세요."></textarea>
+									<a href="#n" class="send-btn" @click.prevent="submitEva(message.id)" :style="theme.ai_font_size">제출하기</a>
+								</div>
+								<a href="#n" class="close-btn" @click.prevent="closeEvaluationPanel(message)">
+									<img src="https://chatty.kr/images/icon_close_res_bm_field.png" alt="싫어요 닫기">
+								</a>
+							</div>
+
+							<!-- 직접입력 패널 -->
+							<div class="direct-panel" v-if="message.showDirectInput">
+								<p class="ttxt">직접입력</p>
+								<div class="ta-box">
+									<textarea
+										v-model="message.eva_comment"
+										cols="30"
+										rows="10"
+										placeholder="구체적으로 입력해주세요." title="구체적으로 입력해주세요."
+										@change="updateEvaComment(message.id)"></textarea>
+									<a href="#n" class="send-btn" @click.prevent="submitDirectInput(message)">제출하기</a>
+								</div>
+								<a href="#n" class="close-btn" @click.prevent="closeDirectInputPanel(message)">
+									<img src="https://chatty.kr/images/icon_close_res_bm_field.png" alt="직접입력창 닫기">
+								</a>
+							</div>
+						</div>
+					</div>
+				</div>
+
+			</div>
+		</template>
+		<div
+			v-if="sttTempMessageActive"
+			class="message user stt-temp-message"
+			:style="theme.user_font_size + theme.user_color + 'background-color:' + sttTempMessageColor + ';'">
+			<span class="stt-temp-dots">...</span>
+		</div>
+		<div v-if="voiceToolStatusText" class="message bot" :style="theme.ai_background_color + theme.ai_color + theme.ai_font_size" style="width:auto;"><img src="/chat/images/floading.gif" class="floading2" alt=""> {{ voiceToolStatusText }}</div>
+		<div v-show="currentLoadingDiv === 1" class="message bot"  :style="theme.ai_background_color + theme.ai_color + theme.ai_font_size" style="width: auto"><img src="/chat/images/floading.gif" class="floading2" alt=""> ...</div>
+		<div v-show="currentLoadingDiv === 2" class="message bot" :style="theme.ai_background_color + theme.ai_color + theme.ai_font_size" style="width: auto"><img src="/chat/images/floading.gif" class="floading2" alt=""> 질문을 이해했습니다.</div>
+		<div v-show="currentLoadingDiv === 3" class="message bot" :style="theme.ai_background_color + theme.ai_color + theme.ai_font_size" style="width: auto"><img src="/chat/images/floading.gif" class="floading2" alt=""> 관련 데이터를 검색하고 있습니다.</div>
+		<div v-show="currentLoadingDiv === 4" class="message bot" :style="theme.ai_background_color + theme.ai_color + theme.ai_font_size" style="width: auto"><img src="/chat/images/floading.gif" class="floading2" alt=""> 답변 내용을 작성하고 있습니다.</div>
+	</div>
+
+	<!-- 롤링 추천질문 영역 -->
+	<div v-if="isRollingEnabled && rollingQuestions.length > 0" class="rolling-questions-container">
+		<!-- 20260527 -->
+		<div class="rolling-content">
+		  <img src="/chat/images/chattyb.png" alt="" class="rolling-ai-icon" />
+		  <div class="rolling-question-wrapper" @click="handleRollingQuestionClick" @keyup.enter="handleRollingQuestionClick" tabIndex="0">
+			<div class="rolling-question-track" :style="trackStyle">
+			  <span 
+				v-for="(question, index) in loopRollingQuestions" 
+				:key="index"
+				class="rolling-question-item"
+			  >
+				{{ question }}
+			  </span>
+			</div>
+		  </div>
+		</div>
+		<div class="rolling-controls">
+			<button class="rolling-btn rolling-prev" @click="prevRollingQuestion">
+				<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+					<path d="M15 19l-7-7 7-7" style="color: #333;" />
+				</svg>
+			</button>
+			<button class="rolling-btn rolling-next" @click="nextRollingQuestion">
+				<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+					<path d="M9 5l7 7-7 7" style="color: #333;" />
+				</svg>
+			</button>
+			<button class="rolling-btn rolling-play-pause" @click="toggleRollingPlay">
+				<svg v-if="isRollingPlaying" viewBox="0 0 24 24" width="20" height="20" fill="#333" stroke="none">
+					<rect x="6" y="4" width="4" height="16" />
+					<rect x="14" y="4" width="4" height="16" />
+				</svg>
+				<svg v-else viewBox="0 0 24 24" width="20" height="20" fill="#333" stroke="none">
+					<polygon points="5 3 19 12 5 21 5 3" />
+				</svg>
+			</button>
+		</div>
+	</div>
+
+	<div v-if="isAuth" class="input-container" :style="theme.end_background_color">
+		<div id="charLimitWarning" style="opacity: 0; transition: opacity 0.3s ease;"></div>
+		<textarea
+			id="userInput"
+			ref="userInput"
+			maxlength="10000"
+			:style="theme.ai_font_family"
+			:title="'질문을 입력하세요(' + chat_question_hint + ')'"
+			v-model.trim="messageText"
+			@keydown.enter="sendMessage"
+			:placeholder="chat_question"
+			oninput="autoResize(this)"></textarea>
+		<div class="baBar baBar1" v-if="if_config.tools"></div>
+		<div class="baBar baBar2">
+			<VoiceMicButton
+				v-if="mic === 'on'"
+				:key="voiceButtonInstanceId"
+				class="voice-mic-wrapper"
+				:mode="voiceMode"
+				:color="voiceButtonColor"
+				size="34px"
+				@stt-result="handleVoiceResult"
+				@processing-start="handleVoiceProcessingStart"
+				@processing-complete="handleVoiceProcessingComplete"
+				@webrtc-audio="handleWebRTCAudioStream"
+				@webrtc-error="handleWebRTCError"
+			/>
+			<button @click="sendMessage" id="sendMessagea"
+			:style="theme.btn_background_color + theme.btn_font_family + theme.btn_font_size + theme.btn_color">
+			{{ btn_name }}
+			</button>
+		</div>
+	</div>
+
+	<div v-else class="no-auth-box">
+		<p>💡 채팅 권한이 없습니다.<br>관리자에게 문의해 주세요.</p>
+	</div>
+
+	<div v-if="cc === 'on'" class="bt" :style="theme.cc_background_color">
+		<a href="http://chatty.kr/" target="_blank">Copyright ⓒ chatty.kr</a>
+	</div>
+	<a href="#n" class="close-this" id="closeCurrentButton" @click="closeWindow" title="닫기" style="pointer-events: auto;width: 25px;height: 25px;position: absolute;top: 18px;right: 10px;"><svg width="24" height="24" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" style="transform: translate(0, 6);"><path d="M6.2 4.8L8 3L16 11L24 3L25.8 4.8L17.8 12.8L25.8 20.8L24 22.6L16 14.6L8 22.6L6.2 20.8L14.2 12.8Z" :fill="chatIconColor" style="transform: translate(0px, 4px);"></path></svg></a>
+</div>
+    `,
+    props: [
+		"chat_bot_id","study", "chatHistory", "chat_hp_url", "cwl", "chat_window_logo", "chat_name", "chat_desc", "refresh", "zoom",
+		"chat_first_msg", "ads", "chat_question", "chat_question_hint","if_config","btn_name","cc","study_url","staffwhere", "mic",
+		"re_tts_icon","re_copy_icon","re_like_icon","re_dislike_icon","re_like_reverse_icon","re_dislike_reverse_icon",
+		"re_icon_conf","re_tts","re_copy","re_like","re_dislike","re_like_reverse","re_dislike_reverse",
+		"themeList", "instructionList","model","sysConfig","isChattingAuth",
+		"eva", "goodItems", "badItems", "goodSubjective", "badSubjective",
+		"chatFontSize","modelidList","init_model",
+		"state_play_icon","state_pause_icon","state_stopped_icon",
+		"chatExpand", "chatIconColor",
+		"reRollQs", "keywordItems", "useSuggestedCount", "chatUseAiQr",
+		"chatColorAuto", "chatNameColor", "chatDescColor",
+	],
+    data() {
+		const today = new Date();
+		const oneYearAgo = new Date(today);
+		oneYearAgo.setFullYear(today.getFullYear() - 1);
+		const year = oneYearAgo.getFullYear();
+		const month = String(oneYearAgo.getMonth() + 1).padStart(2, '0'); // 월은 0~11 이므로 +1
+		const day = String(oneYearAgo.getDate()).padStart(2, '0');
+		const minmin = `${year}-${month}-${day}`;
+		const currentYear = today.getFullYear();
+		const currentMonth = String(today.getMonth() + 1).padStart(2, '0'); // 월: 0~11 → +1
+		const currentDay = String(today.getDate()).padStart(2, '0');
+		const maxmax = `${currentYear}-${currentMonth}-${currentDay}`;
+		const thismonth = `${currentYear}-${currentMonth}-01`;
+		const filteredModels = modelList.filter(item => item.type === "Y")
+		.map(item => ({
+			model: item.ai_id,
+			model_name: item.name,
+			image: item.image
+		}));
+		const filteredBots = botList.map(item => ({
+			bot: item.bot_id,
+			bot_name: item.name,
+			type: item.type
+		}));
+        return {
+			currentFontSize: 18,
+			messageText : '',
+			messageList : [],
+			currentLoadingDiv: -1,
+			loadpagetime : '',
+			model_name_from_api : '',
+			source_from_api : '',
+			ttsPlayers: {},
+			currentPlayingMessageId: null,
+			showVoiceButton: true,
+			voiceMode: (typeof window !== 'undefined' && window.VOICE_RUNTIME_CONFIG && window.VOICE_RUNTIME_CONFIG.mode) || 'webrtc',
+			voiceButtonColor: '#007aff',
+			voiceButtonInstanceId: 0,
+			sttTempMessageActive: false,
+			sttTempMessageColor: '#007aff',
+			isVoiceProcessing: false,
+			isSTTInput: false,
+			activeWebRTCStream: null,
+			isWebRTCActive: false,
+			voiceChatBridge: null,
+			voiceBridgeAssistantMessageIdByResponse: {},
+			voiceStreamRenderStateByMessage: {},
+			voiceStreamRenderIntervalMs: 28,
+			voiceStreamChunkSize: 1,
+			voiceScrollScheduled: false,
+			voiceToolStatusText: '',
+			voiceToolStatusClearTimer: null,
+			voiceToolStatusDelayTimer: null,
+			voiceToolStatusPendingText: '',
+			theme: {
+				// header
+				header_title_font_family: 'font-family : Pretendard GOV',
+				header_title_font_size: 'font-size : 13px',
+				header_title_color: 'color : #070707',
+				header_title_background_color: '',
+				header_desc_font_family: 'font-family : Pretendard GOV',
+				header_desc_font_size: 'font-size : 11px',
+				header_desc_color: 'color : #070707',
+				header_desc_background_color: '',
+				// user
+				user_font_family: 'font-family : Pretendard GOV',
+				user_font_size : 'font-size : 18px',
+				user_color : 'color : #ffffff',
+				user_background_color : 'background-color : #007aff',
+				// ai
+				ai_font_family : 'font-family : Pretendard GOV',
+				ai_font_size : 'font-size : 18px',
+				ai_color : 'color : #000000',
+				ai_background_color : 'background-color : #f8f8f8',
+				// background
+				begin_background_color : 'background-color : #ffffff',
+				index_background_color : 'background-color : #ffffff',
+				end_background_color : 'background-color : #ffffff',
+				cc_background_color : 'background-color : #ffffff',
+				// btn
+				btn_font_family : 'font-family : Pretendard GOV',
+				btn_font_size : 'font-size : 18px',
+				btn_color : 'color : #ffffff',
+				btn_background_color : 'background-color : #007aff',
+				id: null,
+			},
+			instruction: {id: null, value: ''},
+			menuOptions: {
+				isHeadMenuOpen: false,
+				isMenuOpen: false,
+				activeSubmenu: null,
+				fontPanelVisible: false
+			},
+			modelList:filteredModels,
+			botList:filteredBots,
+			textareaIsFocus : false,
+			scrollState : true,
+			lastScrollTop: 0,
+			currentSessionId: null,// session_id 저장 (페이지 새로고침 시 초기화됨)
+			hasAskedQuestion: false,// 사용자가 질문을 했는지 여부
+			// 롤링 추천질문 관련
+			rollingQuestions: [],           // 롤링 질문 목록
+			currentRollingIndex: 0,         // 현재 표시 인덱스
+			isRollingPlaying: true,         // 재생 상태
+			marqueeInterval: null,          // 자동 롤링 타이머
+			aiSuggestedQuestions: [],        // AI 동적 추천 질문
+			mindate: minmin,
+			maxdate: maxmax,
+			valuedate: thismonth,
+			selectedFormat: '.xlsx',
+			chatWidgetFullScreen: false,
+			hideTimeout: null,
+			// 펼침 설정 (priority: URL 매개변수 > localStorage > props > default, localStorage는 오늘 23:59:59까지 유지)
+			expandUse: (() => {
+				if (typeof window === 'undefined') return 'off';
+				// URL 매개변수에서 chatExpandFromURL 전역 변수 읽기
+				const expandFromURL = typeof chatExpandFromURL !== 'undefined' ? chatExpandFromURL : null;
+				if (expandFromURL) {
+					return expandFromURL;
+				}
+				const expireTime = localStorage.getItem('chat_expand_expire');
+				const isExpired = expireTime ? Date.now() > parseInt(expireTime) : true;
+				if (isExpired) {
+					localStorage.removeItem('chat_expand');
+					localStorage.removeItem('chat_border');
+					localStorage.removeItem('chat_border_color');
+					localStorage.removeItem('chat_expand_expire');
+					// Vue data()에서 this.chatExpand는 undefined일 수 있으므로, props가 있으면 사용, 없으면 'off'
+					return (typeof chatExpand !== 'undefined' ? chatExpand : 'off');
+				}
+				return localStorage.getItem('chat_expand') || (typeof chatExpand !== 'undefined' ? chatExpand : 'off');
+			})(),
+			borderType: (() => {
+				if (typeof window === 'undefined') return 'none';
+				// URL 매개변수에서 chatBorderFromURL 전역 변수 읽기
+				const borderFromURL = typeof chatBorderFromURL !== 'undefined' ? chatBorderFromURL : null;
+				if (borderFromURL === 'on') return 'color';
+				const expireTime = localStorage.getItem('chat_expand_expire');
+				const isExpired = expireTime ? Date.now() > parseInt(expireTime) : true;
+				if (isExpired) return this.chat_border === 'on' ? 'color' : 'none';
+				return (localStorage.getItem('chat_border') === 'on' || this.chat_border === 'on') ? 'color' : 'none';
+			})(),
+			borderColor: (() => {
+				if (typeof window === 'undefined') return '#000000';
+				// URL 매개변수에서 chatBorderColorFromURL 전역 변수 읽기
+				const borderColorFromURL = typeof chatBorderColorFromURL !== 'undefined' ? chatBorderColorFromURL : null;
+				if (borderColorFromURL) return borderColorFromURL;
+				const expireTime = localStorage.getItem('chat_expand_expire');
+				const isExpired = expireTime ? Date.now() > parseInt(expireTime) : true;
+				if (isExpired) return this.chat_border_color || '#000000';
+				return localStorage.getItem('chat_border_color') || this.chat_border_color || '#000000';
+			})(),
+			// confirm modal
+			showConfirmModal: false,
+			confirmModalMessage: '',
+			confirmModalCallback: null,
+			confirmModalOldValue: null,
+			isConfirming: false,
+			// 초기화 플래그 (초기 데이터 로딩 중에는 watcher가 동작하지 않음)
+			isInitializing: true,
+			isSliding: false,  // 20260527
+			isTransitionDisabled: false, // 20260527
+        }
+    },
+	computed: {
+		formattedTime: function() {
+			return dayjs().format(this.loadpagetime);
+		},
+		isAuth() {
+			return this.isChattingAuth === true || this.isChattingAuth === 'true';
+		},
+		isLogin(){
+			const token = localStorage.getItem('chatload_token');
+			return token !== null;
+		},
+		isRollingEnabled() {
+			return this.reRollQs === 'on' && 
+				(
+					(Array.isArray(this.aiSuggestedQuestions) && this.aiSuggestedQuestions.length > 0) || 
+					(Array.isArray(this.keywordItems) && this.keywordItems.length > 0)
+				);
+		},
+		// 20260527
+		loopRollingQuestions() {
+			const list = this.rollingQuestions;
+			if (!list || list.length <= 1) return list;
+			return [list[list.length - 1], ...list, list[0]];
+		},
+		trackStyle() {
+			return {
+				transform: `translateX(-${(this.currentRollingIndex + 1) * 100}%)`,
+				transition: this.isTransitionDisabled ? 'none' : 'transform 0.3s ease'
+			};
+		},
+	},
+	watch: {
+		botList: {
+			handler() {
+				this.updateVoiceModeFromSettings();
+			},
+			deep: true,
+			immediate: true
+		},
+		theme: {
+			handler() {
+				this.updateVoiceButtonColor();
+				this.updateFontColors();
+			},
+			deep: true,
+			immediate: true
+		},
+		chatColorAuto: {
+			handler() {
+				this.updateFontColors();
+			},
+			immediate: true
+		},
+		chatNameColor: {
+			handler() {
+				this.updateFontColors();
+			},
+			immediate: true
+		},
+		chatDescColor: {
+			handler() {
+				this.updateFontColors();
+			},
+			immediate: true
+		},
+		voiceMode(newMode, oldMode) {
+			if (oldMode === 'webrtc' && newMode !== 'webrtc') {
+				this.cleanupWebRTCSession();
+			}
+		},
+		borderColor(newColor) {
+			this.updateBorderColor(newColor);
+		},
+		borderType(newType, oldType) {
+			this.updateBorderType(newType);
+			if (newType === 'color') {
+				this.$nextTick(() => {
+					this.initSpectrumColorPicker();
+				});
+			}
+		},
+		expandUse(newVal, oldVal) {
+			// 초기화 시점(isInitializing이 true 또는 oldVal이 undefined)에는 동작하지 않음
+			if (this.isInitializing || oldVal === undefined) return;
+			
+			if (newVal !== oldVal) {
+				if (this.isConfirming) {
+					this.isConfirming = false;
+					return;
+				}
+				
+				const message = newVal === 'on' 
+					? '채팅창 펼침 기능을 사용하시겠습니까?' 
+					: '채팅창 펼침 기능을 미사용하시겠습니까?';
+				
+				this.isConfirming = true;
+				this.showConfirmForExpand(message, newVal);
+			}
+		}
+	},
+	methods: {
+		updateFontColors() {
+			if (this.chatColorAuto === 'off') {
+				if (this.chatNameColor) {
+					this.theme.header_title_color = 'color : ' + this.chatNameColor;
+				}
+				if (this.chatDescColor) {
+					this.theme.header_desc_color = 'color : ' + this.chatDescColor;
+				}
+			}
+		},
+		// 펼침 설정 confirm modal 처리 함수
+		showConfirmForExpand(message, newVal) {
+			this.showConfirm(message, () => {
+				const today = new Date();
+				const expireTime = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1, 0, 0, 0, 0).getTime() - 1;
+				
+				// ✅ postMessage로 설정값 전달 (부모 창에서 localStorage 저장)
+				const settingsData = {
+					type: 'chatSettingsSave',
+					chat_expand: newVal,
+					chat_border: this.borderType === 'color' ? 'on' : 'off',
+					chat_border_color: this.borderColor,
+					chat_expand_expire: expireTime.toString()
+				};
+				
+				if (window.parent && window.parent !== window) {
+					window.parent.postMessage(settingsData, '*');
+					window.parent.postMessage({ type: 'chatExpandChanged', value: newVal }, '*');
+				} else if (window.opener) {
+					window.opener.postMessage(settingsData, '*');
+					window.opener.postMessage({ type: 'chatExpandChanged', value: newVal }, '*');
+				}
+			}, newVal === 'on' ? 'off' : 'on');
+		},
+		resolveVoiceRuntimeMode() {
+			if (typeof window === 'undefined') {
+				return 'webrtc';
+			}
+			const configuredMode = window.VOICE_RUNTIME_CONFIG && window.VOICE_RUNTIME_CONFIG.mode;
+			return configuredMode === 'stt' ? 'stt' : 'webrtc';
+		},
+		closeWindow() {
+			window.close();
+			  const wbsbtn = document.getElementById('windowbs');
+			  wbsbtn.classList.remove('on');
+			  wbsbtn.title = '채팅창 크기 확대';
+		},
+		showConfirm(message, callback, oldValue) {
+			this.confirmModalMessage = message;
+			this.confirmModalCallback = callback;
+			this.confirmModalOldValue = oldValue;
+			this.showConfirmModal = true;
+		},
+		handleConfirmYes() {
+			this.showConfirmModal = false;
+			if (this.confirmModalCallback) {
+				this.confirmModalCallback();
+			}
+		},
+		handleConfirmNo() {
+			this.$nextTick(() => {
+				this.showConfirmModal = false;
+				if (this.confirmModalOldValue !== null) {
+					this.expandUse = this.confirmModalOldValue;
+				}
+			});
+		},
+		closeConfirmModal() {
+			this.showConfirmModal = false;
+			if (this.confirmModalOldValue !== null) {
+				this.expandUse = this.confirmModalOldValue;
+			}
+		},
+		updateBorderColor(color) {
+			const popcon = document.getElementById('popcon');
+			if (popcon && this.borderType === 'color') {
+				popcon.style.backgroundColor = color;
+			}
+		},
+		updateBorderType(type) {
+			const popcon = document.getElementById('popcon');
+			const colorPicker = document.getElementById('borderColorPicker');
+			if (popcon) {
+				if (type === 'color') {
+					popcon.style.backgroundColor = this.borderColor;
+					popcon.classList.remove('iframe-style');
+				} else {
+					popcon.style.backgroundColor = '#ffffff';
+					popcon.classList.add('iframe-style');
+					this.borderColor = this.chat_border_color || '#000000';
+				}
+			}
+			if (colorPicker) {
+				try {
+					$(colorPicker).spectrum('option', 'disabled', type !== 'color');
+					if (type === 'none') {
+						$(colorPicker).spectrum('set', this.chat_border_color || '#000000');
+					}
+				} catch (e) {}
+			}
+			this.$emit('update:chat_border', type === 'color' ? 'on' : 'off');
+		},
+		syncVoiceWebSearchFromSettings() {
+			const sourceList = Array.isArray(this.botList)
+				? this.botList
+				: (window.vueApp?.botList || []);
+
+			const webBot = sourceList.find((bot) => {
+				const botId = (bot.bot || '').toLowerCase();
+				const botName = (bot.bot_name || '').toLowerCase();
+				return (
+					botId === 'use_websearch' ||
+					botId === 'use_web_search' ||
+					botId === 'use_web' ||
+					botId.includes('web') ||
+					botName.includes('웹')
+				);
+			});
+
+			const ragBot = sourceList.find((bot) => {
+				const botId = (bot.bot || '').toLowerCase();
+				const botName = (bot.bot_name || '').toLowerCase();
+				return botId === 'use_rag' || botId.includes('rag') || botName.includes('rag') || botName.includes('검색');
+			});
+
+			const useWebSearch = webBot ? webBot.type === 'Y' : false;
+			const useRag = ragBot ? ragBot.type === 'Y' : true;
+			if (typeof window !== 'undefined') {
+				window.RAG_RT_CONFIG = {
+					...(window.RAG_RT_CONFIG || {}),
+					use_rag: useRag,
+					use_web_search: useWebSearch,
+					metadata: {
+						...((window.RAG_RT_CONFIG && window.RAG_RT_CONFIG.metadata) || {}),
+						use_rag: useRag,
+						use_web_search: useWebSearch
+					}
+				};
+				window.use_rag = useRag ? 'on' : 'off';
+				window.search_web = useWebSearch ? 'on' : 'off';
+			}
+		},
+		updateVoiceModeFromSettings() {
+			this.syncVoiceWebSearchFromSettings();
+			const nextMode = this.resolveVoiceRuntimeMode();
+			if (this.voiceMode !== nextMode) {
+				this.voiceMode = nextMode;
+			}
+			if (typeof window !== 'undefined') {
+				window.useWebRTCVoice = nextMode === 'webrtc';
+			}
+		},
+		updateVoiceButtonColor() {
+			const parsedColor = this.extractColorFromTheme(this.theme && this.theme.btn_background_color);
+			if (parsedColor) {
+				this.voiceButtonColor = parsedColor;
+				this.sttTempMessageColor = parsedColor;
+				return;
+			}
+
+			if (typeof window !== 'undefined') {
+				const sendButton = document.querySelector('.baBar #sendMessagea') ||
+					document.querySelector('#sendMessagea');
+				if (sendButton) {
+					const computedColor = window.getComputedStyle(sendButton).backgroundColor;
+					if (computedColor) {
+						this.voiceButtonColor = computedColor;
+						this.sttTempMessageColor = computedColor;
+					}
+				}
+			}
+		},
+		extractColorFromTheme(styleText) {
+			if (!styleText || typeof styleText !== 'string') {
+				return null;
+			}
+
+			const hexMatch = styleText.match(/#[0-9a-fA-F]{3,8}/);
+			if (hexMatch) {
+				return hexMatch[0];
+			}
+
+			const rgbMatch = styleText.match(/rgba?\([^)]+\)/);
+			if (rgbMatch) {
+				return rgbMatch[0];
+			}
+
+			const parts = styleText.split(':');
+			if (parts.length > 1) {
+				return parts[1].replace(/;/g, '').trim();
+			}
+
+			return null;
+		},
+		handleVoiceResult(text) {
+			this.insertVoiceText(text);
+		},
+		async handleVoiceProcessingStart() {
+			//채팅횟수 제한-----------start
+			const response_limits = await axios.post('./api/public/check_chat_limits.php', {
+				mb_id,
+				chat_bot_id
+			});
+			if (response_limits.data.status === "error") {
+				this.handleAskApiLimits(response_limits.data.message);
+				return;
+			}
+			//채팅횟수 제한------------end
+			if (this.voiceMode !== 'stt') {
+				return;
+			}
+			this.isVoiceProcessing = true;
+			this.showSttTempMessage();
+			this.setSTTInputFlag(false);
+		},
+		handleVoiceProcessingComplete() {
+			this.isVoiceProcessing = false;
+			this.hideSttTempMessage();
+		},
+		showSttTempMessage() {
+			if (this.voiceMode !== 'stt') {
+				return;
+			}
+			const color = this.voiceButtonColor || this.getSendButtonColor() || this.sttTempMessageColor;
+			this.sttTempMessageColor = color;
+			this.sttTempMessageActive = true;
+		},
+		hideSttTempMessage() {
+			this.sttTempMessageActive = false;
+		},
+		getSendButtonColor() {
+			if (typeof window === 'undefined') {
+				return null;
+			}
+			const sendButton = document.querySelector('.baBar #sendMessagea') ||
+				document.querySelector('#sendMessagea');
+			if (sendButton) {
+				const computedColor = window.getComputedStyle(sendButton).backgroundColor;
+				if (computedColor && computedColor !== 'rgba(0, 0, 0, 0)' && computedColor !== 'transparent') {
+					return computedColor;
+				}
+			}
+			return null;
+		},
+		setSTTInputFlag(value) {
+			this.isSTTInput = value;
+			if (typeof window !== 'undefined') {
+				window.isSTTInput = value;
+			}
+		},
+		insertVoiceText(text) {
+			if (typeof window !== 'undefined' && window.ttsPlayer) {
+				window.ttsPlayer.stop();
+			}
+			this.messageText = text || '';
+			this.hideSttTempMessage();
+			this.setSTTInputFlag(true);
+			this.$nextTick(() => {
+				const textarea = this.$refs.userInput;
+				if (textarea) {
+					textarea.dispatchEvent(new Event('input', { bubbles: true }));
+					textarea.dispatchEvent(new Event('change', { bubbles: true }));
+					textarea.focus();
+				}
+			});
+		},
+		sendMessageFromSTT() {
+			this.setSTTInputFlag(true);
+			this.triggerSendButtonFromVoice();
+		},
+		triggerSendButtonFromVoice() {
+			const fakeEvent = {
+				preventDefault() {},
+				shiftKey: false
+			};
+			this.sendMessage(fakeEvent);
+		},
+		triggerAutoTTS() {
+			if (!this.isSTTInput) {
+				return false;
+			}
+
+			const tryFindTTSButton = () => {
+				const visibleBotMessages = Array.from(document.querySelectorAll('.message.bot')).filter(msg =>
+					msg.style.display !== 'none' && msg.offsetParent !== null
+				);
+
+				if (visibleBotMessages.length === 0) {
+					console.log('표시된 AI 답변 메시지를 찾을 수 없습니다.');
+					return;
+				}
+
+				const lastMessage = visibleBotMessages[visibleBotMessages.length - 1];
+				const ttsButton = lastMessage.querySelector('[id^="tts-"]') ||
+					lastMessage.querySelector('button.ttsdiv') ||
+					lastMessage.querySelector('.ttsdiv') ||
+					lastMessage.querySelector('.tts-button') ||
+					lastMessage.querySelector('button[onclick*="tts"]');
+
+				if (ttsButton) {
+					const messageId = ttsButton.id?.replace('tts-', '') ||
+						lastMessage.getAttribute('data-message-id') ||
+						Date.now().toString();
+
+					if (window._sttTtsTriggeredForMessageId === messageId) {
+						console.log('이미 TTS가 트리거된 메시지입니다:', messageId);
+						return;
+					}
+					window._sttTtsTriggeredForMessageId = messageId;
+					ttsButton.click();
+					console.log('🎵 STT 자동 TTS 트리거 성공:', messageId);
+				} else {
+					console.warn('TTS 버튼을 찾을 수 없습니다.');
+				}
+			};
+
+			setTimeout(tryFindTTSButton, 100);
+			this.setSTTInputFlag(false);
+			return true;
+		},
+		handleWebRTCAudioStream(stream) {
+			if (!stream) {
+				if (window.toast) {
+					window.toast.show('음성채팅이 종료되었습니다.', 'info', 3000);
+				}
+				this.cleanupWebRTCSession();
+				return;
+			}
+
+			this.stopAllTTS();
+			this.cleanupWebRTCSession();
+			this.activeWebRTCStream = stream;
+			this.isWebRTCActive = true;
+			if (window.toast) {
+				window.toast.show('음성채팅이 시작되었습니다.', 'info', 3000);
+			}
+
+			if (typeof stream.getTracks === 'function') {
+				stream.getTracks().forEach(track => {
+					const onTrackEnded = () => {
+						this.handleWebRTCStreamEnded();
+					};
+					track.__voiceOnEnded = onTrackEnded;
+					track.addEventListener('ended', onTrackEnded);
+					track.addEventListener('inactive', onTrackEnded);
+				});
+			}
+		},
+		handleWebRTCStreamEnded() {
+			this.cleanupWebRTCSession();
+		},
+		handleWebRTCError(error) {
+			const message = error?.message || error || '음성 채팅 중 오류가 발생했습니다.';
+			console.warn('Voice WebRTC error handled:', message);
+			this.cleanupWebRTCSession();
+		},
+		initSpectrumColorPicker() {
+			const colorPicker = document.getElementById('borderColorPicker');
+			if (!colorPicker) return;
+
+			const initPicker = () => {
+				if (typeof $.fn.spectrum === 'undefined') {
+					setTimeout(initPicker, 100);
+					return;
+				}
+
+				try {
+					$(colorPicker).spectrum('destroy');
+				} catch (e) {
+					// spectrum이 초기화되지 않았을 경우
+				}
+
+				$(colorPicker).spectrum({
+					color: this.borderColor,
+					disabled: this.borderType !== 'color',
+					showInput: true,
+					showInitial: false,
+					showPalette: true,
+					showSelectionPalette: true,
+					palette: [
+						['#000000', '#ffffff', '#808080', '#f8f8f8'],
+						['#007aff', '#ff0000', '#ffff00', '#008000']
+					],
+					maxSelectionSize: 7,
+					preferredFormat: "hex",
+					move: (color) => {
+						if (color && this.borderType === 'color') {
+							this.updateBorderColor(color.toHexString());
+						}
+					},
+					change: (color) => {
+						if (color) {
+							this.borderColor = color.toHexString();
+						}
+					}
+				});
+
+				if (this.borderColor) {
+					$(colorPicker).spectrum("set", this.borderColor);
+				}
+			};
+
+			if (document.readyState === 'complete') {
+				initPicker();
+			} else {
+				window.addEventListener('load', initPicker);
+			}
+		},
+		initializeVoiceChatBridge() {
+			if (this.voiceChatBridge || typeof window === 'undefined' || typeof window.VoiceChatBridge === 'undefined') {
+				return;
+			}
+
+			this.voiceChatBridge = new window.VoiceChatBridge({
+				partialThrottleMs: 80,
+				persistDebounceMs: 3000,
+				onUserFinal: (payload) => this.handleVoiceBridgeUserFinal(payload),
+				onAssistantPartial: (payload) => this.handleVoiceBridgeAssistantPartial(payload),
+				onAssistantFinal: (payload) => this.handleVoiceBridgeAssistantFinal(payload),
+				onResponseDone: (payload) => this.handleVoiceBridgeResponseDone(payload)
+			});
+
+			this.voiceChatBridge.start();
+		},
+		destroyVoiceChatBridge() {
+			if (!this.voiceChatBridge) {
+				return;
+			}
+			this.voiceChatBridge.stop();
+			this.voiceChatBridge = null;
+			this.voiceBridgeAssistantMessageIdByResponse = {};
+			this.clearAllVoiceStreamRenderers();
+		},
+		scheduleVoiceScrollToBottom() {
+			if (this.voiceScrollScheduled) {
+				return;
+			}
+			this.voiceScrollScheduled = true;
+			requestAnimationFrame(() => {
+				this.voiceScrollScheduled = false;
+				this.scrollToBottom();
+			});
+		},
+		ensureVoiceStreamRenderer(messageId) {
+			if (!messageId) {
+				return null;
+			}
+			if (!this.voiceStreamRenderStateByMessage[messageId]) {
+				this.voiceStreamRenderStateByMessage[messageId] = {
+					targetText: '',
+					timerId: null
+				};
+			}
+			return this.voiceStreamRenderStateByMessage[messageId];
+		},
+		startVoiceStreamRenderer(messageId) {
+			const state = this.ensureVoiceStreamRenderer(messageId);
+			if (!state || state.timerId) {
+				return;
+			}
+			state.timerId = setInterval(() => {
+				const targetMessage = this.messageList.find((msg) => msg.id === messageId);
+				if (!targetMessage) {
+					this.stopVoiceStreamRenderer(messageId);
+					return;
+				}
+
+				const targetText = state.targetText || '';
+				const currentText = targetMessage.text_data || '';
+				if (currentText === targetText) {
+					if (targetMessage.isComplete) {
+						this.stopVoiceStreamRenderer(messageId);
+					}
+					return;
+				}
+
+				if (targetText.length < currentText.length) {
+					targetMessage.text_data = targetText;
+					this.scheduleVoiceScrollToBottom();
+					return;
+				}
+
+				const appendText = targetText.slice(
+					currentText.length,
+					currentText.length + Math.max(1, this.voiceStreamChunkSize)
+				);
+				targetMessage.text_data = currentText + appendText;
+				this.scheduleVoiceScrollToBottom();
+			}, Math.max(16, this.voiceStreamRenderIntervalMs));
+		},
+		setVoiceStreamTarget(messageId, text) {
+			const state = this.ensureVoiceStreamRenderer(messageId);
+			if (!state) {
+				return;
+			}
+			state.targetText = text || '';
+			this.startVoiceStreamRenderer(messageId);
+		},
+		stopVoiceStreamRenderer(messageId, flush = false) {
+			const state = this.voiceStreamRenderStateByMessage[messageId];
+			if (!state) {
+				return;
+			}
+			if (state.timerId) {
+				clearInterval(state.timerId);
+				state.timerId = null;
+			}
+			if (flush) {
+				const targetMessage = this.messageList.find((msg) => msg.id === messageId);
+				if (targetMessage) {
+					targetMessage.text_data = state.targetText || targetMessage.text_data || '';
+				}
+			}
+			delete this.voiceStreamRenderStateByMessage[messageId];
+		},
+		clearAllVoiceStreamRenderers() {
+			Object.keys(this.voiceStreamRenderStateByMessage).forEach((messageId) => {
+				this.stopVoiceStreamRenderer(messageId, false);
+			});
+			this.voiceStreamRenderStateByMessage = {};
+		},
+		createVoiceTransientMessage(type, text = '') {
+			const now = Date.now();
+			return {
+				id: `voice_${type}_${now}_${Math.random().toString(36).slice(2, 8)}`,
+				type,
+				text_data: text,
+				created_at: dayjs().format('YYYY-MM-DD HH:mm:ss'),
+				eva_type: null,
+				eva_items: [],
+				eva_comment: '',
+				showDirectInput: false,
+				showMainEvalPanel: false,
+				isComplete: type === 'q',
+				isVoiceTransient: true
+			};
+		},
+		handleVoiceBridgeUserFinal(payload = {}) {
+			const text = (payload.text || '').trim();
+			if (!text) {
+				return;
+			}
+
+			if (!this.hasAskedQuestion) {
+				this.hasAskedQuestion = true;
+			}
+
+			const message = this.createVoiceTransientMessage('q', text);
+			this.messageList.push(message);
+			this.$nextTick(() => this.scheduleVoiceScrollToBottom());
+		},
+		handleVoiceBridgeAssistantPartial(payload = {}) {
+			const responseId = payload.responseId || '';
+			const text = payload.text || '';
+			if (!responseId) {
+				return;
+			}
+
+			let messageId = this.voiceBridgeAssistantMessageIdByResponse[responseId];
+			let targetMessage = messageId
+				? this.messageList.find((msg) => msg.id === messageId)
+				: null;
+
+			if (!targetMessage) {
+				targetMessage = this.createVoiceTransientMessage('a', '');
+				targetMessage.isComplete = false;
+				targetMessage.voiceResponseId = responseId;
+				this.messageList.push(targetMessage);
+				this.voiceBridgeAssistantMessageIdByResponse[responseId] = targetMessage.id;
+			}
+
+			targetMessage.isComplete = false;
+			this.setVoiceStreamTarget(targetMessage.id, text);
+			this.$nextTick(() => this.scheduleVoiceScrollToBottom());
+		},
+		handleVoiceBridgeAssistantFinal(payload = {}) {
+			const responseId = payload.responseId || '';
+			if (!responseId) {
+				return;
+			}
+
+			this.handleVoiceBridgeAssistantPartial(payload);
+			const messageId = this.voiceBridgeAssistantMessageIdByResponse[responseId];
+			const targetMessage = messageId
+				? this.messageList.find((msg) => msg.id === messageId)
+				: null;
+
+			if (targetMessage) {
+				const finalText = (payload.text || '').trim();
+				if (finalText) {
+					this.setVoiceStreamTarget(targetMessage.id, finalText);
+				}
+				targetMessage.isComplete = true;
+			}
+			this.$nextTick(() => this.scheduleVoiceScrollToBottom());
+		},
+		handleVoiceBridgeResponseDone(payload = {}) {
+			const responseId = payload.responseId || '';
+			if (!responseId) {
+				return;
+			}
+
+			const messageId = this.voiceBridgeAssistantMessageIdByResponse[responseId];
+			const targetMessage = messageId
+				? this.messageList.find((msg) => msg.id === messageId)
+				: null;
+
+			if (targetMessage && !targetMessage.isComplete) {
+				targetMessage.isComplete = true;
+			}
+
+			if (messageId) {
+				this.stopVoiceStreamRenderer(messageId, true);
+			}
+
+			delete this.voiceBridgeAssistantMessageIdByResponse[responseId];
+			this.$nextTick(() => this.scheduleVoiceScrollToBottom());
+		},
+		setVoiceToolStatus(text) {
+			if (this.voiceToolStatusClearTimer) {
+				clearTimeout(this.voiceToolStatusClearTimer);
+				this.voiceToolStatusClearTimer = null;
+			}
+			this.voiceToolStatusText = text || '';
+		},
+		scheduleVoiceToolStatus(text, delayMs = 3000) {
+			const nextText = text || '';
+			if (!nextText) {
+				return;
+			}
+
+			if (this.voiceToolStatusText) {
+				this.setVoiceToolStatus(nextText);
+				return;
+			}
+
+			this.voiceToolStatusPendingText = nextText;
+			if (this.voiceToolStatusDelayTimer) {
+				clearTimeout(this.voiceToolStatusDelayTimer);
+			}
+			this.voiceToolStatusDelayTimer = setTimeout(() => {
+				this.voiceToolStatusDelayTimer = null;
+				if (this.voiceToolStatusPendingText) {
+					this.setVoiceToolStatus(this.voiceToolStatusPendingText);
+				}
+			}, Math.max(0, Number(delayMs) || 0));
+		},
+		clearVoiceToolStatus(delayMs = 0) {
+			if (this.voiceToolStatusDelayTimer) {
+				clearTimeout(this.voiceToolStatusDelayTimer);
+				this.voiceToolStatusDelayTimer = null;
+			}
+			this.voiceToolStatusPendingText = '';
+
+			if (this.voiceToolStatusClearTimer) {
+				clearTimeout(this.voiceToolStatusClearTimer);
+				this.voiceToolStatusClearTimer = null;
+			}
+			if (delayMs > 0) {
+				this.voiceToolStatusClearTimer = setTimeout(() => {
+					this.voiceToolStatusText = '';
+					this.voiceToolStatusClearTimer = null;
+				}, delayMs);
+				return;
+			}
+			this.voiceToolStatusText = '';
+		},
+		handleVoiceRealtimeEvent(event) {
+			const detail = event?.detail;
+			if (!detail || typeof detail !== 'object') {
+				return;
+			}
+
+			const raw = detail.raw || {};
+			const eventType = detail.type || raw.type || '';
+			if (eventType !== 'voice.tool.status') {
+				return;
+			}
+
+			const state = raw.state || detail.state || '';
+			const toolName = raw.tool_name || detail.tool_name || '';
+			const message = (raw.message || detail.message || detail.text || '').trim();
+
+			if (state === 'tool_running') {
+				const fallback = toolName === 'search_web' ? '외부에서 찾는 중...' : '근거 찾는 중...';
+				this.scheduleVoiceToolStatus(message || fallback, 3000);
+				return;
+			}
+
+			if (state === 'answering') {
+				if (this.voiceToolStatusText) {
+					this.setVoiceToolStatus('답변 정리 중...');
+				}
+				return;
+			}
+
+			if (state === 'done') {
+				this.clearVoiceToolStatus(400);
+			}
+		},
+		stopAllTTS() {
+			try {
+				Object.values(this.ttsPlayers || {}).forEach(player => {
+					if (player && typeof player.stop === 'function') {
+						player.stop();
+					}
+				});
+				this.currentPlayingMessageId = null;
+				if (typeof window !== 'undefined' && window.ttsPlayer && typeof window.ttsPlayer.stop === 'function') {
+					window.ttsPlayer.stop();
+				}
+			} catch (error) {
+				console.warn('TTS 정지 중 오류:', error);
+			}
+		},
+		cleanupWebRTCSession() {
+			const hadStream = !!this.activeWebRTCStream;
+			const wasActive = this.isWebRTCActive;
+
+			if (this.activeWebRTCStream && typeof this.activeWebRTCStream.getTracks === 'function') {
+				this.activeWebRTCStream.getTracks().forEach(track => {
+					if (track.__voiceOnEnded) {
+						track.removeEventListener('ended', track.__voiceOnEnded);
+						track.removeEventListener('inactive', track.__voiceOnEnded);
+						delete track.__voiceOnEnded;
+					}
+					if (typeof track.stop === 'function' && track.readyState !== 'ended') {
+						try {
+							track.stop();
+						} catch (e) {
+							console.warn('WebRTC track stop error:', e);
+						}
+					}
+				});
+			}
+
+			this.activeWebRTCStream = null;
+			this.isWebRTCActive = false;
+
+			if (hadStream || wasActive) {
+				this.resetVoiceMicButton();
+			}
+
+			if (this.voiceChatBridge && typeof this.voiceChatBridge.reset === 'function') {
+				this.voiceChatBridge.reset();
+			}
+
+			this.clearAllVoiceStreamRenderers();
+		},
+		resetVoiceMicButton() {
+			this.voiceButtonInstanceId += 1;
+		},
+		/**
+		 * 고유한 session_id 생성
+		 */
+		generateSessionId() {
+			const s = "session_";
+		  return s + 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+			  const r = (Math.random() * 16) | 0
+			  const v = c === 'x' ? r : (r & 0x3) | 0x8
+				
+			  return v.toString(16)
+			})
+		},
+		/**
+		 * 현재 session_id 반환
+		 * - 처음 호출 시: 생성
+		 * - 이후: 기존 값 유지
+		 */
+		getSessionId() {
+		  if (!this.currentSessionId) {
+			this.currentSessionId = this.generateSessionId()
+		  }
+		  return this.currentSessionId
+		},
+		/**
+		* session_id 를 localStorage 에 저장
+		*/
+		saveSessionIdToLocalStorage(sessionId) {
+			const data = {
+				value: sessionId,
+				expiry: Date.now() + 365 * 24 * 60 * 60 * 1000 // 1년
+			};
+			localStorage.setItem('previous_session_id', JSON.stringify(data));
+		},
+		/**
+		 * localStorage에서 이전 session_id 읽기
+		 * @returns {string|null} 이전 session_id 또는 null
+		 */
+		getPreviousSessionIdFromLocalStorage() {
+		  const stored = localStorage.getItem('previous_session_id');
+			if (!stored) return null;
+
+			try {
+				const data = JSON.parse(stored);
+				if (data.expiry && Date.now() > data.expiry) {
+					localStorage.removeItem('previous_session_id');
+					return null;
+				}
+				return data.value;
+			} catch {
+				return null;
+			}
+		},
+		/**
+		* 새고로침 /페이지 닫기 전에 현재 session_id 를 localStorage 에 저장
+		*/
+		handleBeforeUnload() {
+			if (this.currentSessionId) {
+				this.saveSessionIdToLocalStorage(this.currentSessionId);
+			}
+		},
+		toggleHeadMenu() {
+			this.menuOptions.isHeadMenuOpen = !this.menuOptions.isHeadMenuOpen;
+        },
+		toggleMenu(event) {
+			if (event && event.stopPropagation) {
+				event.stopPropagation();
+			}
+			this.menuOptions.isMenuOpen = !this.menuOptions.isMenuOpen;
+			if (!this.menuOptions.isMenuOpen) {
+				this.menuOptions.activeSubmenu = null;
+			} else {
+				this.menuOptions.fontPanelVisible = false;
+			}
+		},
+		showSubmenu(index, event) {
+			if (event) event.stopPropagation();
+			// 清除之前的关闭定时器
+			if (this.hideTimeout) {
+				clearTimeout(this.hideTimeout);
+				this.hideTimeout = null;
+			}
+			if (index === 4) {
+				this.menuOptions.fontPanelVisible = false;
+			}
+			this.menuOptions.activeSubmenu = index;
+		},
+		hideSubmenu() {
+			// 延迟关闭，给焦点移动到子菜单的时间
+			this.hideTimeout = setTimeout(() => {
+				const activeElement = document.activeElement;
+				const submenu = document.querySelector('.font-size-controls, .tools-depth2, .conInside-box');
+				
+				// 如果焦点在子菜单内，保持打开
+				if (submenu && activeElement && submenu.contains(activeElement)) {
+					return;
+				}
+				
+				this.menuOptions.activeSubmenu = null;
+				this.hideTimeout = null;
+			}, 200);
+		},
+
+		closeSetMenu(){
+			const wbsbtn = document.getElementById('windowbs');
+			this.menuOptions.isMenuOpen = false;
+			setTimeout(function(){
+				wbsbtn.classList.remove('on');
+			}, 500);
+
+
+		},
+
+		showApiErrorMessage(message) {
+			const fallbackMessage = message || "잠시 서비스 이용이 원활하지 않습니다. 잠시 후 다시 시도해주세요.";
+			const errorMessage = {
+				id: `error-${Date.now()}`,
+				type: 'a',
+				text_data: fallbackMessage,
+				eva_type: null,
+				eva_items: [],
+				eva_comment: '',
+				showDirectInput: false,
+				showMainEvalPanel: false,
+				isComplete: true,
+				isErrorMessage: true,
+				created_at: dayjs().format('YYYY-MM-DD HH:mm:ss')
+			};
+			this.messageList.push(errorMessage);
+			this.$nextTick(() => {
+				this.scrollToBottom();
+			});
+		},
+
+		handleAskApiError(error) {
+			console.error('Fetch error:', error);
+			this.currentLoadingDiv = -1;
+			const fallbackMessage = "잠시 서비스 이용이 원활하지 않습니다. 잠시 후 다시 시도해주세요.";
+			const lastMessage = this.messageList[this.messageList.length - 1];
+			if (lastMessage && lastMessage.type === 'a' && !lastMessage.isComplete && !lastMessage.text_data) {
+				lastMessage.text_data = fallbackMessage;
+				lastMessage.isComplete = true;
+				lastMessage.isErrorMessage = true;
+				lastMessage.created_at = dayjs().format('YYYY-MM-DD HH:mm:ss');
+				lastMessage.showMainEvalPanel = false;
+				lastMessage.showDirectInput = false;
+				lastMessage.eva_items = [];
+				lastMessage.eva_comment = '';
+				this.$forceUpdate();
+				this.$nextTick(() => this.scrollToBottom());
+			} else {
+				this.showApiErrorMessage(fallbackMessage);
+			}
+		},
+		handleAskApiLimits(str) {
+			this.currentLoadingDiv = -1;
+			const fallbackMessage = str;
+			const lastMessage = this.messageList[this.messageList.length - 1];
+			if (lastMessage && lastMessage.type === 'a' && !lastMessage.isComplete && !lastMessage.text_data) {
+				lastMessage.text_data = fallbackMessage;
+				lastMessage.isComplete = true;
+				lastMessage.isErrorMessage = true;
+				lastMessage.created_at = dayjs().format('YYYY-MM-DD HH:mm:ss');
+				lastMessage.showMainEvalPanel = false;
+				lastMessage.showDirectInput = false;
+				lastMessage.eva_items = [];
+				lastMessage.eva_comment = '';
+				this.$forceUpdate();
+				this.$nextTick(() => this.scrollToBottom());
+			} else {
+				this.showApiErrorMessage(fallbackMessage);
+			}
+		},
+		hideAllMenus() {
+			this.menuOptions.isMenuOpen = false;
+			this.menuOptions.activeSubmenu = null;
+			this.menuOptions.fontPanelVisible = false;
+		},
+
+		toggleFontPanel(event) {
+			if (event) {
+				event.stopPropagation();
+			}
+			// 만약 열려 있는 것이 상단 폰트 패널이라면, 도구 메뉴의 폰트 패널을 닫도록 설정
+			if (!this.menuOptions.fontPanelVisible) {
+				this.menuOptions.isMenuOpen = false;
+				this.menuOptions.activeSubmenu = null;
+			}
+			this.menuOptions.fontPanelVisible = !this.menuOptions.fontPanelVisible;
+		},
+		  handleEnter(event) {
+			event.preventDefault();
+			this.toggleFontPanel(event);
+		  },
+		
+		updateFontSize(event) {
+			const size = this.currentFontSize;
+			this.theme.user_font_size = `font-size:${size}px;`;
+			this.theme.ai_font_size = `font-size:${size}px;`;
+			this.$forceUpdate();
+
+			// localStorage에 저장
+			localStorage.setItem('chatFontSize', size);
+			
+			// 서버에 저장
+			this.saveFontSizeToServer(size);
+		},
+
+		// 붙이기 로그인시
+		updateFontSizeForLogin(size) {
+			this.theme.user_font_size = `font-size:${size}px;`;
+			this.theme.ai_font_size = `font-size:${size}px;`;
+			this.$forceUpdate();
+		},
+		
+		adjustFontSize(action) {
+			const step = 1;
+			const min = 12;
+			const max = 24;
+			
+			let newSize = this.currentFontSize;
+
+			switch (action) {
+				case 'l1':
+					newSize = 12; 
+					break;
+				case 'l2':
+					newSize = 15; 
+					break;
+				case 'l3':
+					newSize = 18;
+					break;
+				case 'l4':
+					newSize = 21; 
+					break;
+				case 'l5':
+					newSize = 24;
+					break;
+				case 'decrease':
+					newSize = Math.max(min, this.currentFontSize - step);
+					break;
+				case 'increase':
+					newSize = Math.min(max, this.currentFontSize + step);
+					break;
+				default:
+					newSize = this.currentFontSize;
+			}
+			
+			this.currentFontSize = newSize; 
+			this.updateFontSize(); 
+		},
+
+		// 글꼴 크기를 서버에 저장
+		async saveFontSizeToServer(fontSize) {
+			// 사용자가 로그인했는지 확인
+			if (!mb_id) return;
+			
+			try {
+				await requestInstance.post('./api/public/save_font_size.php', {
+					mb_id,
+					chat_bot_id,
+					font_size: fontSize
+				});
+			} catch (error) {
+				console.error('글꼴 크기 서버 저장 실패:', error);
+			}
+		},
+
+		handleGlobalClick(event) {
+			// 클릭이 메뉴 외부에서 발생했는지 확인
+			const toolsButton = document.getElementById('tools');
+			const toolsMenu = document.querySelector('.tools-depth1');
+			const fontPanel = document.querySelector('.font-size-controls');
+			const fontButton = document.getElementById('tT');
+			
+			if (fontPanel && fontButton) {
+				if (!fontButton.contains(event.target) && !fontPanel.contains(event.target)) {
+					//this.menuOptions.fontPanelVisible = true;
+				}
+			}
+			
+			if (toolsButton && toolsMenu) {
+				if (!toolsButton.contains(event.target) && !toolsMenu.contains(event.target)) {
+					this.hideAllMenus();
+				}
+			}
+		},
+
+		reloadPage(){
+			// 현재 세션아이디를 LocalStorage에 저장 
+			if (this.currentSessionId) {
+				this.saveSessionIdToLocalStorage(this.currentSessionId);
+			}
+			this.currentSessionId = null;// 세션아이디를 없앰.
+			// 채팅 데이터 초기화
+			this.messageText = '';
+			this.messageList = [];
+			this.hasAskedQuestion = false;
+			this.currentLoadingDiv = -1;
+			this.model_name_from_api = '';
+			this.source_from_api = '';
+			
+			// TTS 플레이어 정리
+			Object.values(this.ttsPlayers).forEach(player => {
+				if (player) {
+					player.destroy();
+				}
+			});
+			this.ttsPlayers = {};
+			this.currentPlayingMessageId = null;
+			
+			// 메뉴 상태 초기화
+			this.hideAllMenus();
+
+			// 시간 다시 로드
+			requestInstance.get('./api/public/select_time_from_db.php')
+			.then(response_time => {
+				this.loadpagetime = dayjs(response_time.data.data).format('YYYY-MM-DD HH:mm:ss');
+			})
+			.catch(error => {
+				console.error('시간 갱신 실패:', error);
+			});
+			//this.loadpagetime = dayjs().format('YYYY-MM-DD HH:mm:ss');
+			
+			// 첫 번째 메시지 다시 표시
+			this.$nextTick(() => {
+				const historyFirst = document.getElementById('history_first');
+				if (historyFirst) {
+					historyFirst.style.display = 'block';
+				}
+				this.scrollToBottom();
+			});
+		},
+		
+
+		selectTheme(theme) {
+			const selectedTheme = this.themeList.find(theme => theme.id === this.theme.id);
+			const theme_omit = _.omit(selectedTheme, ['id', 'name', 'description', 'author', 'created_at']);
+			this.theme = Object.keys(theme_omit).reduce((acc, key) => {
+				let cssKey = "";
+				if (key.endsWith("_background_color")) {
+					cssKey = "background-color";
+				} else if (key.endsWith("_font_family")) {
+					cssKey = "font-family";
+				} else if (key.endsWith("_font_size")) {
+					cssKey = "font-size";
+				} else if (key.endsWith("_color")) {
+					cssKey = "color";
+				}
+				const cssValue = `${cssKey}: ${theme_omit[key]};`;
+				acc[key] = cssValue;
+				return acc;
+			}, {});
+			this.theme.id = theme.id;
+			this.toggleMenu();
+			
+        },
+		selectInstruction(instruction) {
+			this.instruction.id = instruction.id;
+			this.instruction.value = instruction.value;
+			this.toggleMenu();
+        },
+		selectModel(model) {
+			this.$emit("selectModel", model);
+			this.toggleMenu();
+        },
+		formatMessage(textData, source) {
+		  const tempDiv = document.createElement('div');
+
+		  // LaTeX 수식을 임시로 보호 (marked.parse가 백슬래시를 제거하는 것을 방지)
+		  const mathPlaceholders = [];
+		  let processedText = textData;
+
+		  // $$...$$ (display mode) 보호
+		  processedText = processedText.replace(/\$\$([\s\S]*?)\$\$/g, (match) => {
+		    const placeholder = `MATH_BLOCK_${mathPlaceholders.length}`;
+		    mathPlaceholders.push({placeholder, original: match});
+		    return placeholder;
+		  });
+
+		  // \[...\] (display mode) 보호
+		  processedText = processedText.replace(/\\\[([\s\S]*?)\\\]/g, (match) => {
+		    const placeholder = `MATH_BLOCK_${mathPlaceholders.length}`;
+		    mathPlaceholders.push({placeholder, original: match});
+		    return placeholder;
+		  });
+
+		  // $...$ (inline mode) 보호
+		  processedText = processedText.replace(/\$([^\$\n]+?)\$/g, (match) => {
+		    const placeholder = `MATH_INLINE_${mathPlaceholders.length}`;
+		    mathPlaceholders.push({placeholder, original: match});
+		    return placeholder;
+		  });
+
+		  // \(...\) (inline mode) 보호
+		  processedText = processedText.replace(/\\\(([\s\S]*?)\\\)/g, (match) => {
+		    const placeholder = `MATH_INLINE_${mathPlaceholders.length}`;
+		    mathPlaceholders.push({placeholder, original: match});
+		    return placeholder;
+		  });
+
+		   const escapedText = processedText.replace(/~/g, '\\~');
+		   tempDiv.innerHTML = marked.parse(escapedText);
+
+		  // 보호했던 수식을 다시 복원
+		  let restoredHTML = tempDiv.innerHTML;
+		  restoredHTML = restoredHTML.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+		  mathPlaceholders.forEach(({placeholder, original}) => {
+		    restoredHTML = restoredHTML.replace(placeholder, original);
+		  });
+		  tempDiv.innerHTML = restoredHTML;
+
+		  // KaTeX 렌더링 추가
+		  if (typeof renderMathInElement !== 'undefined') {
+		    try {
+		      renderMathInElement(tempDiv, {
+		        delimiters: [
+		          {left: '$$', right: '$$', display: true},
+		          {left: '\\[', right: '\\]', display: true},
+		          {left: '$', right: '$', display: false},
+		          {left: '\\(', right: '\\)', display: false}
+		        ],
+		        throwOnError: false,
+		        strict: false
+		      });
+		    } catch (e) {
+		      console.error('KaTeX 렌더링 오류:', e);
+		    }
+		  }
+
+		  if (source && source_cnt > 0) {
+			let source_pElement = document.createElement('p');
+			source_pElement.innerHTML = `출처:`;
+			tempDiv.appendChild(source_pElement);
+			let source_Element = document.createElement('ul');
+			source_Element.classList.add('sourceTxT');
+			const parts = source.split(',');
+			parts.slice(0, source_cnt).forEach(part => {
+			  const liElement = document.createElement('li');
+			  source_Element.appendChild(liElement);
+			  part = part.trim();
+			  liElement.innerHTML = `<a href="javascript:void(0);" class="sourceLinkBtn no-copy" rel="noopener noreferrer" onClick="sourceClick(event)">${part}</a>`;
+			});
+			tempDiv.appendChild(source_Element);
+		  }
+
+		  const preElements = tempDiv.querySelectorAll('pre');
+		  if (preElements) {
+			preElements.forEach((pre) => {
+			  const copyButton = `<a href="#n" class="copydivcode no-copy"><img src="./images/dark_copy.png" alt="소스 복사" onClick="copyCode(event)"></a>`;
+			  pre.insertAdjacentHTML('beforeend', copyButton);
+			});
+		  }
+
+		  const htmlContent = tempDiv.innerHTML;
+		  tempDiv.remove();
+		  return htmlContent;
+		},
+		toStudy() {
+			window.open(this.study_url, '_blank');
+		},
+
+		textareaFocus(){
+			if(!this.textareaIsFocus){
+				this.textareaIsFocus = true;
+				window.parent.postMessage('abcd', '*');
+				window.parent.postMessage({ type: 'disable-scroll','abcd':'abcd'}, '*');
+			}
+		},
+		textareaBlur(){
+			this.textareaIsFocus = false;
+			window.parent.postMessage('abcdBlur', '*');
+		},
+		async sendMessage(event) {
+			if (event.shiftKey) {
+				return;
+			}
+			event.preventDefault();
+			this.scrollState = true;
+			this.lastScrollTop = document.getElementById('chatbox').scrollHeight;
+
+			const messageText = this.messageText;
+			if (!messageText) {
+				// 전역 toast 시스템이 있으면 우선 사용
+				if (window.toast && typeof window.toast.show === 'function') {
+					window.toast.show('내용을 입력해주세요.', 'warning', 3000);
+				} else {
+					this.showSTTToast('내용을 입력해주세요.', 'warning', 3000);
+				}
+				document.getElementById('userInput').focus();
+				return;
+			}
+
+			this.messageText = '';
+			this.scrollToBottom(true);
+
+			if (!this.hasAskedQuestion) {
+				this.hasAskedQuestion = true;
+			}
+
+			//앤드포인트 발송전에 사용자 입력 출력. //밑에서 지워짐.
+			this.messageList.push({
+				mb_id,
+				mb_name,
+				text_data: messageText,
+				type: 'q',
+				model_name: this.model_name_from_api,
+			});
+			//console.log('messageText', '📢' + messageText);
+
+			// ask 요청은 먼저 시작하고, 체크가 통과된 뒤에 응답 스트림을 화면에 연결한다.
+			let fullResponse = "";
+			let tokenUsage = null; // 토큰 사용량
+			let suggested_questions = [];// 추천질문 add 250627
+			let use_suggested_question_type = "Long";// 추천질문 형식
+			const timestamp = Date.now();
+			const appInstance = window.appHeadInstance || window.appHeadVue || window.vueApp;
+			const selectedModel =
+				appInstance?.model?.model ||
+				this.model?.model ||
+				(this.model && typeof this.model === 'string' ? this.model : null);
+			const botSource = Array.isArray(appInstance?.botList)
+				? appInstance.botList
+				: (Array.isArray(this.botList) ? this.botList : []);
+			const botSelections = botSource.reduce((acc, item) => {
+				if (!item?.bot) {
+					return acc;
+				}
+				return {
+					...acc,
+					[item.bot]: item.type
+				};
+			}, {});
+
+			const bodyData = { 
+				db_name, 
+				chat_bot_id, 
+				mb_id, 
+				mb_name, 
+				query: messageText,
+				user_inst: this.instruction.value,
+				model_name: selectedModel,
+				timestamp,
+				...botSelections,
+				session_id: this.getSessionId(),  // ✅ session_id 포함 전송
+			};
+			if (!selectedModel) {
+				console.error('❌ [CHAT MODEL DEBUG] 모델이 선택되지 않았습니다!', {
+					app_model: appInstance?.model,
+					this_model: this.model
+				});
+			}
+
+			const keys = [
+				'chat_bot_id', 'timestamp'
+			];
+
+			const signature = generateHmacSignature({ data: bodyData, keys });
+			const askController = new AbortController();
+			const askResponsePromise = fetch(`${url1}/ask`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					"X-HMAC-Signature": signature
+				},
+				body: JSON.stringify(bodyData),
+				signal: askController.signal
+			}).then(
+				response => ({ response }),
+				error => ({ error })
+			);
+
+			//채팅횟수 제한-----------start
+			const response_limits = await axios.post('./api/public/check_chat_limits.php', {
+				mb_id,
+				chat_bot_id
+			});
+			if (response_limits.data.status === "error") {
+				this.handleAskApiLimits(response_limits.data.message);
+				askController.abort();
+				return;
+			}
+			//채팅횟수 제한------------end
+
+
+			this.currentLoadingDiv = 1;
+			this.changeCurrentLoadingDiv();
+			let message_q = {
+				type: 'q',
+				text_data: messageText,
+				eva_type: null,
+				eva_items: [],
+				eva_comment: '',
+				showDirectInput: false,
+				showMainEvalPanel: true
+			};
+			//this.messageList.push(message_q);
+			this.$nextTick(() => {
+				this.scrollToBottom();
+			});
+			this.scrollToBottom();
+
+			try {
+				await new Promise((resolve, reject) => {
+					askResponsePromise
+					.then(({ response, error }) => {
+						if (error) {
+							reject(error);
+							return;
+						}
+						if (!response.ok) {
+							reject(new Error(`ask API error: ${response.status}`));
+							return;
+						}
+						let message_a = {
+							type: 'a', 
+							text_data: '',
+							eva_type: null,
+							eva_items: [],
+							eva_comment: '',
+							showDirectInput: false,
+							showMainEvalPanel: true,
+							isComplete: false
+						};
+						this.messageList.push(message_a);
+						const reader = response.body.getReader();
+						const decoder = new TextDecoder();
+
+						const readStream = () => {
+							reader.read().then(async ({ done, value }) => {
+								this.currentLoadingDiv = -1;
+								if (done) {
+									// message_a에 추천질문 저장 add 250627
+									//message_a.suggested_questions = suggested_questions;
+									if(suggested_questions && suggested_questions.length > 0){
+										var suggested_questions_ul = `<ul class='addquestion${use_suggested_question_type === 'Long' ? 'Long' : ''}'><strong>추천질문</strong>`;
+										  suggested_questions.forEach(question => {
+											suggested_questions_ul	+= "<li><a href='#n'>"+question+"</a></li>";
+										  });
+										suggested_questions_ul += "</ul>";
+									}else{
+										var suggested_questions_ul = "";
+									}
+									// question && answer add
+									const response_message_add = await requestInstance.post("./api/public/process_add_own.php", {
+										chat_bot_id,
+										message_q : {
+											mb_id,
+											mb_name,
+											text_data: messageText,
+											type: 'q',
+											model_name: this.model_name_from_api,
+										},
+										message_a : {
+											mb_id,
+											mb_name,
+											text_data: fullResponse + suggested_questions_ul,
+											type: 'a',
+											model_name: this.model_name_from_api,
+											source: this.source_from_api,
+										},
+										token_usage: tokenUsage,
+										session_id: this.currentSessionId
+									});
+									// DB에서 text_data가 null로 올 경우 스트리밍 결과를 폴백으로 사용 (UI 안전)
+									const messageAFromDb = response_message_add?.data?.message_a || {};
+									messageAFromDb.text_data = messageAFromDb.text_data ?? (fullResponse + suggested_questions_ul);
+									messageAFromDb.source = messageAFromDb.source ?? (this.source_from_api || '');
+									messageAFromDb.model = this.get_model(this.model_name_from_api);
+									messageAFromDb.isComplete = true;
+									this.source_from_api ="";
+									// update by db
+									this.messageList = _.dropRight(this.messageList, 2);
+									this.messageList.push(response_message_add.data.message_q);
+									//response_message_add.data.message_a.suggested_questions = suggested_questions;// add 250627
+									this.messageList.push(messageAFromDb);
+									// AI 추천질문으로 롤링 업데이트
+									this.updateAiSuggestedQuestions(suggested_questions);
+									// end
+									
+									resolve();
+									return;
+								}
+
+								// chunk
+								let content = '';
+								const chunks = decoder.decode(value, { stream: true }).split('\n');
+								chunks.forEach(chunk => {
+									if (chunk.startsWith('data: ')) {
+										try {
+											const jsonStr = chunk.replace("data: ", "");
+											if (jsonStr.trim()) {
+												const parsedChunk = JSON.parse(jsonStr);
+												if(parsedChunk.type === 'token_usage'){
+													tokenUsage = parsedChunk.tokens;
+												}
+												if(parsedChunk.description != "doc_source"){
+													content = content + parsedChunk.content;
+												}
+												if(parsedChunk.model_name){
+													this.model_name_from_api = parsedChunk.model_name;
+												}
+												if(parsedChunk.model_name){
+													this.model_name_from_api = parsedChunk.model_name;
+												}
+												if(parsedChunk.source && parsedChunk.description == 'doc_source' ){
+													this.source_from_api = parsedChunk.source;
+												}
+												// 추천질문add 250627 
+												if (parsedChunk.suggested_questions?.length > 0) {
+													suggested_questions = parsedChunk.suggested_questions;
+												}
+
+												// 추천질문 형식
+												use_suggested_question_type = parsedChunk.use_suggested_question_type;
+											}
+										} catch (e) {
+											console.error('parse JSON error:', e, 'chunkdata:', chunk);
+										}
+									}
+								});
+
+								fullResponse += content;
+								message_a.text_data = fullResponse;
+								this.$forceUpdate();
+								this.scrollToBottom();
+
+								// 마지막.message.user 찾기
+								const chatbox = document.getElementById('chatbox');
+								const userMessages = document.querySelectorAll('.message.user');
+								const lastMsg = userMessages.length > 0
+									? userMessages.item(userMessages.length - 1)
+									: null;
+
+								if (chatbox && lastMsg) {
+									const position = lastMsg.offsetTop;
+									const rect = lastMsg.getBoundingClientRect();
+									const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+									const absoluteTop = rect.top + scrollTop;
+
+									if (absoluteTop <= 200 && this.scrollState) {
+										let count = 0;
+										const timer = setInterval(function(){
+											if(count >= 3){
+												clearInterval(timer);
+											}
+											chatbox.scrollTo({
+											  top: position - 10,
+											  behavior: 'smooth'
+											});
+											count ++;
+										},500);
+										this.scrollState = false;
+									}
+								}
+								/*setTimeout(() => {
+									this.scrollToBottom();
+								}, 1000);*/
+								// loop
+								readStream();
+							}).catch(error => {
+								reject(error);
+							});   
+						}
+
+						readStream();
+					})
+					.catch(error => {
+						reject(error);
+					});
+				});
+			} catch (error) {
+				this.handleAskApiError(error);
+				return;
+			}
+		},
+		changeCurrentLoadingDiv() {
+			setTimeout(() => {
+				if(this.currentLoadingDiv === -1){
+					return;
+				}
+				this.currentLoadingDiv = 2;
+			}, 3000);
+
+			setTimeout(() => {
+				if(this.currentLoadingDiv === -1){
+					return;
+				}
+				this.currentLoadingDiv = 3;
+			}, 7000);
+
+			setTimeout(() => {
+				if(this.currentLoadingDiv === -1){
+					return;
+				}
+				this.currentLoadingDiv = 4;
+			}, 11000);
+		},
+scrollToBottom(force = false) {
+    if(this.scrollState === true){
+        setTimeout(()=>{
+            const container = this.$refs.chatbox;
+            if (!container) return;
+            
+            const distanceToBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+            
+            // force = true: 强制滚动（用户发送消息时）
+            // force = false: 智能判断（AI回复时），只有距离底部小于50px才滚动
+            if (force || distanceToBottom < 50) {
+                container.scrollTop = container.scrollHeight;
+            }
+        }, 300);
+    }
+},
+		async getHistory() {
+			// 현재 LocalStorage에 저장되어 있는 세션
+			let cookie_old_session_id = this.getPreviousSessionIdFromLocalStorage();
+			// 현재 세션을 LocalStorage에 저장 
+			this.saveSessionIdToLocalStorage(this.currentSessionId);
+			// LocalStorage에서 가져온 세션을 현재 세션으로 
+			this.currentSessionId = cookie_old_session_id;
+			this.scrollState = true;
+			this.hasAskedQuestion = true;
+			try {
+				const response_history = await requestInstance.post('./api/public/select_chating_process_list_own.php', {
+					mb_id, 
+					chat_time : this.loadpagetime, 
+					chat_bot_id,
+					session_id : this.currentSessionId+"'",// LocalStorage에서 뽑아서 설정한 현재 세션으로 대화 기록 조회
+				});
+				if(response_history.data.data.length > 0){
+					this.loadpagetime = response_history.data.data[0].created_at;
+					for (const obj of Object.entries(response_history.data.data)) {
+						// 평가 관련 속성 초기화
+						obj[1].eva_type = obj[1].eva_type || null;  // 평가 유형 (good/bad)
+
+						// eva_items 안전하게 파싱
+						try {
+							if (obj[1].eva_items) {
+								// 이미 객체인 경우 그대로 사용, 문자열인 경우 파싱
+								obj[1].eva_items = typeof obj[1].eva_items === 'string' ? 
+									JSON.parse(obj[1].eva_items) : obj[1].eva_items;
+							} else {
+								obj[1].eva_items = [];
+							}
+						} catch (e) {
+							console.error('평가 항목 파싱 오류:', e);
+							obj[1].eva_items = [];
+						}
+
+						obj[1].eva_comment = obj[1].eva_comment || ''; // 사용자 의견
+						obj[1].showDirectInput = false; // 직접입력 창 표시 여부
+						obj[1].isHistory = true; // 히스토리에서 불러온 메시지임을 표시
+
+						// 평가가 있으면 평가 패널 표시 설정 (히스토리에서는 수정 불가)
+						obj[1].showMainEvalPanel = false;
+						
+						// 답변 메시지라면 모델 정보 설정
+						if ('a'.startsWith(obj[1].type)) {
+							obj[1].model = this.get_model(obj[1].model_name);
+							obj[1].isComplete = true;
+						}
+					}
+
+					//this.messageList = _.concat(response_history.data.data, this.messageList);
+					const historyFirst = document.getElementById('history_first');
+					if (historyFirst) {
+						historyFirst.style.display = 'none';
+					}
+					//$('#history_first').remove();
+				}
+				this.messageList = response_history.data.data;// 세션으로 조회한 내용만 나와야 됨 
+				this.$nextTick(() => {
+					this.scrollToBottom();
+				});
+			} catch (error) {
+				console.error(error);
+			}
+		},
+		get_model: function(id) {
+			const modelMap = modelList
+			  .filter(item => id == item.nicnm)
+			  .reduce((map, item) => {
+				map[item.ai_id] = {
+				  name: item.name,
+				  image: item.image
+				};
+				return map;
+			  }, {});
+			for (const [key, value] of Object.entries(modelMap)) {
+				if (id == key) {
+				  return value;
+				}
+			}
+		},
+		async memory(message_a) {
+			if(!message_a.parent_id){
+				alert("parent_id가 비어 있는 데이터는 기억할 수 없습니다.");
+				return;
+			}
+			try {
+				// python
+				const response_longSave = await axios.post(
+					`${url1}/save/long`, 
+					{
+						db_name, 
+						chat_id : message_a.chat_bot_id,
+						user_id : message_a.mb_id,
+						message_id : message_a.id,
+						is_ok : false
+					},
+					{
+						validateStatus: function (status) {
+							return status >= 200 || status == 400;
+						}
+					}
+				);
+
+				// update is_momory
+				const response_process_add = await requestInstance.post('./api/public/memory_add.php', {
+					param_message_a : message_a
+				});
+				alert("기억되었습니다.");
+			} catch (error) {
+				console.error(error);
+			}
+    },
+
+
+		// 평가 데이터를 서버에 저장하는 공통 함수
+		async saveEvaluation(message) {
+			if (!message || !message.id) return;
+			
+			try {
+				await requestInstance.post('./api/public/process_eva.php', {
+					chat_bot_id,
+					message_id: message.id,
+					eva_type: message.eva_type,
+					eva_items: JSON.stringify(message.eva_items || []),
+					eva_comment: message.eva_comment || '',
+					mb_id,
+					mb_name,
+					subjective: (message.eva_type === 'good' ? this.goodSubjective : this.badSubjective) === '1' ? 'Y' : 'N',
+					type: 'chatting'
+				});
+				return true;
+			} catch (error) {
+				console.error('평가 저장 오류:', error);
+				return false;
+			}
+		},
+
+		async setEvaluation(message, type) {
+			// 히스토리에서 불러온 메시지는 평가 불가
+			if (message.isHistory) {
+				alert('히스토리에서 불러온 메시지는 평가할 수 없습니다.');
+				return;
+			}
+
+			// 평가 타입을 토글 (같은 걸 누르면 해제)
+			if (message.eva_type === type) {
+				// 이전 상태 저장
+				const previousType = message.eva_type;
+				
+				// 상태 초기화
+				message.eva_type = null;
+				message.eva_items = [];
+				message.eva_comment = '';
+				message.showDirectInput = false;
+				message.showMainEvalPanel = true;
+				
+				// 평가 삭제 요청 전송
+				try {
+					await requestInstance.post('./api/public/process_eva.php', {
+						chat_bot_id,
+						message_id: message.id,
+						eva_type: 'delete', // 삭제 작업 명시
+						previous_type: previousType, // 이전 타입 정보 전달
+						mb_id,
+						mb_name,
+						type: 'chatting'
+					});
+				} catch (error) {
+					console.error('평가 삭제 오류:', error);
+				}
+			} else {
+				// 다른 메시지의 평가 패널 모두 닫기
+				this.messageList.forEach(msg => {
+					if (msg.id !== message.id) {
+						msg.showMainEvalPanel = false;
+						msg.showDirectInput = false;
+					}
+				});
+
+				message.eva_type = type;
+				message.eva_items = [];
+				message.eva_comment = '';
+				message.showDirectInput = false;
+				
+				// 평가 항목이나 주관식이 있는 경우에만 패널 표시
+				const hasItems = type === 'good' ? this.goodItems.length > 0 : this.badItems.length > 0;
+				const hasSubjective = type === 'good' ? this.goodSubjective === 'on' : this.badSubjective === 'on';
+				message.showMainEvalPanel = hasItems || hasSubjective;
+				
+				// 새 평가 저장
+				await this.saveEvaluation(message);
+
+				// DOM 업데이트 후 스크롤 - 타이머 추가로 안정성 향상
+				this.$nextTick(() => {
+					// 약간의 지연을 두어 DOM이 완전히 업데이트된 후 스크롤하도록 함
+					setTimeout(() => {
+						const messageElement = document.querySelector(`#message_${message.id}`);
+						if (messageElement) {
+							const panel = messageElement.querySelector(`.panel${type === 'good' ? '1' : '2'}`);
+							if (panel) {
+								panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+							} else {
+								// 패널을 찾지 못한 경우 메시지 요소 자체로 스크롤
+								//messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+							}
+						}
+					}, 100); // 100ms 지연
+				});
+			}
+		},
+
+		closeEvaluationPanel(message) {
+			message.showDirectInput = false;
+			message.showMainEvalPanel = false;
+		},
+
+		showDirectInputPanel(message) {
+			message.showMainEvalPanel = false;
+			message.showDirectInput = true;
+		},
+
+		closeDirectInputPanel(message) {
+			message.showDirectInput = false;
+			message.showMainEvalPanel = true;
+		},
+
+		// 평가 의견 업데이트 함수 추가
+		async updateEvaComment(messageId) {
+			const message = this.messageList.find(msg => msg.id === messageId);
+			if (!message) return;
+			
+			try {
+				const success = await this.saveEvaluation(message);
+				if (success) {
+				} else {
+					throw new Error('저장 실패');
+				}
+			} catch (error) {
+				console.error('평가 의견 저장 오류:', error);
+				alert('평가 의견을 저장하는 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.');
+			}
+		},
+		
+		submitDirectInput(message) {
+			message.showDirectInput = false;
+			message.showMainEvalPanel = false; // 평가 전체 닫기
+
+			// 서버에 저장
+			this.updateEvaComment(message.id);
+		},
+
+		// 평가 제출
+		async submitEva(messageId) {
+			const message = this.messageList.find(msg => msg.id === messageId);
+			if (!message) return;
+
+			// 변경사항 반영 보장
+			this.$nextTick(async () => {
+				try {
+					const success = await this.saveEvaluation(message);
+					if (success) {
+						// 선택 항목이 있으면 패널 닫기
+						if (message.eva_items && message.eva_items.length > 0) {
+							message.showDirectInput = false;
+							message.showMainEvalPanel = false;
+						}
+						// 주관식 답변인 경우에도 입력 후 패널 닫기
+						else if (message.eva_comment) {
+							message.showDirectInput = false;
+							message.showMainEvalPanel = false;
+						}
+					} else {
+						throw new Error('저장 실패');
+					}
+				} catch (error) {
+					console.error('평가 제출 오류:', error);
+					alert('평가를 제출하는 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.');
+				}
+			});
+		},
+		decodeHtml(html) {
+		  // 1. 임시 컨테이너를 생성하여 HTML을 파싱
+		  const tempDiv = document.createElement('div');
+		  tempDiv.innerHTML = html;
+
+		  // 2. 모든 <font> 태그 처리
+		  const fontTags = tempDiv.querySelectorAll('font');
+		  fontTags.forEach(font => {
+			// face 속성을 font-family 스타일로 변환
+			if (font.hasAttribute('face')) {
+			  const faceValue = font.getAttribute('face');
+			  font.style.fontFamily = faceValue; // 스타일에 font-family 적용
+			  font.removeAttribute('face');     // 기존 face 속성 제거
+			}
+
+			// size 속성을 font-size 스타일로 변환
+			if (font.hasAttribute('size')) {
+			  const sizeMap = {
+				'1': 'xx-small', '2': 'x-small', '3': 'medium',
+				'4': 'large', '5': 'x-large', '6': 'xx-large', '7': 'xxx-large'
+			  };
+			  const sizeValue = font.getAttribute('size');
+			  const fontSize = sizeMap[sizeValue] || 'medium';
+			  font.style.fontSize = fontSize; // 스타일에 font-size 적용
+			  font.removeAttribute('size');  // 기존 size 속성 제거
+			}
+		  });
+
+		  // 3. 처리된 HTML 반환 (<font> 태그는 유지하고, 속성만 수정)
+		  const txt = document.createElement("textarea");
+		  txt.innerHTML = tempDiv.innerHTML;
+		  
+		  // 4. txt.value에서 face 또는 font-family 값을 추출하여 chatbox에 적용
+		  const fontFamilyMatch = txt.value.match(/(?:face="([^"]+)"|font-family:\s*([^;]+))/i);
+		  let fontFamilyValue = null;
+		  
+		  if (fontFamilyMatch) {
+			// face 값이 있으면 첫 번째 캡처 그룹, font-family 스타일이 있으면 두 번째 캡처 그룹 사용
+			fontFamilyValue = fontFamilyMatch[1] || fontFamilyMatch[2];
+		  }
+
+		  if (fontFamilyValue) {
+			const chatbox = document.getElementById("chatbox");
+			const userInput = document.getElementById("userInput");
+			if (chatbox) {
+			  setTimeout(() => {
+				chatbox.style.fontFamily = fontFamilyValue;
+				if (userInput) {
+				  userInput.style.fontFamily = fontFamilyValue;
+				}
+			  }, 500);
+			}
+		  }
+		  return txt.value;
+		},
+		toggleTTS(message) {
+			console.log(message);
+			// 해당 메시지의 TTS 플레이어가 없으면 생성
+			const btnElement = document.querySelector(`#tts-${message.id} .re-icon`);
+			if (!this.ttsPlayers[message.id]) {
+				this.ttsPlayers[message.id] = new TTSPlayer({
+					playPauseSelector: `#tts-${message.id}`,
+					playPauseText: { play: '음성', pause: '정지', loading: '로딩중' },
+					apiUrlBase: ttsApiUrl,
+					useVoiceName: true,
+					onPlay: () => {
+					btnElement.src = this.state_pause_icon;
+						btnElement.alt = "정지";
+						btnElement.parentElement.title = "정지";
+						this.currentPlayingMessageId = message.id;
+					},
+					onPause: () => {
+						btnElement.src = this.state_play_icon;
+					},
+					onEnd: () => {
+						btnElement.src = this.state_stopped_icon;
+						this.currentPlayingMessageId = null;
+						btnElement.alt = "음성";
+						btnElement.parentElement.title = "음성";
+					},
+					onError: (error) => {
+						console.error('TTS 오류:', error);
+						btnElement.src = this.state_stopped_icon;
+						this.currentPlayingMessageId = null;
+					}
+				});
+			}
+
+			const ttsPlayer = this.ttsPlayers[message.id];
+
+			if (this.currentPlayingMessageId === message.id) {
+				ttsPlayer.stop();
+				this.currentPlayingMessageId = null;
+			} else {
+				// 다른 메시지가 재생 중이면 중지
+				if (this.currentPlayingMessageId && this.ttsPlayers[this.currentPlayingMessageId]) {
+					this.ttsPlayers[this.currentPlayingMessageId].stop();
+				}
+
+				// HTML 태그 및 이모티콘 제거
+				const cleanText = marked.parse(message.text_data).replace(/<[^>]*>/g, ''); // HTML 태그 제거
+				// 언어 감지 API 호출 (Promise 사용)
+				axios.post(`${url1}/lang_detect`, {
+					INPUT_TEXT: cleanText
+				})
+				.then(response => {
+					// 감지된 언어 코드 사용
+					const detectedLang = response.data || 'ko'; // 기본값은 한국어
+				
+					// 감지된 언어로 TTS 재생
+					ttsPlayer.play(cleanText, detectedLang);
+				})
+				.catch(error => {
+					console.error('언어 감지 오류:', error);
+					// 오류 발생 시 기본값으로 한국어 사용
+					ttsPlayer.play(cleanText, 'unknown');
+				});
+			}
+		},
+		logout() {
+			localStorage.removeItem('chatload_token');
+			if (window.vueApp?.updateAuthStatus) {
+				window.vueApp.updateAuthStatus(false);
+			}
+			showLoginModal();
+		},
+		// 20260527
+		// 롤링 추천질문 초기화
+		initRollingQuestions() {
+			if (this.reRollQs !== 'on') return;
+			
+			let questions = [];
+			
+			if (Array.isArray(this.aiSuggestedQuestions) && this.aiSuggestedQuestions.length > 0) {
+				questions = this.aiSuggestedQuestions;
+			}
+			else if (Array.isArray(this.keywordItems)) {
+				const count = parseInt(this.useSuggestedCount) || 3;
+				questions = this.keywordItems.slice(0, count);
+			}
+			
+			this.rollingQuestions = questions;
+			this.currentRollingIndex = 0;
+			this.isRollingPlaying = true;
+			
+			this.startMarqueeInterval();
+		},
+		// 자동 롤링 시작
+		startMarqueeInterval() {
+		  this.stopMarqueeInterval();
+		  
+		  if (this.rollingQuestions.length > 1) {
+			this.marqueeInterval = setInterval(() => {
+			  if (this.isRollingPlaying && !this.isSliding) {
+				this.moveSlide();
+			  }
+			}, 3000);
+		  }
+		},
+		// 자동 롤링 정지
+		stopMarqueeInterval() {
+			if (this.marqueeInterval) {
+				clearInterval(this.marqueeInterval);
+				this.marqueeInterval = null;
+			}
+		},
+		// 슬라이드 이동
+		moveSlide() {
+		  this.nextRollingQuestion();
+		},
+		// 다음 추천질문으로 이동
+		nextRollingQuestion() {
+		  if (this.isSliding) return;
+		  const total = this.rollingQuestions.length;
+		  if (total <= 1) return;
+
+		  this.isSliding = true;
+		  const target = this.currentRollingIndex + 1;
+
+		  // 1. 애니메이션 ON 상태로 다음으로 이동
+		  this.isTransitionDisabled = false;
+		  this.currentRollingIndex = target;
+
+		  // 2. 마지막에 도달하면 -> 애니메이션 끝난 후 점프
+		  if (target >= total) {
+			setTimeout(() => {
+			  // ✅ 애니메이션을 끈 후 점프 (이것이 핵심)
+			  this.isTransitionDisabled = true;
+			  this.currentRollingIndex = 0;
+
+			  // ✅ Vue가 DOM을 업데이트할 시간을 확보
+			  setTimeout(() => {
+				this.isTransitionDisabled = false;
+			  }, 20);
+
+			}, 300); // ✅ 애니메이션이 끝나는 0.3초 후 실행
+		  }
+
+		  // 3. 잠금 해제 & 타머 리셋
+		  setTimeout(() => {
+			this.isSliding = false;
+			this.startMarqueeInterval();
+		  }, 320);
+		},
+
+		// 이전 추천질문으로 이동
+		prevRollingQuestion() {
+		  if (this.isSliding) return;
+		  const total = this.rollingQuestions.length;
+		  if (total <= 1) return;
+
+		  this.isSliding = true;
+		  const target = this.currentRollingIndex - 1;
+
+		  // 애니메이션 켜진 상태로 이동
+		  this.isTransitionDisabled = false;
+		  this.currentRollingIndex = target;
+
+		  // 첫 페이지에서 앞으로 갈 때 → 뒤로 순간이동
+		  if (target < 0) {
+			setTimeout(() => {
+			  // 애니메이션 끄고 순간이동
+			  this.isTransitionDisabled = true;
+			  this.currentRollingIndex = total - 1;
+
+			  // Vue 렌더링 확보
+			  setTimeout(() => {
+				this.isTransitionDisabled = false;
+			  }, 20);
+
+			}, 300);
+		  }
+
+		  // 잠금 해제
+		  setTimeout(() => {
+			this.isSliding = false;
+			this.startMarqueeInterval();
+		  }, 320);
+		},
+		// 재생/일시정지 토글
+		toggleRollingPlay() {
+		  if (this.isSliding) return;
+		  this.isRollingPlaying = !this.isRollingPlaying;
+		},
+		// 롤링 질문 클릭 시 전송
+		handleRollingQuestionClick() {
+			if (this.rollingQuestions.length > 0) {
+				this.sendSuggestedQuestion(this.rollingQuestions[this.currentRollingIndex]);
+			}
+		},
+		// AI 동적 추천 질문 업데이트
+		updateAiSuggestedQuestions(questions) {
+			if (this.chatUseAiQr !== 'on') {
+				return;
+			}
+			
+			if (Array.isArray(questions) && questions.length > 0) {
+				this.aiSuggestedQuestions = questions;
+				this.$emit('update-suggested-questions', questions);
+				this.initRollingQuestions();
+			}
+		},
+		// 추천질문 클릭 시 해당 질문을 자동으로 전송하는 함수 add 250627
+		sendSuggestedQuestion(question) {
+			this.messageText = question;
+			this.sendMessage({ preventDefault: () => {}, shiftKey: false });
+		},
+		handleAClick(event) {
+          // 클릭된 요소가 addquestion 클래스의 ul 하위 li인지 확인
+          const liElement = event.target.closest('ul[class^="addquestion"] > li');
+          if (liElement) {
+            event.preventDefault();
+            // li 요소 내의 모든 a 태그 찾기
+            const aTags = liElement.querySelectorAll('a');
+            // 모든 a 태그의 텍스트를 리버스 처리
+            aTags.forEach(aTag => {
+              const originalText = aTag.textContent;
+              this.sendSuggestedQuestion(originalText);
+            });
+          }
+        },
+		
+		showSTTToast(message, type = 'error', duration = 4000) {
+			// 전역 toast 시스템이 있으면 우선 사용 (chat.htm과 통일성 확보)
+			if (window.toast && typeof window.toast.show === 'function') {
+				window.toast.show(message, type, duration);
+				return;
+			}
+			
+			// 전역 toast가 없으면 자체 toast 시스템 사용
+			// 토스트 컨테이너 확인 및 생성
+			let container = document.getElementById('stt-toast-container');
+			if (!container) {
+				container = document.createElement('div');
+				container.id = 'stt-toast-container';
+				container.style.cssText = `
+					position: fixed;
+					bottom: 140px;
+					right: 20px;
+					z-index: 10000;
+					display: flex;
+					flex-direction: column;
+					gap: 10px;
+					pointer-events: none;
+				`;
+				document.body.appendChild(container);
+			}
+			
+			// 토스트 메시지 생성
+			const toast = document.createElement('div');
+			const icon = this.getSTTToastIcon(type);
+			const color = this.getSTTToastColor(type);
+			
+			toast.style.cssText = `
+				background: ${color.background};
+				color: ${color.text};
+				padding: 12px 16px;
+				border-radius: 8px;
+				box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+				display: flex;
+				align-items: center;
+				gap: 8px;
+				font-size: 14px;
+				line-height: 1.4;
+				max-width: 350px;
+				word-wrap: break-word;
+				opacity: 0;
+				transform: translateX(100%);
+				transition: all 0.3s ease;
+				pointer-events: auto;
+				cursor: pointer;
+			`;
+			
+			toast.innerHTML = `
+				<span style="font-size: 16px;">${icon}</span>
+				<span>${message}</span>
+			`;
+			
+			// 컨테이너에 추가
+			container.appendChild(toast);
+			
+			// 애니메이션 효과
+			setTimeout(() => {
+				toast.style.opacity = '1';
+				toast.style.transform = 'translateX(0)';
+			}, 10);
+			
+			// 자동 제거
+			setTimeout(() => {
+				toast.style.opacity = '0';
+				toast.style.transform = 'translateX(100%)';
+				setTimeout(() => {
+					if (toast.parentNode) {
+						toast.parentNode.removeChild(toast);
+					}
+				}, 300);
+			}, duration);
+			
+			// 클릭으로 제거
+			toast.addEventListener('click', () => {
+				toast.style.opacity = '0';
+				toast.style.transform = 'translateX(100%)';
+				setTimeout(() => {
+					if (toast.parentNode) {
+						toast.parentNode.removeChild(toast);
+					}
+				}, 300);
+			});
+		},
+		
+		getSTTToastIcon(type) {
+			const icons = {
+				success: '✅',
+				error: '❌',
+				warning: '⚠️',
+				info: 'ℹ️'
+			};
+			return icons[type] || icons.info;
+		},
+		
+		getSTTToastColor(type) {
+			const colors = {
+				success: { background: '#d4edda', text: '#155724' },
+				error: { background: '#f8d7da', text: '#721c24' },
+				warning: { background: '#fff3cd', text: '#856404' },
+				info: { background: '#d1ecf1', text: '#0c5460' }
+			};
+			return colors[type] || colors.info;
+		},
+		
+	 async downloadData() {
+		  // 1. 시작일, 종료일 값 가져오기
+		  const startdate = document.getElementById('downstartDate').value;
+		  const enddate = document.getElementById('downendDate').value;
+		  if (!startdate) {
+			alert('시작일을 선택해주세요.');
+			return;
+		  }
+			if (!mb_id) return;
+
+			$(".conInside-box").css({ display: "none" });
+
+			
+			
+		// ✅ 선택된 포맷 가져오기 (Vue 반응형 데이터)
+			const format = this.selectedFormat || '.xlsx'; // 기본값 .pdf
+
+	fetch('./api/public/userchathistory_down.php', {
+        method: 'POST',
+		headers: {
+			'Content-Type': 'application/json', // 서버가 JSON 을 기대할 경우
+		  },
+		  body: JSON.stringify({
+			mb_id,
+			session_id: this.currentSessionId,
+			chat_bot_id,
+			startdate,
+			enddate,
+			chat_name,
+			format  // ✅ 포맷 정보도 함께 전송
+		  })
+		})
+    .then(response => {
+		// ✅ 1. 응답이 JSON 인지 확인 (Content-Type 으로 판단)
+        const contentType = response.headers.get('content-type');
+
+		console.log(response);
+        if (!response.ok) {
+			console.log(response.error);
+            throw new Error('서버 오류: ' + response.status);
+        }
+
+		// ✅ 2. JSON 이면 에러 메시지 처리
+        if (contentType && contentType.includes('application/json')) {
+            return response.json().then(errData => {
+                //alert('⚠️ ' + errData.error); // 에러 메시지 표시
+                throw new Error(errData.error); // 다운로드 흐름 중단
+            });
+        }
+
+        return response.blob(); 
+    })
+    .then(blob => {
+		// ✅ 확장자에 따라 다운로드 파일명 다르게 설정
+		let filename = '';
+		if (format === '.pdf') {
+			filename = `[${chat_name}]_채팅기록.pdf`;
+		} else if (format === '.txt') {
+			filename = `[${chat_name}]_채팅기록.txt`;
+		} else {
+			filename = `[${chat_name}]_채팅기록.xlsx`; 
+		}
+		//var filename = '['+chat_name+']_채팅기록.xlsx';
+        var url = window.URL.createObjectURL(blob);
+		var a = document.createElement('a');
+		a.href = url;
+		a.download = filename;
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		window.URL.revokeObjectURL(url);
+    })
+    .catch(error => {
+        console.error('다운로드 실패:', error);
+        alert('엑셀 다운로드 실패: ' + error.message);
+    });
+
+
+		},
+
+windowbs() {
+  const wbsbtn = document.getElementById('windowbs');
+  if (wbsbtn) {
+    if (wbsbtn.classList.contains('on')) {
+      wbsbtn.classList.remove('on');
+      wbsbtn.title = '채팅창 크기 확대';
+      window.parent.postMessage('removewindowbsWin', '*');
+    } else {
+      wbsbtn.classList.add('on');
+      wbsbtn.title = '채팅창 크기 축소';
+      window.parent.postMessage('windowbsWin', '*');
+    }
+  }
+},
+
+
+	},
+	async created() {
+		try {
+			const response_time = await requestInstance.get('./api/public/select_time_from_db.php');
+			this.loadpagetime = dayjs(response_time.data.data).format('YYYY-MM-DD HH:mm:ss');
+			const response_theme_one = await axios.get('./api/public/select_theme_one.php', {
+				params: {
+					chat_bot_id,
+				}
+			});
+
+			const settingsFromServer = response_theme_one.data.data;
+			const chatThemeEntry = settingsFromServer.find(item => item.key === 'chat_theme');
+			const preferredThemeId = chatThemeEntry ? chatThemeEntry.value : null;
+
+			const initialThemeValues = settingsFromServer.reduce((acc, item) => {
+				const key = item.key.replace(/-/g, "_");
+				let cssKey = "";
+				if (key.endsWith("_background_color")) cssKey = "background-color";
+				else if (key.endsWith("_font_family")) cssKey = "font-family";
+				else if (key.endsWith("_font_size")) cssKey = "font-size";
+				else if (key.endsWith("_color")) cssKey = "color";
+
+				if (cssKey) acc[key] = item.value;
+
+				return acc;
+			}, {});
+
+			// 새 객체로 할당
+			this.theme = { ...this.theme, ...initialThemeValues };
+
+			if (preferredThemeId && this.themeList.find(t => t.id === preferredThemeId)) {
+				this.theme.id = preferredThemeId;
+			}
+
+			// 글꼴 크기 설정 불러오기
+			const savedSize = localStorage.getItem('chatFontSize');
+			if (savedSize) {
+				const size = parseInt(savedSize);
+				if (size >= 12 && size <= 24) {
+					this.currentFontSize = size;
+					this.theme.user_font_size = `font-size:${size}px;`;
+					this.theme.ai_font_size = `font-size:${size}px;`;
+				}
+			}
+			
+			// 사용자가 로그인한 경우, 서버에서 글꼴 크기 설정 불러오기
+			if (mb_id) {
+				try {
+					const response = await axios.get('./api/public/get_font_size.php', {
+						params: {
+							mb_id,
+							chat_bot_id
+						}
+					});
+
+					if (response.data && response.data.font_size) {
+						const size = parseInt(response.data.font_size);
+						if (size >= 12 && size <= 24) {
+							this.currentFontSize = size;
+							this.theme.user_font_size = `font-size:${size}px;`;
+							this.theme.ai_font_size = `font-size:${size}px;`;
+							// localStorage도 함께 업데이트하여 동기화 유지
+							localStorage.setItem('chatFontSize', size);
+						}
+					}
+				} catch (error) {
+					console.error('서버에서 글꼴 크기 설정 불러오기 실패:', error);
+				}
+			}
+
+		} catch (error) {
+			console.error(error);
+		} finally {
+			// 초기화 완료: watcher가 정상 동작하도록 isInitializing을 false로 설정
+			this.isInitializing = false;
+		}
+	},
+    mounted() {
+		window.callVueMethod = this.handleAskApiLimits.bind(this);
+		// 롤링 추천질문 초기화
+		this.initRollingQuestions();
+		// 2. 페이지 로드 시 현재 session_id 생성 (이미 존재하면 재사용)
+		this.getSessionId();
+		this.initializeVoiceChatBridge();
+		window.addEventListener('voice-webrtc-realtime-event', this.handleVoiceRealtimeEvent);
+		// 3. beforeunload 이벤트 등록
+		window.addEventListener('beforeunload', this.handleBeforeUnload);
+
+		// 전역 클릭 이벤트 리스너 추가
+		document.addEventListener('click', this.handleGlobalClick);
+
+		// 다운로드 내역 관련 start
+		$(document).on("click", ".baBar a.conInside", function(e) {
+			e.preventDefault();
+			const $box = $(".conInside-box");
+			if ($box.length) {
+				$box.css({ display: "flex" });
+				// 让第一个可聚焦元素获得焦点
+				setTimeout(() => {
+					$box.find('input, button, a').first().focus();
+				}, 200);
+			}
+		});
+
+		$(document).on("click", ".baBar a.conInsideClose, .baBar a.conInsideCancel", function(e) {
+			e.preventDefault(); 
+
+			$(".conInside-box").css({ display: "none" });
+
+			//document.querySelectorAll('.date-input').forEach(input => {
+			//  input.value = ''; 
+			//  const span = input.nextElementSibling;
+			 // if (span) {
+			//	span.style.display = 'block';
+			//	span.style.opacity = '1';
+			 // }
+			//});
+		});
+
+		$(document).on("click", ".panel1 .close-btn", function(e) {
+			$('.goodss').focus();
+			$('.goodss').css('outline', '2px solid #2196F3').one('blur', function() {
+			  $(this).css('outline', '');
+			});
+		});
+
+		$(document).on("click", ".panel2 .close-btn", function(e) {
+			$('.badss').focus();
+			$('.badss').css('outline', '2px solid #2196F3').one('blur', function() {
+			  $(this).css('outline', '');
+			});
+		});
+
+		let goDirectSource = '';
+
+		$(document).on("click", ".panel1 .go-direct", function(e) {
+			e.preventDefault();
+			goDirectSource = 'panel1'; 
+			$('.direct-panel textarea').focus();
+			$('.direct-panel textarea').css('outline', '2px solid #2196F3').one('blur', function() {
+				$(this).css('outline', '');
+			});
+		});
+		$(document).on("click", ".panel2 .go-direct", function(e) {
+			e.preventDefault();
+			goDirectSource = 'panel2'; 
+			$('.direct-panel textarea').focus();
+			$('.direct-panel textarea').css('outline', '2px solid').one('blur', function() {
+				$(this).css('outline', '');
+			});
+		});
+
+		$(document).on("keydown click", ".goodss", function(e) {
+			if (e.type === 'click') {
+			  $('.panel1').focus();
+			  return;
+			}
+			if (e.key === 'Enter' || e.keyCode === 13) {
+				$('.panel1').focus();
+				$('.panel1').css('outline', '2px solid').one('blur', function() {
+				  $(this).css('outline', '');
+				});
+			}
+		});
+
+		$(document).on("keydown click", ".badss", function(e) {
+			if (e.type === 'click') {
+			$('.panel2').focus();
+			  return;
+			}
+			if (e.key === 'Enter' || e.keyCode === 13) {
+				$('.panel1').focus();
+				$('.panel2').css('outline', '2px solid ').one('blur', function() {
+				  $(this).css('outline', '');
+				});
+			}
+		});
+
+		$(document).on("click", ".direct-panel a.close-btn", function(e) {
+			e.preventDefault();
+
+			if (goDirectSource === 'panel1') {
+				$('.panel1 .go-direct').focus();
+			} else if (goDirectSource === 'panel2') {
+				$('.panel2 .go-direct').focus();
+			} else {
+				$('a.go-direct').focus();
+			}
+		});
+
+		document.addEventListener('click', (e) => {
+			const span = e.target;
+
+			if (!span.classList?.contains('placeholder-span')) return;
+
+			const input = span.previousElementSibling;
+			if (!input || !input.classList?.contains('date-input')) return;
+
+			e.preventDefault();
+			input.focus();
+			input.showPicker?.();
+		});
+
+		document.addEventListener('focusin', (e) => {
+			const input = e.target;
+			if (!input.classList?.contains('date-input')) return;
+
+			const span = input.nextElementSibling;
+			if (span?.classList.contains('placeholder-span') && !input.value) {
+				//span.style.opacity = '0';
+				span.style.opacity = '1';
+				span.style.display = 'block';
+				input.style.color = 'transparent';
+				input.style.caretColor = 'transparent';
+			}
+		});
+
+		document.addEventListener('focusout', (e) => {
+			const input = e.target;
+			if (!input.classList?.contains('date-input')) return;
+
+			const span = input.nextElementSibling;
+			if (span?.classList.contains('placeholder-span') && !input.value) {
+				span.style.opacity = '1';
+				span.style.display = 'block';
+				input.style.color = 'transparent';
+				input.style.caretColor = 'transparent';
+			}
+		});
+
+		document.addEventListener('change', (e) => {
+			const input = e.target;
+			if (!input.classList?.contains('date-input')) return;
+
+			const span = input.nextElementSibling;
+			if (span?.classList.contains('placeholder-span')) {
+				if (input.value) {
+					span.style.display = 'none'; 
+					input.style.color = '';
+					input.style.caretColor = '';
+				} else {
+					//span.style.opacity = '1';  
+					span.style.display = 'block';
+					span.style.opacity = '1';
+					input.style.color = 'transparent';
+					input.style.caretColor = 'transparent';
+				}
+			}
+		});
+
+		document.addEventListener('DOMContentLoaded', () => {
+			document.querySelectorAll('.date-input').forEach(input => {
+				const span = input.nextElementSibling;
+				if (span?.classList.contains('placeholder-span') && input.value) {
+					span.style.display = 'none';
+				}
+			});
+		});
+		// 마감일은 시작일보다 같거나 큰 것만 설정 가능 
+		document.getElementById('downstartDate')?.addEventListener('change', function() {
+		  const startDate = this.value;
+		  const endDateInput = document.getElementById('downendDate');
+		  
+		  if (startDate && endDateInput) {
+			endDateInput.min = startDate;
+
+			if (endDateInput.value && endDateInput.value < startDate) {
+			  endDateInput.value = '';
+			  
+			  const changeEvent = new Event('change', { bubbles: true });
+			  endDateInput.dispatchEvent(changeEvent);
+			}
+		  }
+		});
+		// 날자 선택은 키보드로 입력 못하게 
+		document.querySelectorAll('.date-input').forEach(input => {
+		  input.addEventListener('keydown', function(e) {
+			e.preventDefault(); 
+		  });
+
+		  input.addEventListener('paste', function(e) {
+			e.preventDefault();
+		  });
+
+		  input.addEventListener('input', function(e) {
+			if (!this.valueAsDate) {
+			  this.value = '';
+			}
+		  });
+		});
+		// 다운로드 내역 관련 end
+
+		this.decodeHtml();
+
+		document.addEventListener('DOMContentLoaded', function() {
+
+		  const startInput = document.getElementById('downstartDate');
+		  const endInput = document.getElementById('downendDate');
+
+		  [startInput, endInput].forEach(input => {
+			input.addEventListener('click', function(e) {
+
+			  if (typeof this.showPicker === 'function') {
+				this.showPicker();
+			  } else {
+
+				this.focus();
+
+				const tmpBtn = document.createElement('button');
+				tmpBtn.style.position = 'absolute';
+				tmpBtn.style.left = '-9999px';
+				document.body.appendChild(tmpBtn);
+				tmpBtn.focus();
+				this.focus();
+				document.body.removeChild(tmpBtn);
+			  }
+			});
+		  });
+		});
+
+		document.addEventListener('fullscreenchange', this.handleFullscreenChange);
+		document.addEventListener('mozfullscreenchange', this.handleFullscreenChange);
+		document.addEventListener('webkitfullscreenchange', this.handleFullscreenChange);
+		document.addEventListener('msfullscreenchange', this.handleFullscreenChange);
+
+		// localStorage 만료 체크 (오늘 23:59:59까지 유지)
+		const expireTime = localStorage.getItem('chat_expand_expire');
+		const isExpired = expireTime ? Date.now() > parseInt(expireTime) : true;
+		if (isExpired) {
+			localStorage.removeItem('chat_expand');
+			localStorage.removeItem('chat_border');
+			localStorage.removeItem('chat_border_color');
+			localStorage.removeItem('chat_expand_expire');
+		}
+
+		// 펼침 설정 초기화 (priority: URL 매개변수 > localStorage > props > default) - spectrum 초기화 전에 실행
+		const expandFromURL = typeof chatExpandFromURL !== 'undefined' ? chatExpandFromURL : null;
+		const borderFromURL = typeof chatBorderFromURL !== 'undefined' ? chatBorderFromURL : null;
+		const borderColorFromURL = typeof chatBorderColorFromURL !== 'undefined' ? chatBorderColorFromURL : null;
+
+		this.expandUse = expandFromURL || (!isExpired && localStorage.getItem('chat_expand')) || this.chatExpand || 'on';
+		this.borderType = borderFromURL || (!isExpired && localStorage.getItem('chat_border') === 'on') || this.chat_border === 'on' ? 'color' : 'none';
+		this.borderColor = borderColorFromURL || (!isExpired && localStorage.getItem('chat_border_color')) || this.chat_border_color || '#000000';
+
+		// spectrum color picker 초기화 (DOM이 렌더링된 후 실행)
+		this.$nextTick(() => {
+			this.initSpectrumColorPicker();
+		});
+	},
+	beforeUnmount() {
+      // 컴포넌트 제거 전에 이벤트 해제 (메모리 누수 방지)
+		window.removeEventListener('beforeunload', this.handleBeforeUnload);
+		window.removeEventListener('voice-webrtc-realtime-event', this.handleVoiceRealtimeEvent);
+      	this.destroyVoiceChatBridge();
+      	this.clearVoiceToolStatus();
+      	this.cleanupWebRTCSession();
+    },
+	beforeDestroy() {
+		// 롤링 추천질문 타이머 정리
+		this.stopMarqueeInterval();
+		// 모든 TTS 플레이어 정리
+		Object.values(this.ttsPlayers).forEach(player => {
+			if (player) {
+				player.destroy();
+			}
+		});
+
+		// 전역 클릭 이벤트 리스너 제거
+		document.removeEventListener('click', this.handleGlobalClick);
+		window.removeEventListener('voice-webrtc-realtime-event', this.handleVoiceRealtimeEvent);
+		this.destroyVoiceChatBridge();
+		this.clearVoiceToolStatus();
+
+		document.removeEventListener('fullscreenchange', this.handleFullscreenChange);
+		document.removeEventListener('mozfullscreenchange', this.handleFullscreenChange);
+		document.removeEventListener('webkitfullscreenchange', this.handleFullscreenChange);
+		document.removeEventListener('msfullscreenchange', this.handleFullscreenChange);
+
+	}
+};

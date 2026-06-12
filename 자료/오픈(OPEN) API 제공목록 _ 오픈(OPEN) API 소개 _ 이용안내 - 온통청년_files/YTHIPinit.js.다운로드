@@ -1,0 +1,26 @@
+$(document).ready(function(){
+
+    //YTHIPutil.log(">>>>> =============== INIT START ===============");
+
+    // 사용자 아이피 가져오기
+    // $.getJSON("https://api.ip.pe.kr/json",
+    //     function(json) {
+    //         YTHIPcomm.GLOBAL_CONST['clientIpAddr'] = json.ip;
+    //     }
+    // );
+    // 메뉴트리정보 가져오기
+    YTHIPbiz.menu.inits();
+
+    // 공통코드 셀렉트박스
+    YTHIPbiz.code.init();
+
+    // 공통(버튼) INIT
+    YTHIPbiz.comm.init();
+
+    // 지역정보 조회(전국여부)
+    YTHIPbiz.ctpvSgg.init();
+    
+    
+
+    //YTHIPutil.log(">>>>> =============== INIT END ===============");
+});

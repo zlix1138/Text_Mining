@@ -1,0 +1,122 @@
+/* global search_web, TOAST_DURATION */
+(function () {
+	const VOICE_WEBRTC_MODEL = 'gpt-realtime-2';
+
+	function toBooleanWebSearch(value) {
+		return typeof value === 'string' ? value.toLowerCase() === 'on' : value === true;
+	}
+
+	function configureVoiceRuntime(options) {
+		const config = options || {};
+		const useRag = typeof config.useRag === 'boolean' ? config.useRag : true;
+		const useWebSearch = typeof config.useWebSearch === 'boolean'
+			? config.useWebSearch
+			: toBooleanWebSearch(config.searchWebValue);
+
+		window.RAG_RT_CONFIG = {
+			...(window.RAG_RT_CONFIG || {}),
+			apiBaseUrl: config.apiBaseUrl,
+			mode: 'conversation',
+			webrtcModel: config.webrtcModel || VOICE_WEBRTC_MODEL,
+			model: config.webrtcModel || VOICE_WEBRTC_MODEL,
+			rag_db: config.dbName,
+			rag_chat_id: config.chatBotId,
+			use_rag: useRag,
+			use_web_search: useWebSearch,
+			metadata: {
+				...((window.RAG_RT_CONFIG && window.RAG_RT_CONFIG.metadata) || {}),
+				source: config.source,
+				use_rag: useRag
+			}
+		};
+
+		window.VOICE_RUNTIME_CONFIG = {
+			...(window.VOICE_RUNTIME_CONFIG || {}),
+			mode: 'webrtc',
+			allowSttFallback: false
+		};
+
+		window.useWebRTCVoice = window.VOICE_RUNTIME_CONFIG.mode === 'webrtc';
+	}
+
+	function registerVoicePlugin(app, options) {
+		if (!window.VoiceInputPlugin) {
+			return false;
+		}
+
+		const config = options || {};
+		const runtimeConfig = window.RAG_RT_CONFIG || {};
+		const runtimeVoiceMode = (window.VOICE_RUNTIME_CONFIG && window.VOICE_RUNTIME_CONFIG.mode) || 'webrtc';
+		const resolvedVoiceModel = runtimeConfig.webrtcModel || runtimeConfig.model || VOICE_WEBRTC_MODEL;
+		const useWebSearch = typeof runtimeConfig.use_web_search === 'boolean'
+			? runtimeConfig.use_web_search
+			: toBooleanWebSearch(config.searchWebValue || (typeof search_web !== 'undefined' ? search_web : false));
+		const useRag = typeof runtimeConfig.use_rag === 'boolean' ? runtimeConfig.use_rag : true;
+
+		app.use(window.VoiceInputPlugin, {
+			mode: runtimeVoiceMode,
+			sttApiUrl: config.sttApiUrl,
+			webrtcApiUrl: config.webrtcApiUrl,
+			webrtcModel: resolvedVoiceModel,
+			model: resolvedVoiceModel,
+			ragDb: runtimeConfig.rag_db || runtimeConfig.db_name || config.dbName,
+			ragChatId: runtimeConfig.rag_chat_id || runtimeConfig.chat_bot_id || config.chatBotId,
+			useRag,
+			use_rag: useRag,
+			useWebSearch,
+			webrtcMetadata: {
+				...(runtimeConfig.metadata || {}),
+				use_rag: useRag
+			},
+			autoSend: true,
+			showTempMessage: false,
+			autoThemeSync: true,
+			watchSettings: false,
+			...(config.containerSelector ? { containerSelector: config.containerSelector } : {}),
+			...(config.themeColorSelector ? { themeColorSelector: config.themeColorSelector } : {}),
+			getModeFromSettings: () => runtimeVoiceMode,
+			onAudioStream: () => {},
+			onError: (error) => {
+				const errorMessage = error?.message || error || '음성 기능에서 오류가 발생했습니다.';
+				if (window.toast) {
+					const duration = window.TOAST_DURATION?.ERROR || (typeof TOAST_DURATION !== 'undefined' ? TOAST_DURATION.ERROR : 5000);
+					window.toast.show(errorMessage, 'error', duration);
+				} else {
+					console.error('Voice 오류:', errorMessage);
+				}
+
+				if (typeof config.onVoiceError === 'function') {
+					config.onVoiceError(errorMessage);
+				}
+			}
+		});
+
+		return true;
+	}
+
+	function waitForVoicePlugin(maxAttempts = 20, intervalMs = 100) {
+		return new Promise(resolve => {
+			if (window.VoiceInputPlugin) {
+				resolve(true);
+				return;
+			}
+
+			let attempts = 0;
+			const intervalId = setInterval(() => {
+				attempts += 1;
+				if (window.VoiceInputPlugin) {
+					clearInterval(intervalId);
+					resolve(true);
+				} else if (attempts >= maxAttempts) {
+					clearInterval(intervalId);
+					resolve(false);
+				}
+			}, intervalMs);
+		});
+	}
+
+	window.VOICE_WEBRTC_MODEL = VOICE_WEBRTC_MODEL;
+	window.configureVoiceRuntime = configureVoiceRuntime;
+	window.registerVoicePluginRuntime = registerVoicePlugin;
+	window.waitForVoicePluginRuntime = waitForVoicePlugin;
+})();

@@ -1,0 +1,1413 @@
+(function() {
+
+// ========== 보조 함수 ==========
+function setCookie(name, value, hours, path = '/') {
+    let expires = '';
+    if (hours) {
+        const date = new Date();
+        date.setHours(23, 59, 59, 999);
+        expires = '; expires=' + date.toUTCString();
+    }
+    document.cookie = encodeURIComponent(name) + '=' + encodeURIComponent(value) + expires + '; path=' + path;
+}
+
+function getCookie(name) {
+    const encodedName = encodeURIComponent(name) + '=';
+    const cookies = document.cookie.split('; ');
+    for (let cookie of cookies) {
+        if (cookie.indexOf(encodedName) === 0) {
+            return decodeURIComponent(cookie.substring(encodedName.length));
+        }
+    }
+    return null;
+}
+
+// ========== 위치 저장 필요 여부 확인 ==========
+function shouldPersistPosition() {
+    const touchesEl = document.querySelector('.touches');
+    return touchesEl !== null && !touchesEl.classList.contains('no');
+}
+
+// ========== 상단 최소 여백 가져오기 ==========
+// touches가 존재하고 no 클래스가 없으면,
+// 드래그 핸들이 가려지지 않도록 상단에 40px 여백 추가
+function getMinTop() {
+    const touchesEl = document.querySelector('.touches');
+    if (touchesEl !== null && !touchesEl.classList.contains('no')) {
+        return 40;
+    }
+    return 0;
+}
+function getMinRight() {
+    const chbCloseEl = document.querySelector('.chbClose');
+    if (chbCloseEl && chbCloseEl.style.display !== 'none') {
+        return 20;  
+    }
+    return 0;
+}
+
+// ========== 위치를 localStorage에 저장 (오직 right/bottom) ==========
+function saveCurrentPosition() {
+    const d = document.querySelector('.chat-widget');
+    if (!d) return;
+    if (!d.style.right || !d.style.bottom) return;
+    
+    try {
+        let rightNum = parseFloat(d.style.right);
+		if(rightNum <= 20 && parseFloat(rightn) > 0){
+			rightNum = parseFloat(rightn);
+		}
+		let bottomNum = parseFloat(d.style.bottom);
+    if (rightNum === 0 && bottomNum === 0) {
+        console.trace();
+    }
+
+        if (!isNaN(rightNum) && !isNaN(bottomNum) && (rightNum > 0 || bottomNum > 0)) {
+             // 숫자 형식으로 쓰기 (last.js용)
+            localStorage.setItem('chat_widget_pos', JSON.stringify({
+                right: rightNum,
+                bottom: bottomNum
+            }));
+            // px 형식으로 쓰기( last2.js 자체 사용을 위해)
+            localStorage.setItem('chat_float_pos', JSON.stringify({
+                right: rightNum + 'px',
+                bottom: bottomNum + 'px'
+            }));
+			//debugger
+        }
+    } catch (e) {}
+}
+
+// ========== 저장된 위치 읽기 ==========
+function loadSavedPosition() {
+    if (!shouldPersistPosition()) {
+        return null;
+    }
+    
+    try {
+        // 통일된 것을 우선적으로 읽기 chat_widget_pos
+        let saved = localStorage.getItem('chat_widget_pos');
+        if (saved) {
+            const pos = JSON.parse(saved);
+            // last2.js에 필요한 형식(px가 포함된 문자열)으로 변환
+            return {
+                right: pos.right + 'px',
+                bottom: pos.bottom + 'px'
+            };
+        }
+        
+        // 구형과 호환되는 chat_float_pos
+        saved = localStorage.getItem('chat_float_pos');
+        if (saved) {
+            return JSON.parse(saved);
+        }
+    } catch (e) {}
+    return null;
+}
+
+const chatIconHideTIme = getCookie('chat_icon_hide_time') || '';
+if (chatIconHideTIme == 'today') {
+    throw new Error('채팅창 아이콘을 하루동안 숨깁니다.');
+}
+
+// 스타일 추가
+const style = document.createElement('style');
+style.textContent = '.chat-widget.aabbccdd { position: fixed !important;padding-right: 0 !important}';
+style.textContent += '.chat-widget .chat-icon{text-align:center;}';
+style.textContent += '.chat-widget .chat-icon-talk {right: -999em !important;}';
+style.textContent += '.chat-widget.windowbsWin {max-width: 100% !important;width: 100% !important; height: 100vh !important; }';
+style.textContent += '.chat-widget.windowbsWin .borderss{display:none !important; }';
+style.textContent += '.chat-widget.windowbsWin .touches{display:none !important; }';
+style.textContent += '.chat-widget .touches::before{content:"위치 이동";display: flex;justify-content: center;align-items: center;height: 30px;color: #000;font-size: 14px;border-radius: 31px;background: rgba(255, 255, 255, 0.3);padding: 0 10px;box-shadow: rgb(221, 221, 221) 0px 0px 2px;max-width: 90px;position: absolute;left: 50%;transform: translateX(-50%);white-space: nowrap;bottom: 101%;}';
+style.textContent += '.chat-widget.aabbccdd .touches::before{display:none;}';
+style.textContent += '.chat-widget:not(.aabbccdd) .touches.no{display:none !important;}';
+style.textContent += '.chat-widget .touches.icon{width: auto !important;box-shadow: none !important;border-radius: 0 !important;background: none !important;}';
+style.textContent += '.chat-widget .touches.icon::before{display:none;}';
+style.textContent += '.chat-widget .touches:focus { outline: 2px dashed red; outline-offset: 2px; }';
+style.textContent += '.chat-widget .touches .tooltip-text {position: absolute;right: calc(100% + 10px);bottom: -5px;background: #fff;border: 1px solid #ddd;font-weight: 500;color: #000;padding: 4px 8px;font-size: 12px;border-radius: 4px;width: 100px;}';
+style.textContent += '.chat-widget .touches.icon img{pointer-events: none;max-height: 100%;max-width: fit-content;}';
+style.textContent += '.chat-widget.aabbccdd .touches{width: calc(100% - 290px) !important;height: 45px !important;right: auto !important;left: 70px !important;top: 5px !important;z-index: 99 !important;background: none !important;box-shadow: none !important;transform: translateX(0) !important;}';
+style.textContent += '.chat-widget.aabbccdd .touches.icon img{display:none !important;}';
+style.textContent += '.chat-widget.chatIconhover .chat-icon-talk {display:flex !important;right: calc(100% + 5px) !important}';
+style.textContent += '.chat-widget.aabbccdd.chatIconhover .chat-icon-talk {display: none !important;}';
+style.textContent += '.chat-widget.chatIconhover .chat-icon-talk span{display:flex !important;}';
+style.textContent += '.chat-widget .chbClose .chb-close {opacity:1 !important;}';
+style.textContent += '.chat-widget .chbClose .chb-close img{width:100% !important;filter: brightness(0.5);}';
+style.textContent += '.chat-widget .chb-time{font-size:13px;}';
+style.textContent += '.chat-widget .chb-time input[type="checkbox"]{position: static !important;width: auto !important;height:auto !important;margin: 0 !important;margin-right: 2px !important;overflow: inherit !important;}';
+style.textContent += '.chat-widget .chb-all{display:block !important;}';
+style.textContent += '.chat-widget.dragging { user-select: none; -webkit-user-select: none; -moz-user-select: none; }';
+document.head.appendChild(style);
+
+let chatWidth = '500px';  
+let storedImgWidth = 0, storedImgHeight = 0;
+let rightn, maxwidth;
+let rigHt = window.rigHt || null;
+let bottOm = window.bottOm || null;
+let mAxwidTh = window.mAxwidTh || "";
+let mAxheigHt = window.mAxheigHt || "";
+
+if (typeof rigHt === "string" && rigHt.trim() !== "") {
+    rightn = rigHt.trim();
+} else {
+    rightn = "0px"
+}
+
+let bottomn = (typeof bottOm === "string" && bottOm.trim()) ? bottOm : "0px";
+maxwidth = (typeof mAxwidTh === "string" && mAxwidTh.trim()) ? mAxwidTh : "";
+const maxheight = (typeof mAxheigHt === "string" && mAxheigHt.trim()) ? mAxheigHt : "";
+
+const IFRAME_LOAD_TIMEOUT = 50000;
+
+(async () => {
+    const d = document.createElement('div');
+    const i = document.createElement('iframe');
+    i.id = 'iframe';
+    i.title = 'AI 챗봇';
+
+    d.className = 'chat-widget';
+    const targetSelector = window.chatTargetSelector || '';
+    const targetParent = targetSelector ? document.querySelector(targetSelector) : null;
+    const positionType = targetParent ? 'static' : 'fixed'; 
+
+    d.style.position = positionType;
+    /*d.style.right = rightn;
+    d.style.bottom = bottomn;
+    d.style.cursor = 'move';*/
+    d.style.zIndex = '-1';
+    d.style.height = '100%';
+    d.style.maxWidth = maxwidth;
+    d.style.maxHeight = maxheight;
+    d.style.colorScheme = 'normal';
+    d.style.display = 'none';
+    //console.log("aaaaaa", chBc)
+
+    // localStorage에서 설정값을 읽어서 URL 매개변수로 전달
+    const savedChatExpand = localStorage.getItem('chat_expand');
+    const savedBorder = localStorage.getItem('chat_border');
+    const savedBorderColor = localStorage.getItem('chat_border_color');
+    
+    const chatExpandParam = savedChatExpand ? `&chatExpand=${encodeURIComponent(savedChatExpand)}` : '';
+    const borderParam = savedBorder ? `&chatBorder=${encodeURIComponent(savedBorder)}` : '';
+    const borderColorParam = savedBorderColor ? `&chatBorderColor=${encodeURIComponent(savedBorderColor)}` : '';
+    
+    i.src = `${chatURL}/chat/chatLoader.htm?chatID=${chatID}${chatExpandParam}${borderParam}${borderColorParam}`;
+    i.style.cssText = 'width:100%;height:100%;border:none;background:none !important;transform: translateZ(0);overflow: hidden;';
+    i.setAttribute('allow', 'microphone; camera');
+    i.setAttribute('allowfullscreen', 'true');
+
+    let loadTimeoutId;
+    
+    i.onload = function() {
+        clearTimeout(loadTimeoutId);
+        setTimeout(() => {
+            d.style.display = 'block';
+            d.style.zIndex = '99999'; 
+        }, 100);
+    };
+
+    i.onerror = function() {
+        clearTimeout(loadTimeoutId);
+        d.remove();
+    };
+    
+    loadTimeoutId = setTimeout(() => {
+        //console.log('챗봇 iframe 로드 타임아웃');
+        d.remove();
+    }, IFRAME_LOAD_TIMEOUT);
+
+    const draggableArea = document.createElement('div');
+    draggableArea.className = 'touches';
+    draggableArea.style.cssText = 'width: max-content;position: absolute;left: 50%;transform: translateX(-50%);bottom: 101%; z-index: 15; border-radius: 31px; display: flex; justify-content: center;';
+    d.appendChild(draggableArea);
+    d.appendChild(i);
+
+    const resizers = {};
+    const directions = ['top', 'right', 'bottom', 'left'];
+    directions.forEach(direction => {
+        const resizer = document.createElement('div');
+        resizer.className = 'borderss';
+        resizer.style.position = 'absolute';
+        resizer.style.background = 'none';
+        resizer.style.opacity = '.2';
+
+        switch (direction) {
+            case 'top':
+                resizer.style.width = '100%';
+                resizer.style.height = '20px';
+                resizer.style.top = '0';
+                resizer.style.left = '0';
+                resizer.style.cursor = 'ns-resize';
+                resizer.style.maxWidth = '100%';
+                break;
+            case 'right':
+                resizer.style.width = '10px';
+                resizer.style.height = '100%';
+                resizer.style.right = '-5px';
+                resizer.style.top = '0';
+                resizer.style.cursor = 'ew-resize';
+                resizer.style.maxWidth = '100%';
+                break;
+            case 'bottom':
+                resizer.style.width = '100%';
+                resizer.style.height = '10px';
+                resizer.style.bottom = '-5px';
+                resizer.style.left = '0';
+                resizer.style.cursor = 'ns-resize';
+                resizer.style.maxWidth = '100%';
+                break;
+            case 'left':
+                resizer.style.width = '20px';
+                resizer.style.height = '100%';
+                resizer.style.left = '0';
+                resizer.style.top = '0';
+                resizer.style.cursor = 'ew-resize';
+                resizer.style.maxWidth = '100%';
+                break;
+        }
+
+        resizer.style.display = 'none';
+        resizers[direction] = resizer;
+        d.appendChild(resizer);
+    });
+
+    if (targetParent) {
+        targetParent.appendChild(d); 
+    } else {
+        document.body.appendChild(d); 
+    }
+
+    let targetRight = null;
+    let targetBottom = null;
+    let dragClose = null;
+    let wasDraggedWhileExpanded = false;
+    let beforeExpandRight = null;
+    let beforeExpandBottom = null;
+    let beforeExpandWidth = null;
+    let beforeExpandHeight = null;
+
+    // ========== 저장된 위치를 뷰포트에 맞게 조정하는 함수 ==========
+    function adjustPositionToViewport(savedRight, savedBottom) {
+        const windowHeight = window.innerHeight;
+        const windowWidth = window.innerWidth;
+        const widgetHeight = d.offsetHeight;
+        const widgetWidth = d.offsetWidth;
+        // touches 존재하고 no 클래스가 없으면 40px 여백 필요
+        const touchesEl = document.querySelector('.touches');
+        const needReserve = (touchesEl !== null && !touchesEl.classList.contains('no'));
+        const reserve = needReserve ? 40 : 0;
+        const reserveRight = getMinRight();
+
+        let newBottom = parseFloat(savedBottom);
+        let newRight = parseFloat(savedRight);
+        
+        // bottom이 화면을 벗어나면 바닥에 붙임
+        if (newBottom + widgetHeight >= windowHeight - reserve) {
+            newBottom = windowHeight - widgetHeight - reserve;
+        }
+        
+        // right이 화면을 벗어나면 오른쪽에 붙임
+		const maxRight = windowWidth - widgetWidth - reserveRight;
+		if (newRight > maxRight) {
+			newRight = Math.max(0, maxRight);
+		}
+        
+        // 0 미만이 되지 않도록 보호
+        newBottom = Math.max(0, newBottom);
+        newRight = Math.max(0, newRight);
+        return { right: newRight, bottom: newBottom };
+    }
+
+    const savedPos = loadSavedPosition();
+    if (savedPos && savedPos.right !== undefined && savedPos.bottom !== undefined) {
+        // 저장된 위치를 뷰포트에 맞게 조정
+        const adjusted = adjustPositionToViewport(savedPos.right, savedPos.bottom);
+        d.style.right = adjusted.right + 'px';
+        d.style.bottom = adjusted.bottom + 'px';
+        targetRight = adjusted.right;
+        targetBottom = adjusted.bottom;
+        
+        // 위치가 조정되었으면 다시 저장
+        if (adjusted.right !== parseFloat(savedPos.right) || adjusted.bottom !== parseFloat(savedPos.bottom)) {
+            saveCurrentPosition();
+        }
+    } else {
+        // 저장된 위치가 없으면 기본값 사용
+		//console.log("rightn", rightn);
+        //d.style.right = rightn;
+        //d.style.bottom = bottomn;
+    }
+
+    // ========== 경계 보정 함수 ==========
+    let resizeTimer;
+    
+	function fixWidgetInView() {
+		if (!d) return;
+		const isOpen = d.classList.contains('aabbccdd');
+		
+		if (!isOpen && !shouldPersistPosition()) {
+			let finalRight = rightn;
+			let finalBottom = bottomn;
+			
+			if (dragClose === 'on' && !d.classList.contains('aabbccdd') && !document.querySelector('.touches')?.classList.contains('no')) {
+				let rightValue = parseFloat(rightn);
+				if (!isNaN(rightValue)) {
+					finalRight = (rightValue) + 'px';
+				}
+			}
+			
+			d.style.right = finalRight;
+			d.style.bottom = finalBottom;
+			return;
+		}
+		
+		if (isDragging) return;
+		
+		const windowWidth = window.innerWidth;
+		const windowHeight = window.innerHeight;
+		const widgetWidth = d.offsetWidth;
+		const widgetHeight = d.offsetHeight;
+		
+		if (widgetHeight === 0 || widgetWidth === 0) {
+			setTimeout(() => fixWidgetInView(), 50);
+			return;
+		}
+		
+		let currentRight = parseFloat(d.style.right);
+		let currentBottom = parseFloat(d.style.bottom);
+		if (isNaN(currentRight)) currentRight = 0;
+		if (isNaN(currentBottom)) currentBottom = 0;
+		
+		// 올바른 minTop 값을 강제로 가져오기
+		const touchesEl = document.querySelector('.touches');
+		const needTopSpace = (touchesEl !== null && !touchesEl.classList.contains('no'));
+		const minTop = needTopSpace ? 40 : 0;
+		const minRight = getMinRight();
+		
+		// 핵심 수정: top이 범위를 벗어나지 않도록 bottom의 최대값 계산
+		// top = windowHeight - widgetHeight - bottom
+		// 조건: top >= minTop
+		// 따라서 bottom <= windowHeight - widgetHeight - minTop
+		const maxBottom = Math.max(0, windowHeight - widgetHeight - minTop);
+		const maxRight = Math.max(0, windowWidth - widgetWidth);
+		
+		let newRight = Math.max(minRight, Math.min(currentRight, maxRight));
+		let newBottom = Math.max(0, Math.min(currentBottom, maxBottom));
+		
+		// 추가 디버그 로그
+		/*console.log('fixWidgetInView:', {
+			windowHeight,
+			widgetHeight,
+			newRight,
+			minTop,
+			maxBottom,
+			currentBottom,
+			newBottom
+		});*/
+		
+		if (newRight !== currentRight || newBottom !== currentBottom) {
+			targetRight = newRight;
+			targetBottom = newBottom;
+			d.style.right = newRight + 'px';
+			d.style.bottom = newBottom + 'px';
+		}
+	}
+    
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        fixWidgetInView();
+        resizeTimer = setTimeout(() => {
+            fixWidgetInView();
+        }, 150);
+    });
+
+    // ========== 드래그 기능 ==========
+    let isDragging = false;
+    let startX = 0, startY = 0;
+    let startRight = 0, startBottom = 0;
+
+    function canDrag() {
+        const isOpen = d.classList.contains('aabbccdd');
+        if (isOpen) return true;
+        const touchesEl = document.querySelector('.touches');
+        return touchesEl !== null && !touchesEl.classList.contains('no');
+    }
+
+    function onDragStart(clientX, clientY) {
+        if (!canDrag()) return false;
+
+        const rect = d.getBoundingClientRect();
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+
+        startRight = windowWidth - rect.right - 11;
+        startBottom = windowHeight - rect.bottom;
+        startX = clientX;
+        startY = clientY;
+        
+        isDragging = true;
+        
+        d.style.willChange = 'right, bottom';
+        d.style.transition = 'none';
+        d.style.cursor = 'grabbing';
+        d.classList.add('dragging');
+        
+        document.body.style.userSelect = 'none';
+        
+        return true;
+    }
+
+    function onDragMove(clientX, clientY) {
+        if (!isDragging) return;
+        
+        const dx = clientX - startX;
+        const dy = clientY - startY;
+        
+        let newRight = startRight - dx;
+        let newBottom = startBottom - dy;
+        
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+        const widgetWidth = d.offsetWidth;
+        const widgetHeight = d.offsetHeight;
+        const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+        const availableWidth = windowWidth - scrollbarWidth;
+        const minTop = getMinTop();
+		const minRight = getMinRight();
+        
+        const maxRight = Math.max(0, availableWidth - widgetWidth - minRight);
+        const maxBottom = Math.max(0, windowHeight - widgetHeight - minTop);
+        
+        newRight = Math.max(minRight, Math.min(newRight, maxRight));
+        newBottom = Math.max(0, Math.min(newBottom, maxBottom));
+        
+        targetRight = newRight;
+        targetBottom = newBottom;
+        
+        d.style.right = newRight + 'px';
+        d.style.bottom = newBottom + 'px';
+    }
+
+    function onDragEnd() {
+        if (!isDragging) return;
+        
+        isDragging = false;
+        
+        d.style.willChange = '';
+        d.style.transition = '';
+        d.style.cursor = '';
+        d.classList.remove('dragging');
+        document.body.style.userSelect = '';
+        
+        targetRight = parseFloat(d.style.right);
+        targetBottom = parseFloat(d.style.bottom);
+        
+        if (d.classList.contains('aabbccdd')) {
+            wasDraggedWhileExpanded = true;
+        }
+
+		try {
+			const rightVal = d.style.right;
+			const bottomVal = d.style.bottom;
+			if (rightVal && bottomVal) {
+				localStorage.setItem('chat_float_pos', JSON.stringify({
+					right: rightVal,
+					bottom: bottomVal
+				}));
+			}
+		} catch(e) { console.log('저장 실패:', e); }
+
+        saveCurrentPosition();
+        fixWidgetInView();
+    }
+
+    draggableArea.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return;
+        e.preventDefault();
+        e.stopPropagation();
+        
+        if (onDragStart(e.clientX, e.clientY)) {
+            const mouseMoveHandler = (moveEvent) => {
+                moveEvent.preventDefault();
+                onDragMove(moveEvent.clientX, moveEvent.clientY);
+            };
+            
+            const mouseUpHandler = () => {
+                onDragEnd();
+                document.removeEventListener('mousemove', mouseMoveHandler);
+                document.removeEventListener('mouseup', mouseUpHandler);
+            };
+            
+            document.addEventListener('mousemove', mouseMoveHandler);
+            document.addEventListener('mouseup', mouseUpHandler);
+        }
+    });
+
+    draggableArea.addEventListener('touchstart', (e) => {
+        if (e.touches.length !== 1) return;
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const touch = e.touches[0];
+        if (onDragStart(touch.clientX, touch.clientY)) {
+            const touchMoveHandler = (moveEvent) => {
+                moveEvent.preventDefault();
+                const touch = moveEvent.touches[0];
+                onDragMove(touch.clientX, touch.clientY);
+            };
+            
+            const touchEndHandler = () => {
+                onDragEnd();
+                document.removeEventListener('touchmove', touchMoveHandler);
+                document.removeEventListener('touchend', touchEndHandler);
+            };
+            
+            document.addEventListener('touchmove', touchMoveHandler, { passive: false });
+            document.addEventListener('touchend', touchEndHandler);
+        }
+    });
+
+    function fixPositionWhenExpand() {
+        if (!d.classList.contains('aabbccdd')) return;
+
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+        const widgetWidth = d.offsetWidth;
+        const widgetHeight = d.offsetHeight;
+        const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+        const availableWidth = windowWidth - scrollbarWidth;
+
+        let newRight, newBottom;
+        
+        if (beforeExpandRight !== null && beforeExpandBottom !== null) {
+            newRight = beforeExpandRight;
+            newBottom = beforeExpandBottom;
+        } else if (targetRight !== null && targetBottom !== null) {
+            newRight = targetRight;
+            newBottom = targetBottom;
+        } else {
+            newRight = 0;
+            newBottom = 0;
+        }
+
+        const maxRight = Math.max(0, availableWidth - widgetWidth);
+        const maxBottom = Math.max(0, windowHeight - widgetHeight);
+        newRight = Math.max(0, Math.min(newRight, maxRight));
+        newBottom = Math.max(0, Math.min(newBottom, maxBottom));
+
+        d.style.right = newRight + 'px';
+        d.style.bottom = newBottom + 'px';
+        
+        targetRight = newRight;
+        targetBottom = newBottom;
+        
+        saveCurrentPosition();
+    }
+
+    let isResizing = false;
+    const startResize = (direction, e) => {
+        isResizing = true;
+
+        Object.entries(resizers).forEach(([dir, resizer]) => {
+            if (dir !== direction) {
+                resizer.style.pointerEvents = 'none'; 
+            }
+        });
+
+        const origWidth = d.offsetWidth;
+        const origHeight = d.offsetHeight;
+        const origX = e.clientX;
+        const origY = e.clientY;
+        const origRight = parseFloat(d.style.right);
+        const origBottom = parseFloat(d.style.bottom);
+
+        const resizeHandler = (e) => {
+            if (!isResizing) return;
+
+            let newWidth = origWidth;
+            let newHeight = origHeight;
+            let newRight = origRight;
+            let newBottom = origBottom;
+
+            if (direction === 'right') {
+                newWidth = origWidth + (e.clientX - origX);
+                newRight = origRight - (e.clientX - origX);
+            } else if (direction === 'left') {
+                newWidth = origWidth - (e.clientX - origX);
+                newRight = origRight + (e.clientX - origX);
+            } else if (direction === 'bottom') {
+                newHeight = origHeight + (e.clientY - origY);
+                newBottom = origBottom - (e.clientY - origY);
+            } else if (direction === 'top') {
+                newHeight = origHeight - (e.clientY - origY);
+                newBottom = origBottom + (e.clientY - origY);
+            }
+
+            newWidth = Math.max(100, newWidth);
+            newHeight = Math.max(100, newHeight);
+            
+            const windowWidth = window.innerWidth;
+            const windowHeight = window.innerHeight;
+            newRight = Math.max(0, Math.min(newRight, windowWidth - newWidth));
+            newBottom = Math.max(0, Math.min(newBottom, windowHeight - newHeight));
+
+            d.style.width = `${newWidth}px`;
+            d.style.maxWidth = `${newWidth}px`;
+            d.style.height = `${newHeight}px`;
+            d.style.right = `${newRight}px`;
+            d.style.bottom = `${newBottom}px`;
+            
+            targetRight = newRight;
+            targetBottom = newBottom;
+        };
+
+        const stopResizeHandler = () => {
+            isResizing = false;
+
+            Object.entries(resizers).forEach(([dir, resizer]) => {
+                resizer.style.pointerEvents = 'auto';
+            });
+
+            document.removeEventListener('mousemove', resizeHandler);
+            document.removeEventListener('mouseup', stopResizeHandler);
+            
+            saveCurrentPosition();
+        };
+
+        document.addEventListener('mousemove', resizeHandler);
+        document.addEventListener('mouseup', stopResizeHandler);
+    };
+
+    Object.entries(resizers).forEach(([direction, resizer]) => {
+        resizer.addEventListener('mousedown', (e) => {
+            e.stopPropagation(); 
+            startResize(direction, e);
+        });
+    });
+
+    const ciTalk = document.createElement("div"); 
+    ciTalk.className = 'chat-icon-talk';
+    ciTalk.style.cssText = `position: absolute;right:100%;bottom:0;align-items: flex-end;justify-content: right;min-height: ${maxheight};z-index: -1;bottom: 0;width: max-content;`;
+
+    const chBc = document.createElement("div"); 
+    chBc.className = 'chbClose';
+    chBc.style.cssText = `display: block;position: absolute;left: 100%;bottom: calc(100% - 20px);width: 20px;height: 20px;z-index: 50;border-radius: 100%;background: #fff;`;
+
+    // ========== iframe 메시지 처리 ==========
+    window.addEventListener('message', e => {
+        // chatExpandChanged 메시지 처리: '사용'으로 변경 시 last2.js 제거 (origin 체크 전에 처리)
+        if (e.data && e.data.type === 'chatExpandChanged') {
+            // chatLoader.htm에서 전송된 메시지인지 확인
+            if (e.origin === chatURL) {
+              //  console.log('[user_chaticon-last2.js] chat_expand=on으로 변경, iframe 제거 및 popup 모드로 전환');
+                // iframe 제거
+                if (d) {
+                    d.remove();
+                }
+                // localStorage에 chat_expand=on 저장
+                localStorage.setItem('chat_expand', 'on');
+                // 페이지 새로고침 대신 fullResetToPopupMode() 함수를 호출하여 popup 모드로 전환
+                if (typeof fullResetToPopupMode === 'function') {
+                  //  console.log('[user_chaticon-last2.js] fullResetToPopupMode() 호출 - popup 모드로 전환');
+                    fullResetToPopupMode();
+                } else {
+                    // fallback: fullResetToPopupMode 함수가 없으면 새로고침
+                 //   console.log('[user_chaticon-last2.js] fullResetToPopupMode 함수 없음 - 페이지 새로고침');
+                    location.reload();
+                }
+            }
+            return;
+        }
+        
+        if (e.origin !== chatURL) return;
+        
+        if (e.data.type === 'chatDragIcon') {
+            const touchesElements = document.querySelectorAll('.touches');
+            if (e.data.dragClose !== undefined) {
+                dragClose = e.data.dragClose;
+            }
+            
+            if(e.data.dragUseType === "off"){
+                touchesElements[0].classList.add('no');
+                if (!shouldPersistPosition()) {
+                    localStorage.removeItem('chat_float_pos');
+                    let finalRight = rightn;
+                    if (dragClose === 'on' && !d.classList.contains('aabbccdd') && !document.querySelector('.touches')?.classList.contains('no')) {
+                        let rightValue = parseFloat(rightn);
+                        if (!isNaN(rightValue)) {
+                            finalRight = (rightValue + 20) + 'px';
+                        }
+                    }
+                    d.style.right = parseFloat(e.data.dragInitYType) + 'px';
+                    d.style.bottom = parseFloat(e.data.dragInitYType) + 'px';
+                    targetRight = null;
+                    targetBottom = null;
+                }
+            } else {
+                const imgUrl = e.data.dragIconType;
+				//console.log("imgUrl", e.data);
+                const isImage = imgUrl && /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(imgUrl) || imgUrl?.startsWith('data:image');
+                if (isImage) {
+					const oldImg = touchesElements[0].querySelector('img');
+					if (oldImg) oldImg.remove();
+					
+					touchesElements[0].insertAdjacentHTML('beforeend', `<img src="${chatURL}${imgUrl}" alt="위치이동">`);
+					touchesElements[0].classList.add('icon');
+				}
+            }
+
+            if (!draggableArea.classList.contains('no')) {
+                d.style.minWidth = '76px';
+                const iconWidth = storedImgWidth;
+                const offset = (76 - iconWidth) / 2;
+
+                d.style.paddingRight = '0px';
+
+                draggableArea.style.left = '50%';
+                if (offset >= 20) {
+                } else {
+                    const closeBtn = chBc.querySelector('.chb-close');
+                    if (closeBtn && closeBtn.style.display !== 'none') {
+                        //d.style.marginRight = "20px";
+                        draggableArea.style.left = '50%';
+                    }
+                }
+            } else {
+                chBc.style.left = '100%';
+            }
+
+if (e.data.dragInitType === "on" && 
+    (e.data.dragInitXType != null || e.data.dragInitYType != null)) {
+    
+    if(e.data.dragInitXType != null) {
+        let rightValue = e.data.dragInitXType;
+        if (dragClose === 'on' && !d.classList.contains('aabbccdd') && !document.querySelector('.touches')?.classList.contains('no')) {
+            rightValue = rightValue;
+        }
+        rightn = rightValue + 'px';
+    }
+
+    if(e.data.dragInitYType != null) {
+        bottomn = e.data.dragInitYType + 'px';
+		console.log("bottomnaaa", e.data.dragInitYType);
+    }
+    
+    // 저장된 위치가 있는지 확인
+    const savedPos = loadSavedPosition();
+    
+    if (savedPos && savedPos.right !== undefined && savedPos.bottom !== undefined) {
+        // ✅ 경계 검사 함수 호출
+        const adjusted = adjustPositionToViewport(
+            parseFloat(savedPos.right), 
+            parseFloat(savedPos.bottom)
+        );
+        d.style.right = adjusted.right + 'px';
+        d.style.bottom = adjusted.bottom + 'px';
+        
+        //console.log('저장 위치가 적용되었습니다(경계 검사를 거쳤습니다):', adjusted);
+        
+    } else {
+        // 드래그하지 않음 → rightn / bottomn 사용
+        d.style.right = rightn;
+        //d.style.bottom = bottomn;
+		// 
+    }
+    
+   // d.style.cursor = 'move';
+    d.style.zIndex = '99999';
+    d.style.display = 'block';
+    const chatExpand = localStorage.getItem('chat_expand');
+    
+    saveCurrentPosition();
+}
+
+			if (e.data.dragInitType === "off"){
+				// 저장된 위치가 있는지 확인
+				const savedPos = loadSavedPosition();
+				
+				if (savedPos && savedPos.right !== undefined && savedPos.bottom !== undefined) {
+					// 드래그 후 → 저장된 위치 사용
+					d.style.right = savedPos.right;
+					d.style.bottom = savedPos.bottom;
+				} else {
+					// 드래그하지 않음 → rightn / bottomn 사용
+					d.style.right = rightn;
+					d.style.bottom = bottomn;
+				}
+                d.style.cursor = 'move';
+                d.style.zIndex = '99999';
+                d.style.display = 'block';
+			}
+        }
+        
+        if (e.data === 'chatIconhover') {
+            d.classList.add('chatIconhover');
+        }
+        if (e.data === 'chatIconleave') {
+            d.classList.remove('chatIconhover');
+        }
+
+        if (e.data.type === "ciTalkTxtHtmlType") {
+            const ciTalkTxtHtml = e.data.value;
+            if (!ciTalkTxtHtml) return;
+
+            const temp = document.createElement("div");
+            temp.innerHTML = ciTalkTxtHtml;
+            const restoredElement = temp.firstElementChild; 
+            if (restoredElement) {
+                ciTalk.appendChild(restoredElement);
+            }
+            if (d && d.appendChild) {
+                d.appendChild(ciTalk);
+            }
+        }
+
+        if (e.data.type === "chbCHtmlType") {
+            const chbCloseTxtHtml = e.data.value;
+            if (!chbCloseTxtHtml) return;
+
+            const tempC = document.createElement("div");
+            tempC.innerHTML = chbCloseTxtHtml;
+            const restoredElement = tempC.firstElementChild;
+
+            if (restoredElement) {
+                restoredElement.style.opacity = '1 !important';
+                restoredElement.style.pointerEvents = 'auto !important';
+
+                const chbCloseBtn = restoredElement.querySelector('.chb-close');
+                const chbTimeEl = restoredElement.querySelector('.chb-time');
+                const chbTimeLink = chbTimeEl ? chbTimeEl.querySelector('a') : null;
+                const chatIconHideTime = restoredElement.querySelector('#tday');
+
+                if (chbCloseBtn) {
+                    chbCloseBtn.onclick = function(e) {
+                        e.preventDefault();
+                        const isOn = this.classList.toggle('chbon');
+                        if (chbTimeEl) {
+                            chbCloseBtn.style.display = 'none';
+                            chbTimeEl.style.display = isOn ? 'flex' : 'none';
+                        }
+                    };
+                }
+
+                if (chbTimeLink) {
+                    chbTimeLink.onclick = function(e) {
+                        e.preventDefault();
+                        if (chatIconHideTime && chatIconHideTime.checked) {
+                            setCookie('chat_icon_hide_time', chatIconHideTime.value, chatIconHideTime.value);
+                        }
+                        if (d) {
+                            d.style.display = 'none';
+                        }
+                    };
+                }
+
+                chBc.appendChild(restoredElement);
+            }
+
+            if (d && d.appendChild) {
+                d.appendChild(chBc);
+            }
+        }
+
+        if (e.data && e.data.type === 'createFakeChatIcon') {
+            const iconInfo = e.data;
+            const targetEl = document.querySelector(window.chatTargetSelector || 'body');
+            if (!targetEl) {
+                console.warn('대상 삽입 위치를 찾을 수 없습니다：', window.chatTargetSelector);
+                return;
+            }
+
+            const oldFakeIcon = document.getElementById('fake-chatIcon');
+            if (oldFakeIcon) oldFakeIcon.remove();
+
+            const fakeChatIcon = document.createElement('div');
+            fakeChatIcon.id = 'fake-chatIcon';
+            fakeChatIcon.style.cssText = `
+                width: ${iconInfo.width}px !important;
+                height: ${iconInfo.height}px !important;
+                pointer-events: none !important;
+                z-index: 99999 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                ${iconInfo.style}
+                ${!window.chatTargetSelector || window.chatTargetSelector.trim() === '' ? 'display:none !important;' : ''}
+            `;
+            if (iconInfo.className) fakeChatIcon.className = iconInfo.className;
+            if (iconInfo.src) {
+                let fullSrc = iconInfo.src;
+                fakeChatIcon.style.backgroundImage = `url(${fullSrc})`;
+                fakeChatIcon.style.backgroundSize = '100% 100%';
+                fakeChatIcon.style.backgroundRepeat = 'no-repeat';
+            } else {
+                fakeChatIcon.innerHTML = chatURL + iconInfo.innerHTML;
+            }
+
+            targetEl.appendChild(fakeChatIcon);
+            window.fakeChatIcon = fakeChatIcon;
+            return;
+        }
+
+        if (e.data.type === 'disable-scroll') {
+            document.body.style.overflow = 'hidden';
+        }
+//console.log("aaaaaaaaa", event.data);
+        if (event.data && event.data.type === 'chatIconImgAlt') {
+            const imgAltValue = event.data.value;
+            i.title = imgAltValue || 'AI 챗봇';
+        }
+
+        d.style.zIndex = '99999';
+
+        if(e.data === 'windowbsWin'){
+            d.classList.add('windowbsWin');
+            d.style.right = 0;
+            d.style.bottom = 0;
+        } else if(e.data === 'removewindowbsWin'){
+            d.classList.remove('windowbsWin');
+            d.style.right = rightn;
+            d.style.bottom = bottomn;
+        }
+        
+
+        if (e.data && typeof e.data === 'object' && e.data.type === 'chatIconSize') {
+            const {imgXType, imgYType, imgWwidth, imgHheight, imgOp } = e.data;  
+			let bbbb = e.data;
+            if (typeof imgWwidth === 'number' && typeof imgHheight === 'number') {  
+                storedImgWidth = imgWwidth;   
+                storedImgHeight = imgHheight;  
+				console.log("e.data.imgYType", e.data);
+					if(e.data.dragInitYType != null) {
+					bottomn = e.data.dragInitYType + 'px';
+					}
+					const savedPos = loadSavedPosition();
+
+					const windowHeight = window.innerHeight;
+					const windowWidth = window.innerWidth;
+					const widgetHeight = imgHheight;
+					const widgetWidth = imgWwidth;
+					const touchesEl = document.querySelector('.touches');
+					const needReserve = (touchesEl !== null && !touchesEl.classList.contains('no'));
+					const reserve = needReserve ? 40 : 0;
+
+					let newBottom, newRight;
+					if (savedPos && savedPos.right !== undefined && savedPos.bottom !== undefined) {
+						newBottom = parseFloat(savedPos.bottom);
+						newRight = parseFloat(savedPos.right);
+					} else {
+						newBottom = parseFloat(e.data.imgYType);
+						newRight = parseFloat(d.style.right);
+					}
+//console.log("d.style.bottom", newBottom);
+					const isBottomOut = (newBottom + widgetHeight >= windowHeight - reserve);
+					const isRightOut = (newRight + widgetWidth >= windowWidth);
+
+					if (isBottomOut) {
+						newBottom = windowHeight - widgetHeight - reserve;
+					}
+
+					if (isRightOut) {
+						newRight = windowWidth - widgetWidth;
+					}
+
+					if (isBottomOut || isRightOut) {
+						newBottom = Math.max(0, newBottom);
+						newRight = Math.max(0, newRight);
+						d.style.right = newRight + 'px';   //  first  newRight  NaN
+						d.style.bottom = newBottom + 'px';   //  first  newBottom  799
+						
+						targetRight = newRight;
+						targetBottom = newBottom;
+					}else{
+						d.style.right = newRight + 'px';   //  first  newRight  NaN
+						d.style.bottom = newBottom + 'px';   //  first  newBottom  799
+						//console.log("d.style.bottom", d.style.bottom);
+					}
+							
+					saveCurrentPosition();
+
+                if(maxwidth || maxheight){
+                    d.style.maxWidth = maxwidth;
+                    d.style.maxHeight = maxheight;
+                } else {
+                    d.style.zIndex = "99999";
+                    var receivedSizeType = e.data.sizeType;
+                    if(receivedSizeType == 2){
+                        d.style.height = storedImgHeight + 'px';
+                        d.style.width = storedImgWidth + 'px';
+                        d.style.maxWidth = storedImgWidth + 'px';
+                        d.style.maxHeight = storedImgHeight + 'px';
+                        let finalRight = rightn;
+                        if (dragClose === 'on' && !d.classList.contains('aabbccdd') && !document.querySelector('.touches')?.classList.contains('no')) {
+                            let rightValue = parseFloat(rightn);
+                            if (!isNaN(rightValue)) {
+                                finalRight = (rightValue + 20) + 'px';
+                            }
+                        }
+						//console.log(1045, finalRight, bottomn);
+                        //d.style.right = finalRight;   //  second  finalRight  0px
+                        //d.style.bottom = bottomn;    //  second  bottomn  0px
+                    } else {
+                        d.style.height = storedImgHeight + 'px';
+                        d.style.width = storedImgWidth + 'px';
+                        d.style.maxWidth = '300px';
+                        d.style.maxHeight = '300px';
+                        let finalRight = rightn;
+                        if (dragClose === 'on' && !d.classList.contains('aabbccdd') && !document.querySelector('.touches')?.classList.contains('no')) {
+                            let rightValue = parseFloat(rightn);
+                            if (!isNaN(rightValue)) {
+                                finalRight = (rightValue + 20) + 'px';
+                            }
+                        }
+                        d.style.right = finalRight; 
+                        d.style.bottom = bottomn; 
+						
+                    }
+                }
+            }
+        }
+
+        let dH;
+        const userAgent = navigator.userAgent.toLowerCase();
+        const isIphone = /iPhone/i.test(navigator.userAgent);
+        const isSamsungGalaxy = userAgent.includes('samsung') && 
+                               (userAgent.includes('galaxy') || 
+                                userAgent.includes('sm-') || 
+                                userAgent.includes('gt-'));
+
+        let scrollPosition = 0;
+        function disableScroll() {
+            scrollPosition = window.scrollY;
+            document.body.style.position = 'fixed';
+            document.body.style.top = `-${scrollPosition}px`;
+            document.body.style.left = '0';
+            document.body.style.width = '100%';
+        }
+
+        function enableScroll() {
+            document.body.style.position = '';
+            document.body.style.top = '';
+            document.body.style.left = '';
+            document.body.style.width = '';
+        }
+
+        if ((isIphone || isSamsungGalaxy) && e.data.abcd === "abcd") {
+            dH = "80%";
+            dW = "calc(100% - 45px)";
+            dL = "0";
+            d.style.height = (isIphone || isSamsungGalaxy) ? dH : '90vh';
+            document.body.style.height = (isIphone || isSamsungGalaxy) ? dH : '90vh';
+            document.body.style.overflowY = 'hidden';
+            d.style.overflow = 'hidden';
+            disableScroll();
+            setTimeout(function(){
+                document.body.style.overflowY = 'hidden';
+                disableScroll();
+            }, 500);
+        } else {
+            dH = "80%";
+        }
+
+        if (e.data === 'clickChatIconBtn' && e.data.type != 'chatIconSize') {
+            const chbCloseEl = document.querySelector('.chbClose');
+            if (chbCloseEl) {
+                chbCloseEl.style.display = 'none'; 
+            }
+            d.style.width = "100%"; 
+            d.style.maxWidth = chatWidth; 
+            d.style.height = (isIphone || isSamsungGalaxy) ? "80%" : '90vh';	
+            //d.style.bottom = '0'; 
+            //d.style.right = '0';
+            d.style.maxHeight = '';
+
+            if (isIphone || isSamsungGalaxy){
+                const viewportMeta = document.querySelector('meta[name="viewport"]');
+                if (viewportMeta) {
+                    let currentContent = viewportMeta.getAttribute('content') || '';
+                    const maxScaleReg = /maximum-scale=\d+(\.\d+)?/;
+
+                    if (maxScaleReg.test(currentContent)) {
+                        currentContent = currentContent.replace(maxScaleReg, 'maximum-scale=1.0');
+                    } else {
+                        currentContent = currentContent.trim() 
+                            ? `${currentContent}, maximum-scale=1.0` 
+                            : 'width=device-width, initial-scale=1.0, maximum-scale=1.0';
+                    }
+                    viewportMeta.setAttribute('content', currentContent);
+                }
+            }
+        } else if (e.data === 'aabbccdd') {
+			wasDraggedWhileExpanded = false;
+			
+			// 현재 위치 저장
+			const currentRight = parseFloat(d.style.right);
+			const currentBottom = parseFloat(d.style.bottom);
+			
+			beforeExpandWidth = d.style.width;
+			beforeExpandHeight = d.style.height;
+			
+			d.classList.add('aabbccdd');
+			Object.values(resizers).forEach(resizer => resizer.style.display = 'block');
+			draggableArea.style.display = 'block';
+			d.style.boxShadow = '0 0 5px #ccc';
+			
+			// 경계 보정: right와 bottom 값이 0보다 작아지지 않도록 처리
+			let newRight = isNaN(currentRight) ? 0 : Math.max(0, currentRight);
+			let newBottom = isNaN(currentBottom) ? 0 : Math.max(0, currentBottom);
+			
+			// 동시에 화면 오른쪽과 하단 영역을 벗어나지 않도록 처리
+			const windowWidth = window.innerWidth;
+			const windowHeight = window.innerHeight;
+			const widgetWidth = d.offsetWidth;
+			const widgetHeight = d.offsetHeight;
+			
+			// 허용 가능한 최대값 계산
+			const maxRight = Math.max(0, windowWidth - widgetWidth);
+			const maxBottom = Math.max(0, windowHeight - widgetHeight);
+			
+			newRight = Math.min(newRight, maxRight);
+			newBottom = Math.min(newBottom, maxBottom);
+			
+			d.style.right = newRight + 'px';
+			d.style.bottom = newBottom + 'px';
+			
+			targetRight = newRight;
+			targetBottom = newBottom;
+		} else if (e.data.type === 'removeClassAabbccdd') {
+            const fakeChatIcon = document.getElementById('fake-chatIcon');
+            if (fakeChatIcon) {
+                fakeChatIcon.remove();
+                window.fakeChatIcon = null;
+            }
+
+            if (isIphone || isSamsungGalaxy) {
+                const viewportMeta = document.querySelector('meta[name="viewport"]');
+                if (viewportMeta) {
+                    let currentContent = viewportMeta.getAttribute('content') || '';
+                    const maxScaleReg = /,?\s*maximum-scale=1(\.0)?/;
+                    if (maxScaleReg.test(currentContent)) {
+                        let newContent = currentContent.replace(maxScaleReg, '').trim();
+                        newContent = newContent.replace(/^,/, '').trim();
+                        newContent = newContent || 'width=device-width, initial-scale=1.0';
+                        viewportMeta.setAttribute('content', newContent);
+                    }
+                }
+            }
+
+            var receivedSizeType = e.data.sizeType;
+
+            if (d.classList.contains('aabbccdd')) {
+                const chbCloseEl = document.querySelector('.chbClose');
+                if (chbCloseEl) {
+                    chbCloseEl.style.display = 'block';
+                }
+                document.body.style.overflowY = '';
+                d.style.height = "100%";
+                document.body.style.height = "";
+                d.style.boxShadow = 'none';
+                enableScroll();
+
+                d.classList.remove('aabbccdd');
+                d.classList.remove('chatIconhover');
+                d.classList.remove('windowbsWin');
+                Object.values(resizers).forEach(resizer => resizer.style.display = 'none');
+                draggableArea.style.display = 'none';
+
+                if (wasDraggedWhileExpanded) {
+                    if (targetRight !== null && targetBottom !== null) {
+                        let adjustedRight = targetRight;
+                        if (dragClose === 'on' && !d.classList.contains('aabbccdd') && !document.querySelector('.touches')?.classList.contains('no')) {
+                            adjustedRight = targetRight + 20;
+                        }
+                        d.style.right = adjustedRight + 'px';
+						
+                        d.style.bottom = targetBottom + 'px';
+						
+                    }
+                } else {
+                    const touchesEl = document.querySelector('.touches');
+                    const isOffMode = touchesEl && touchesEl.classList.contains('no');
+
+                    if (isOffMode) {
+                        let finalRight = rightn;
+                        if (dragClose === 'on' && !d.classList.contains('aabbccdd') && !document.querySelector('.touches')?.classList.contains('no')) {
+                            let rightValue = parseFloat(rightn);
+                            if (!isNaN(rightValue)) {
+                                finalRight = (rightValue + 20) + 'px';
+                            }
+                        }
+                        d.style.right = finalRight;
+                        d.style.bottom = bottomn;
+                    } else if (beforeExpandRight !== null && beforeExpandBottom !== null) {
+                        let adjustedRight = beforeExpandRight;
+                        if (dragClose === 'on' && !d.classList.contains('aabbccdd') && !document.querySelector('.touches')?.classList.contains('no')) {
+                            adjustedRight = beforeExpandRight + 20;
+                        }
+                        d.style.right = adjustedRight + 'px';
+                        d.style.bottom = beforeExpandBottom + 'px';
+                    } else {
+                        const savedPosition = loadSavedPosition();
+						const hasSavedPosition = savedPosition && savedPosition.right !== undefined && savedPosition.bottom !== undefined;
+
+						if (hasSavedPosition) {
+							// 저장된 위치가 있으면 저장된 값을 사용
+							d.style.right = savedPosition.right;
+							d.style.bottom = savedPosition.bottom;
+							targetRight = parseFloat(savedPosition.right);
+							targetBottom = parseFloat(savedPosition.bottom);
+						} else {
+							// 저장된 위치가 없으면 기본값 사용
+							let finalRight = rightn;
+							if (dragClose === 'on' && !d.classList.contains('aabbccdd') && !document.querySelector('.touches')?.classList.contains('no')) {
+								let rightValue = parseFloat(rightn);
+								if (!isNaN(rightValue)) {
+									finalRight = (rightValue + 20) + 'px';
+								}
+							}
+							d.style.right = finalRight;
+							d.style.bottom = bottomn;
+						}
+                    }
+                }
+
+               // saveCurrentPosition();
+
+                if(receivedSizeType == 2){
+                    d.style.height = storedImgHeight + 'px';
+                    d.style.width = storedImgWidth + 'px';
+                    d.style.maxWidth = storedImgWidth + 'px';
+                    d.style.maxHeight = storedImgHeight + 'px';
+                } else {
+                    d.style.height = storedImgHeight + 'px';
+                    d.style.width = storedImgWidth + 'px';
+                    d.style.maxWidth = '300px';
+                    d.style.maxHeight = '300px';
+                }
+            }
+            resetChatWidgetStyles(d);
+        }
+    });
+
+    function resetChatWidgetStyles(chatWidget) {
+        const resizers = document.querySelectorAll('.borderss');
+        const draggableArea = document.querySelector('.touches');
+
+        if (!chatWidget.classList.contains('aabbccdd')) {
+            resizers.forEach(resizer => resizer.style.display = 'none'); 
+            if (draggableArea) draggableArea.style.display = 'block';
+        }
+    }
+
+    let focusedWidget = false;
+    draggableArea.setAttribute('tabindex', '0');
+    draggableArea.title = '키보드 제어: ↑ ↓ ← → 창 이동 (Shift + 방향키 = 빠른 이동)';
+
+    draggableArea.addEventListener('focus', () => {
+        focusedWidget = true;
+        //draggableArea.style.opacity = '0.8';
+		if (!draggableArea.querySelector('.tooltip-text')) {
+			const tipSpan = document.createElement('span');
+			tipSpan.className = 'tooltip-text';
+			tipSpan.textContent = '방향키(↑↓←→)로 아이콘 위치를 이동할 수 있습니다.';
+			draggableArea.appendChild(tipSpan);
+		}
+    });
+    
+    draggableArea.addEventListener('blur', () => {
+        focusedWidget = false;
+        draggableArea.style.opacity = '';
+		const tip = draggableArea.querySelector('.tooltip-text');
+		if (tip) tip.remove();
+		draggableArea.style.opacity = '';
+    });
+    
+    d.addEventListener('mouseenter', () => {
+        focusedWidget = true;
+    });
+    
+    d.addEventListener('mouseleave', () => {
+        setTimeout(() => {
+            if (!draggableArea.matches(':focus')) {
+                focusedWidget = false;
+            }
+        }, 100);
+    });
+
+    function onKeyDownForDrag(e) {
+
+        if (!e.key.startsWith('Arrow')) return;
+        
+        const isOpen = d.classList.contains('aabbccdd');
+        if (!focusedWidget && !isOpen) return;
+
+        const activeElement = document.activeElement;
+        if (activeElement && (activeElement.tagName === 'INPUT' || 
+                              activeElement.tagName === 'TEXTAREA' ||
+                              activeElement.isContentEditable)) {
+            return;
+        }
+        
+        const step = e.shiftKey ? 20 : 10;
+        let moveX = 0, moveY = 0;
+        
+        switch(e.key) {
+            case 'ArrowUp':
+                moveY = -step;
+                e.preventDefault();
+                break;
+            case 'ArrowDown':
+                moveY = step;
+                e.preventDefault();
+                break;
+            case 'ArrowLeft':
+                moveX = -step;
+                e.preventDefault();
+                break;
+            case 'ArrowRight':
+                moveX = step;
+                e.preventDefault();
+                break;
+        }
+        
+        if (moveX === 0 && moveY === 0) return;
+        
+        let currentRight = parseFloat(d.style.right);
+        let currentBottom = parseFloat(d.style.bottom);
+        
+        if (isNaN(currentRight)) currentRight = 0;
+        if (isNaN(currentBottom)) currentBottom = 0;
+        
+        let newRight = currentRight - moveX;
+        let newBottom = currentBottom - moveY;
+        
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+        const widgetWidth = d.offsetWidth;
+        const widgetHeight = d.offsetHeight;
+        const minTop = getMinTop();
+        
+        const maxRight = Math.max(0, windowWidth - widgetWidth);
+        const maxBottom = Math.max(0, windowHeight - widgetHeight - minTop);
+        
+        newRight = Math.max(0, Math.min(newRight, maxRight));
+        newBottom = Math.max(0, Math.min(newBottom, maxBottom));
+        
+        d.style.right = newRight + 'px';
+        d.style.bottom = newBottom + 'px';
+        
+        targetRight = newRight;
+        targetBottom = newBottom;
+        
+        saveCurrentPosition();
+
+        d.style.transition = 'right 0.05s ease, bottom 0.05s ease';
+        setTimeout(() => {
+            d.style.transition = '';
+        }, 100);
+        
+       // console.log(`이동: right=${newRight}px, bottom=${newBottom}px`);
+    }
+    
+    document.addEventListener('keydown', onKeyDownForDrag);
+})();
+})();

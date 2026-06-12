@@ -1,0 +1,71 @@
+/*
+Copyright (c) 2021 Kil Hyung-jin, with Reserved Font Name Pretendard.
+https://github.com/orioncactus/pretendard
+
+This Font Software is licensed under the SIL Open Font License, Version 1.1.
+This license is copied below, and is also available with a FAQ at:
+http://scripts.sil.org/OFL
+*/
+
+@font-face {
+	font-family: 'PretendardGOV';
+	font-weight: 900;
+	font-display: swap;
+	src: local('Pretendard Black'), url('../../font/PretendardGOV/PretendardGOV-Black.subset.woff2') format('woff2'), url('../../font/PretendardGOV/PretendardGOV-Black.subset.woff') format('woff');
+}
+
+@font-face {
+	font-family: 'PretendardGOV';
+	font-weight: 800;
+	font-display: swap;
+	src: local('Pretendard ExtraBold'), url('../../font/PretendardGOV/PretendardGOV-ExtraBold.subset.woff2') format('woff2'), url('../../font/PretendardGOV/PretendardGOV-ExtraBold.subset.woff') format('woff');
+}
+
+@font-face {
+	font-family: 'PretendardGOV';
+	font-weight: 700;
+	font-display: swap;
+	src: local('PretendardGOV Bold'), url('../../font/PretendardGOV/PretendardGOV-Bold.subset.woff2') format('woff2'), url('../../font/PretendardGOV/PretendardGOV-Bold.subset.woff') format('woff');
+}
+
+@font-face {
+	font-family: 'PretendardGOV';
+	font-weight: 600;
+	font-display: swap;
+	src: local('PretendardGOV SemiBold'), url('../../font/PretendardGOV/PretendardGOV-SemiBold.subset.woff2') format('woff2'), url('../../font/PretendardGOV/PretendardGOV-SemiBold.subset.woff') format('woff');
+}
+
+@font-face {
+	font-family: 'PretendardGOV';
+	font-weight: 500;
+	font-display: swap;
+	src: local('PretendardGOV Medium'), url('../../font/PretendardGOV/PretendardGOV-Medium.subset.woff2') format('woff2'), url('../../font/PretendardGOV/PretendardGOV-Medium.subset.woff') format('woff');
+}
+
+@font-face {
+	font-family: 'PretendardGOV';
+	font-weight: 400;
+	font-display: swap;
+	src: local('PretendardGOV Regular'), url('../../font/PretendardGOV/PretendardGOV-Regular.subset.woff2') format('woff2'), url('../../font/PretendardGOV/PretendardGOV-Regular.subset.woff') format('woff');
+}
+
+@font-face {
+	font-family: 'PretendardGOV';
+	font-weight: 300;
+	font-display: swap;
+	src: local('PretendardGOV Light'), url('../../font/PretendardGOV/PretendardGOV-Light.subset.woff2') format('woff2'), url('../../font/PretendardGOV/PretendardGOV-Light.subset.woff') format('woff');
+}
+
+@font-face {
+	font-family: 'PretendardGOV';
+	font-weight: 200;
+	font-display: swap;
+	src: local('PretendardGOV ExtraLight'), url('../../font/PretendardGOV/PretendardGOV-ExtraLight.subset.woff2') format('woff2'), url('../../font/PretendardGOV/PretendardGOV-ExtraLight.subset.woff') format('woff');
+}
+
+@font-face {
+	font-family: 'PretendardGOV';
+	font-weight: 100;
+	font-display: swap;
+	src: local('PretendardGOV Thin'), url('../../font/PretendardGOV/PretendardGOV-Thin.subset.woff2') format('woff2'), url('../../font/PretendardGOV/PretendardGOV-Thin.subset.woff') format('woff');
+}

@@ -1,0 +1,62 @@
+(function () {
+	'use strict';
+
+	/**
+	 * 말풍선 흐름의 단일 출처.
+	 * 각 페이지는 마운트 직후 window.chattingBridgeTarget = <mounted instance> 한 줄만 등록.
+	 * window.chattingBridgeTarget → window.vueApp → window.appHeadInstance 순서로 fallback.
+	 */
+	function getChattingComponent() {
+		const target = window.chattingBridgeTarget
+			|| window.vueApp
+			|| window.appHeadInstance;
+		return target?.$refs?.chattingRef || null;
+	}
+
+	function addSTTTempMessage() {
+		getChattingComponent()?.showSttTempMessage?.();
+	}
+
+	function removeSTTTempMessage() {
+		getChattingComponent()?.hideSttTempMessage?.();
+	}
+
+	function replaceSTTTempMessageWithText(text) {
+		getChattingComponent()?.insertVoiceText?.(text || '');
+	}
+
+	function insertTextToChat(text) {
+		getChattingComponent()?.insertVoiceText?.(text || '');
+	}
+
+	function sendMessageFromSTT() {
+		const ref = getChattingComponent();
+		if (ref?.sendMessageFromSTT) {
+			ref.sendMessageFromSTT();
+			return;
+		}
+		triggerSendButton();
+	}
+
+	function triggerSendButton() {
+		const ref = getChattingComponent();
+		if (ref?.triggerSendButtonFromVoice) {
+			ref.triggerSendButtonFromVoice();
+			return;
+		}
+		// Vue ref 없을 때 DOM fallback
+		const btn = document.querySelector('#sendMessagea')
+			|| document.querySelector('.input-container button')
+			|| document.querySelector('button[type="submit"]')
+			|| document.querySelector('.send-button');
+		btn?.click();
+	}
+
+	window.getChattingComponent = getChattingComponent;
+	window.addSTTTempMessage = addSTTTempMessage;
+	window.removeSTTTempMessage = removeSTTTempMessage;
+	window.replaceSTTTempMessageWithText = replaceSTTTempMessageWithText;
+	window.insertTextToChat = insertTextToChat;
+	window.sendMessageFromSTT = sendMessageFromSTT;
+	window.triggerSendButton = triggerSendButton;
+})();

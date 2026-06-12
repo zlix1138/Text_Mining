@@ -1,0 +1,788 @@
+class TTSPlayer {
+	/**
+	 * @param {object} options 설정 객체
+	 * @param {string} options.playPauseSelector - 재생/일시정지 버튼 셀렉터.
+	 * @param {string} [options.stopSelector] - (선택사항) 중지 버튼 셀렉터.
+	 * @param {string} [options.volumeSelector] - (선택사항) 볼륨 조절 슬라이더 셀렉터.
+	 * @param {string} [options.loadingSelector] - (선택사항) 로딩 표시기 요소 셀렉터.
+	 * @param {string} [options.toastContainerSelector] - (선택사항) 토스트 메시지 컨테이너 셀렉터.
+	 * @param {string} [options.apiUrlBase='/tts'] - TTS API 기본 엔드포인트 (경로는 내부적으로 추가됨).
+	 * @param {number} [options.initialVolume=1] - 초기 볼륨 (0-1).
+	 * @param {boolean} [options.useStopButton=true] - 별도의 중지 버튼 사용 여부.
+	 * @param {object} [options.playPauseText={ play: '재생', pause: '일시정지', loading: '로딩중...' }] - 버튼 상태별 텍스트.
+	 * @param {object} [options.playPauseClasses={ play: 'state-play', pause: 'state-pause', loading: 'state-loading', stopped: 'state-stopped' }] - 버튼 상태에 따른 CSS 클래스.
+	 * @param {function} [options.onLoading] - 로딩 시작 시 콜백 함수.
+	 * @param {function} [options.onError] - 오류 발생 시 콜백 함수.
+	 * @param {function} [options.onPlay] - 재생 시작 시 콜백 함수.
+	 * @param {function} [options.onPause] - 일시 정지 시 콜백 함수.
+	 * @param {function} [options.onEnd] - 재생 종료 시 콜백 함수.
+	 * @param {boolean} [options.useVoiceName=false] - 음성 이름 사용 여부 옵션 추가
+	 * @param {boolean} [options.useModelLevelLow=false] - 모델 레벨 "low" 사용 여부 옵션 추가
+	 */
+	constructor(options = {}) {
+		this.options = {
+			apiUrlBase: '/tts', // 경로 제거, 기본 URL만 사용
+			initialVolume: 0.5,
+			useStopButton: true,
+			playPauseText: { play: '재생', pause: '일시정지', loading: '로딩중...' },
+			playPauseClasses: { play: 'state-play', pause: 'state-pause', loading: 'state-loading', stopped: 'state-stopped' },
+			onLoading: () => {},
+			onError: (error) => { console.error('TTS 오류:', error); this._showToast('TTS 오류 발생', 'error'); },
+			onPlay: () => {},
+			onPause: () => {},
+			onEnd: () => {},
+			useVoiceName: false,
+			useModelLevelLow: false, // 모델 레벨 "low" 사용 여부 옵션 추가
+			...options
+		};
+
+		if (!this.options.playPauseSelector) {
+			throw new Error("TTSPlayer: 'playPauseSelector' 옵션이 필요합니다.");
+		}
+
+		// UI 요소 선택
+		this.playPauseButton = document.querySelector(this.options.playPauseSelector);
+		this.stopButton = this.options.stopSelector ? document.querySelector(this.options.stopSelector) : null;
+		this.volumeSlider = this.options.volumeSelector ? document.querySelector(this.options.volumeSelector) : null;
+		this.loadingIndicator = this.options.loadingSelector ? document.querySelector(this.options.loadingSelector) : null;
+		this.toastContainer = this.options.toastContainerSelector ? document.querySelector(this.options.toastContainerSelector) : document.body;
+
+		if (!this.playPauseButton) {
+			console.error(`TTSPlayer: 재생/일시정지 버튼을 찾을 수 없습니다 (셀렉터: "${this.options.playPauseSelector}")`);
+		}
+
+		// Web Audio API 설정
+		this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+		this.gainNode = this.audioContext.createGain();
+		this.gainNode.gain.setValueAtTime(this.options.initialVolume, this.audioContext.currentTime);
+		this.gainNode.connect(this.audioContext.destination);
+
+		// 상태 변수
+		this.currentAudioSource = null;
+		this.playbackState = 'stopped'; // 'playing', 'paused', 'stopped', 'loading', 'buffering'
+		this.volume = this.options.initialVolume;
+
+		// 텍스트 및 언어 정보
+		this.currentText = ''; // 요청된 전체 텍스트
+		this.currentLang = ''; // 요청된 언어 코드 (BCP-47)
+
+		// 청크 관련 상태
+		this.chunkCount = 0;
+		this.voiceName = null; // 서버에서 결정된 음성 이름
+		this.currentChunkIndex = -1; // 현재 재생 중이거나 로딩 중인 청크 인덱스 (-1은 초기 상태)
+		this.chunkAudioCache = new Map(); // Key: chunkIndex (number), Value: ArrayBuffer
+		this.fetchingChunkIndex = -1; // 현재 로딩 중인 단일 청크 인덱스, 없으면 -1
+
+		// 음성 관련 상태
+		this.currentVoiceName = '';
+
+		this._bindEvents();
+		this._updateUI();
+
+		// BCP-47 언어 코드 맵
+		this.languageCodeToBCP47 = {
+			'gl': 'gl-ES', 'el': 'el-GR', 'gu': 'gu-IN', 'nl': 'nl-NL', 'ne': 'ne-NP',
+			'nb': 'nb-NO', 'nn': 'nn-NO', 'ny': 'ny-MW', 'da': 'da-DK', 'de': 'de-DE',
+			'la': 'la-VA', 'lb': 'lb-LU', 'lo': 'lo-LA', 'lt': 'lt-LT', 'lv': 'lv-LV',
+			'ro': 'ro-RO', 'ru': 'ru-RU', 'mg': 'mg-MG', 'mi': 'mi-NZ', 'mk': 'mk-MK',
+			'ml': 'ml-IN', 'mr': 'mr-IN', 'ms': 'ms-MY', 'mt': 'mt-MT', 'mn': 'mn-MN',
+			'be': 'be-BY', 'bg': 'bg-BG', 'bn': 'bn-BD', 'bs': 'bs-BA', 'eu': 'eu-ES',
+			'my': 'my-MM', 'vi': 'vi-VN', 'ceb': 'ceb-PH', 'es': 'es-ES', 'gd': 'gd-GB',
+			'sd': 'sd-PK', 'si': 'si-LK', 'sk': 'sk-SK', 'sl': 'sl-SI', 'sm': 'sm-WS',
+			'sn': 'sn-ZW', 'so': 'so-SO', 'sr': 'sr-RS', 'st': 'st-LS', 'su': 'su-ID',
+			'sv': 'sv-SE', 'sw': 'sw-TZ', 'af': 'af-ZA', 'ar': 'ar-SA', 'az': 'az-AZ',
+			'ga': 'ga-IE', 'ht': 'ht-HT', 'hy': 'hy-AM', 'is': 'is-IS', 'sq': 'sq-AL',
+			'eo': 'eo-EO', 'et': 'et-EE', 'en': 'en-US', 'uk': 'uk-UA', 'ur': 'ur-PK',
+			'uz': 'uz-UZ', 'ig': 'ig-NG', 'it': 'it-IT', 'yi': 'yi-IL', 'id': 'id-ID',
+			'ja': 'ja-JP', 'am': 'am-ET', 'yo': 'yo-NG', 'cy': 'cy-GB', 'jv': 'jv-ID',
+			'ka': 'ka-GE', 'zh-Hans': 'cmn-CN', 'zh-Hant': 'cmn-TW', 'zu': 'zu-ZA',
+			'cs': 'cs-CZ', 'ca': 'ca-ES', 'co': 'co-FR', 'hr': 'hr-HR', 'kk': 'kk-KZ',
+			'km': 'km-KH', 'kn': 'kn-IN', 'ku': 'ku-TR', 'ky': 'ky-KG', 'xh': 'xh-ZA',
+			'ta': 'ta-IN', 'te': 'te-IN', 'tg': 'tg-TJ', 'th': 'th-TH', 'tr': 'tr-TR',
+			'fa': 'fa-IR', 'fi': 'fi-FI', 'fil': 'fil-PH', 'fr': 'fr-FR', 'fy': 'fy-NL',
+			'pa': 'pa-IN', 'pl': 'pl-PL', 'ps': 'ps-AF', 'pt': 'pt-PT', 'ha': 'ha-NG',
+			'haw': 'haw-US', 'hi': 'hi-IN', 'hu': 'hu-HU', 'he': 'he-IL', 'ko': 'ko-KR',
+			'unknown': 'unknown'
+		};
+	}
+
+	/**
+	 * UI 요소들에 이벤트 리스너를 바인딩합니다.
+	 * @private
+	 */
+	_bindEvents() {
+		if (this.playPauseButton) {
+			this.playPauseButton.addEventListener('click', () => {
+				console.warn("재생 버튼 클릭됨. 외부에서 play(text, langCode)를 호출해야 합니다.");
+			});
+		}
+		if (this.stopButton && this.options.useStopButton) {
+			this.stopButton.addEventListener('click', () => this.stop());
+		}
+		if (this.volumeSlider) {
+			this.volumeSlider.addEventListener('input', (e) => this.setVolume(parseFloat(e.target.value)));
+			this.volumeSlider.value = this.volume;
+		}
+		document.addEventListener('visibilitychange', () => {
+			if (document.visibilityState === 'hidden') {
+				this.pause();
+			}
+		});
+		window.addEventListener('beforeunload', () => {
+			this.destroy();
+		});
+	}
+
+	/**
+	 * 내부 재생 상태를 업데이트하고 UI를 갱신합니다.
+	 * @param {string} newState - 새로운 재생 상태 ('playing', 'paused', 'stopped', 'loading', 'buffering')
+	 * @private
+	 */
+	_setState(newState) {
+		if (this.playbackState !== newState) {
+			this.playbackState = newState;
+			this._updateUI();
+		}
+	}
+
+	/**
+	 * 입력된 HTML 문자열에서 순수 텍스트만 추출합니다.
+	 * @param {string} rawText
+	 * @returns {string}
+	 * @private
+	 */
+	_sanitizeText(rawText = '') {
+		if (typeof rawText !== 'string' || !rawText) {
+			return '';
+		}
+
+		let text = '';
+
+		if (typeof document !== 'undefined' && document.createElement) {
+			const temp = document.createElement('div');
+			temp.innerHTML = rawText;
+			text = temp.textContent || temp.innerText || '';
+			if (typeof temp.remove === 'function') {
+				temp.remove();
+			} else if (temp.parentNode) {
+				temp.parentNode.removeChild(temp);
+			}
+			text = this._stripHtml(text);
+		} else {
+			text = this._stripHtml(rawText);
+		}
+
+		// 괄호 및 괄호 안의 내용 제거
+		text = this._removeParenthesesContent(text);
+
+		return this._normalizeWhitespace(text);
+	}
+
+	_stripHtml(rawText = '') {
+		const withoutScripts = rawText
+			.replace(/<script[\s\S]*?<\/script>/gi, '')
+			.replace(/<style[\s\S]*?<\/style>/gi, '');
+		const withoutTags = withoutScripts.replace(/<[^>]+>/g, ' ');
+		return this._decodeBasicEntities(withoutTags);
+	}
+
+	_decodeBasicEntities(text = '') {
+		const entityMap = {
+			'&lt;': '<',
+			'&gt;': '>',
+			'&amp;': '&',
+			'&quot;': '"',
+			'&apos;': "'",
+			'&#39;': "'",
+			'&nbsp;': ' '
+		};
+
+		return text.replace(/&(lt|gt|amp|quot|apos|nbsp|#39);/gi, (match) => {
+			const key = match.toLowerCase();
+			return Object.prototype.hasOwnProperty.call(entityMap, key) ? entityMap[key] : match;
+		});
+	}
+
+	_normalizeWhitespace(text = '') {
+		return text
+			.replace(/\r\n|\r/g, '\n')
+			.replace(/\u00A0/g, ' ')
+			.replace(/\s+\n/g, '\n')
+			.replace(/\n{3,}/g, '\n\n');
+	}
+
+	/**
+	 * 괄호와 괄호 안의 내용, 별표(*)를 제거합니다.
+	 * 지원 괄호: (), [], {}, 「」, 【】, 『』, 《》, 〈〉
+	 * @param {string} text - 처리할 텍스트
+	 * @returns {string} 괄호와 별표가 제거된 텍스트
+	 * @private
+	 */
+	_removeParenthesesContent(text = '') {
+		if (typeof text !== 'string' || !text) {
+			return '';
+		}
+
+		// 일반 괄호 () 제거
+		text = text.replace(/\([^()]*\)/g, '');
+		
+		// 대괄호 [] 제거 (선택사항)
+		// text = text.replace(/\[[^\[\]]*\]/g, '');
+		
+		// 중괄호 {} 제거 (선택사항)
+		// text = text.replace(/\{[^{}]*\}/g, '');
+		
+		// 한글 괄호 제거 (선택사항)
+		// text = text.replace(/「[^「」]*」/g, '');
+		// text = text.replace(/【[^【】]*】/g, '');
+		// text = text.replace(/『[^『』]*』/g, '');
+		// text = text.replace(/《[^《》]*》/g, '');
+		// text = text.replace(/〈[^〈〉]*〉/g, '');
+		
+		// 별표(*) 제거
+		text = text.replace(/\*/g, '');
+		
+		// 괄호 제거 후 남은 이중 공백 정리
+		text = text.replace(/\s{2,}/g, ' ').trim();
+		
+		return text;
+	}
+
+	/**
+	 * 언어 코드(예: 'ko', 'en')를 BCP-47 코드(예: 'ko-KR', 'en-US')로 변환합니다.
+	 * @param {string} lang - 변환할 언어 코드
+	 * @returns {string} BCP-47 언어 코드 (찾지 못하면 'en-US' 반환)
+	 * @private
+	 */
+	_getBCP47Code(lang) {
+		return this.languageCodeToBCP47[lang] || 'en-US';
+	}
+
+	/**
+	 * 현재 재생 상태에 따라 UI 요소(버튼, 로딩 표시기 등)를 업데이트합니다.
+	 * @private
+	 */
+	_updateUI() {
+		if (this.playPauseButton) {
+			const isDisabled = this.playbackState === 'loading' || this.playbackState === 'buffering';
+			this.playPauseButton.disabled = isDisabled;
+			this.playPauseButton.style.opacity = isDisabled ? '0.7' : '1';
+
+			Object.values(this.options.playPauseClasses).forEach(cls => this.playPauseButton.classList.remove(cls));
+
+			let buttonText = '';
+			let buttonClass = '';
+
+			switch (this.playbackState) {
+				case 'playing':
+					buttonText = this.options.playPauseText.pause;
+					buttonClass = this.options.playPauseClasses.pause;
+					break;
+				case 'paused':
+					buttonText = this.options.playPauseText.play;
+					buttonClass = this.options.playPauseClasses.pause;
+					break;
+				case 'loading':
+				case 'buffering':
+					buttonText = this.options.playPauseText.loading;
+					buttonClass = this.options.playPauseClasses.loading;
+					break;
+				case 'stopped':
+				default:
+					buttonText = this.options.playPauseText.play;
+					buttonClass = this.options.playPauseClasses.stopped;
+					break;
+			}
+			if (this.playPauseButton.tagName !== 'IMG' && this.playPauseButton.tagName !== 'INPUT') {
+				if (this.playPauseButton.children.length === 0) {
+					this.playPauseButton.textContent = buttonText;
+				}
+			}
+			if(buttonClass) this.playPauseButton.classList.add(buttonClass);
+		}
+
+		if (this.stopButton && this.options.useStopButton) {
+			this.stopButton.disabled = this.playbackState === 'stopped' || this.playbackState === 'loading' || this.playbackState === 'buffering';
+			this.stopButton.style.opacity = this.stopButton.disabled ? '0.5' : '1';
+		}
+
+		if (this.loadingIndicator) {
+			this.loadingIndicator.style.display = (this.playbackState === 'loading' || this.playbackState === 'buffering') ? 'inline-block' : 'none';
+		}
+	}
+
+	/**
+	 * 화면에 토스트 메시지를 표시합니다.
+	 * @param {string} message - 표시할 메시지
+	 * @param {string} [type='info'] - 메시지 타입 ('info', 'error')
+	 * @private
+	 */
+	_showToast(message, type = 'info') {
+		const toast = document.createElement('div');
+		toast.className = `tts-toast tts-toast-${type}`;
+		toast.textContent = message;
+		Object.assign(toast.style, {
+			position: 'fixed', bottom: '20px', right: '20px',
+			padding: '10px 20px', borderRadius: '5px',
+			color: 'white', zIndex: '1001', opacity: '0',
+			transition: 'opacity 0.5s ease'
+		});
+		toast.style.backgroundColor = type === 'error' ? '#f44336' : '#007bff';
+		this.toastContainer.appendChild(toast);
+		setTimeout(() => { toast.style.opacity = '1'; }, 10);
+		setTimeout(() => {
+			toast.style.opacity = '0';
+			setTimeout(() => {
+				if (toast.parentNode === this.toastContainer) {
+					this.toastContainer.removeChild(toast);
+				}
+			}, 500);
+		}, 5000);
+	}
+
+	/**
+	 * 청크 관련 상태와 캐시를 초기화합니다.
+	 * @private
+	 */
+	_resetStateAndCache() {
+		this.stop();
+		this.chunkAudioCache.clear();
+		this.chunkCount = 0;
+		this.voiceName = null;
+		this.currentChunkIndex = -1;
+		this.currentText = '';
+		this.currentLang = '';
+	}
+
+	/**
+	 * 재생을 시작하거나 오디오를 미리 로드합니다.
+	 * @param {string} text - 재생/로드할 전체 텍스트
+	 * @param {string} langCode - 언어 코드 (예: 'ko')
+	 * @param {boolean} playImmediately - 즉시 재생할지 여부
+	 * @private
+	 */
+	async _startPlaybackOrPreload(text, langCode, playImmediately) {
+		const sanitizedText = this._sanitizeText(text);
+		const targetText = sanitizedText ? sanitizedText.trim().replace(/[ \t]+/g, ' ') : '';
+		// const targetText = text ? text.trim().replace(/\n/g, ' ').replace(/\s+/g, ' ') : '';
+		const targetLang = this._getBCP47Code(langCode); // 예: 'ko' -> 'ko-KR'
+
+		if (!targetText) {
+			this._resetStateAndCache();
+			return;
+		}
+
+		// 텍스트 또는 언어 코드가 변경되었으면 캐시 초기화
+		if (this.currentText !== targetText || this.currentLang !== targetLang) {
+			this._resetStateAndCache();
+			this.currentText = targetText;
+			this.currentLang = targetLang;
+		} else {
+			// 기존 텍스트와 언어 코드 그대로일 경우
+			if (this.playbackState === 'playing') {
+				if (playImmediately) this.pause(); // 재생 중 -> 일시정지
+				return;
+			}
+			if (this.playbackState === 'paused') {
+				if (playImmediately) this.resume(); // 일시정지 중 -> 이어서 재생
+				return;
+			}
+		}
+
+		// 첫 번째 청크가 이미 캐시에 있는 경우 -> 바로 재생하거나 로딩 완료 처리
+		if (this.chunkAudioCache.has(0) && this.chunkCount > 0 && this.voiceName) {
+			this._setState('loading');
+			if (typeof this.options.onLoading === 'function') this.options.onLoading();
+
+			if (playImmediately) {
+				this._playChunk(0); // 첫 번째 청크 재생 (이 안에서 나머지 로딩 트리거)
+			} else {
+				this._setState('stopped');
+				if (typeof this.options.onEnd === 'function') this.options.onEnd();
+			}
+
+			return;
+		}
+
+		// 첫 번째 청크 요청 (API 호출)
+		this._setState('loading');
+		if (typeof this.options.onLoading === 'function') {
+			this.options.onLoading();
+		}
+
+		try {
+			const requestBody = {
+				text: this.currentText,
+				language_code: this.currentLang
+			};
+
+			// useModelLevelLow 옵션이 true일 때만 model_level 파라미터 추가
+			if (this.options.useModelLevelLow) {
+				requestBody.model_level = "low";
+			}
+
+			// useVoiceName 옵션이 true일 때만 name 파라미터 추가
+			if (this.options.useVoiceName) {
+				requestBody.name = this.currentVoiceName;
+			}
+
+			const response = await fetch(`${this.options.apiUrlBase}/synthesize_first_chunk`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(requestBody)
+			});
+
+			if (!response.ok) {
+				const { detail } = await response.json();
+				if (detail === '지원되는 음성이 없습니다.') {
+					alert(detail);
+				}
+				throw new Error(detail);
+			}
+			//if (!response.ok) throw new Error(`첫 청크 API 요청 실패 (${response.status})`);
+
+			const data = await response.json();
+			if (!data.audio_content || !data.voice || !data.voice.name || typeof data.chunk_count !== 'number') {
+				throw new Error('첫 청크 API 응답 형식이 올바르지 않습니다.');
+			}
+
+			this.chunkCount = data.chunk_count;
+			this.voiceName = data.voice.name;
+
+			// useVoiceName 옵션이 true일 때만 음성 이름 저장
+			if (this.options.useVoiceName) {
+				this.currentVoiceName = data.voice.name;
+			}
+
+			// 첫 청크 오디오 데이터를 디코딩 가능한 형태로 변환하여 캐시에 저장
+			const firstChunkAudioData = Uint8Array.from(atob(data.audio_content), c => c.charCodeAt(0)).buffer;
+			this.chunkAudioCache.set(0, firstChunkAudioData);
+
+			if (playImmediately) {
+				this._playChunk(0); // 첫 청크 재생 (이 안에서 나머지 로딩 트리거)
+			} else {
+				this._setState('stopped');
+				if (typeof this.options.onEnd === 'function') this.options.onEnd();
+			}
+
+		} catch (err) {
+			console.error("첫 청크 가져오기 오류:", err);
+			this.options.onError(err);
+			this._resetStateAndCache();
+		}
+	}
+
+	/**
+	 * 특정 인덱스의 청크 하나를 비동기적으로 가져옵니다.
+	 * @param {number} chunkIndexToFetch - 가져올 청크의 인덱스
+	 * @private
+	 */
+	async _fetchSingleChunk(chunkIndexToFetch) {
+		// 유효한 인덱스이고, 이미 캐시되지 않았고, 현재 로딩 중인 청크가 아닐 때만 진행
+		if (chunkIndexToFetch < 0 || chunkIndexToFetch >= this.chunkCount || 
+			this.chunkAudioCache.has(chunkIndexToFetch) || 
+			this.fetchingChunkIndex === chunkIndexToFetch) {
+			return;
+		}
+
+		this.fetchingChunkIndex = chunkIndexToFetch;
+		// console.log(`_fetchSingleChunk: Fetching chunk ${chunkIndexToFetch}...`);
+
+		try {
+			const requestBody = {
+				text: this.currentText,
+				language_code: this.currentLang,
+				chunk_index: chunkIndexToFetch,
+				name: this.voiceName // 첫 청크에서 받은 voice name 사용
+			};
+
+//			// useVoiceName 옵션이 true일 name 파라미터 추가
+//			if (this.options.useVoiceName) {
+//				requestBody.name = this.currentVoiceName;
+//			}
+
+			const response = await fetch(`${this.options.apiUrlBase}/synthesize_chunk`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(requestBody)
+			});
+
+			if (!response.ok) throw new Error(`청크 ${chunkIndexToFetch} API 요청 실패 (${response.status})`);
+
+			const data = await response.json();
+			if (!data.audio_content || typeof data.index !== 'number') {
+				throw new Error(`청크 ${chunkIndexToFetch} API 응답 형식이 올바르지 않습니다.`);
+			}
+
+			// 오디오 데이터 변환 및 캐싱
+			const chunkAudioData = Uint8Array.from(atob(data.audio_content), c => c.charCodeAt(0)).buffer;
+			this.chunkAudioCache.set(data.index, chunkAudioData);
+			// console.log(`_fetchSingleChunk: Chunk ${data.index} cached.`);
+
+			// 로딩 완료 후 상태 확인: 버퍼링 중이었고, 방금 로드된 청크를 기다리고 있었다면 재생 시도
+			if (this.playbackState === 'buffering' && this.currentChunkIndex === data.index) {
+				// console.log(`_fetchSingleChunk: Player was buffering for chunk ${data.index}. Playing now.`);
+				this.fetchingChunkIndex = -1; // 재생 전에 초기화
+				this._playChunk(data.index);
+			} else {
+				this.fetchingChunkIndex = -1; // 그냥 초기화
+			}
+
+		} catch (err) {
+			console.error(`청크 ${chunkIndexToFetch} 가져오기 오류:`, err);
+			this.options.onError(new Error(`청크 ${chunkIndexToFetch} 로딩 실패`));
+			this.fetchingChunkIndex = -1; // 에러 시 초기화
+		}
+	}
+
+	/**
+	 * 특정 인덱스의 청크를 재생합니다.
+	 * @param {number} index - 재생할 청크 인덱스
+	 * @private
+	 */
+	_playChunk(index) {
+		// 캐시 확인
+		if (!this.chunkAudioCache.has(index)) {
+			console.log(`플레이 시도: 청크 ${index}가 캐시에 없습니다. 버퍼링 시작.`);
+			this._setState('buffering'); // 버퍼링 상태 설정
+			this.currentChunkIndex = index; // 다음 필요한 청크 인덱스 기록
+			// 이미 로딩 중이 아니라면 해당 청크 로딩 시작
+			if (this.fetchingChunkIndex !== index) {
+				// console.log(`_playChunk: Triggering _fetchSingleChunk(${index}) as chunk is missing and not fetching.`);
+				this._fetchSingleChunk(index);
+			}
+			return;
+		}
+
+		const audioData = this.chunkAudioCache.get(index);
+		// console.log(`_playChunk: Playing chunk ${index}`);
+		// 오디오 데이터가 유효하지 않으면 에러 처리
+		if (!audioData || audioData.byteLength === 0) {
+			console.error(`재생 오류: 청크 ${index}의 오디오 데이터가 비어 있습니다.`);
+			this.options.onError(new Error(`청크 ${index} 오디오 데이터 없음`));
+			this._handleChunkEnd(); // 다음 청크 시도 또는 종료
+			return;
+		}
+
+		// 상태가 로딩/버퍼링 중이 아니면 재생하지 않음 (예: 중지된 경우)
+		// if (this.playbackState !== 'loading' && this.playbackState !== 'buffering') {
+		// 	console.log(`_playChunk: Not playing chunk ${index} because state is ${this.playbackState}`);
+		// 	return;
+		// }
+
+		this._setState('loading'); // 디코딩 시작 전 로딩 상태 유지 또는 설정
+		// console.log(`_playChunk: Decoding chunk ${index}`);
+
+		// Web Audio API를 사용하여 오디오 데이터를 디코딩 후 재생
+		this.audioContext.decodeAudioData(audioData.slice(0), // 원본 버퍼 보호를 위해 복사본 사용
+			(buffer) => {
+				// console.log(`_playChunk: Decode complete for chunk ${index}`);
+				// 디코딩 완료 후 상태가 변경되었는지 확인 (예: 사용자가 중지 누름)
+				if (this.playbackState !== 'loading' && this.playbackState !== 'buffering' && this.playbackState !== 'playing') {
+					// console.log(`_playChunk: Playback stopped/paused before chunk ${index} could play.`);
+					return;
+				}
+
+				// 이전 오디오 소스가 남아 있으면 정지시킴 (onended가 호출되지 않았을 수 있음)
+				if (this.currentAudioSource) {
+					try {
+						this.currentAudioSource.onended = null; // 콜백 제거
+						this.currentAudioSource.stop(0);
+					} catch (e) {
+						// 이미 정지된 경우 등 오류 무시
+					}
+				}
+
+				// 새로운 오디오 소스 생성 및 설정
+				this.currentAudioSource = this.audioContext.createBufferSource();
+				this.currentAudioSource.buffer = buffer;
+				this.currentAudioSource.connect(this.gainNode);
+				// 재생 종료 시 호출될 핸들러 설정 (재생 시작 전에 설정)
+				this.currentAudioSource.onended = this._handleChunkEnd.bind(this);
+				// 즉시 재생 시작
+				this.currentAudioSource.start(0);
+				// 현재 재생 중인 청크 인덱스 저장
+				this.currentChunkIndex = index;
+
+				this._setState('playing');
+				// console.log(`_playChunk: State changed to playing for chunk ${index}`);
+				if (index === 0 && typeof this.options.onPlay === 'function') {
+					// console.log(`_playChunk: Calling onPlay callback (first chunk)`);
+					this.options.onPlay(); // 첫 청크 재생 시에만 onPlay 호출
+				}
+
+				// *** 현재 청크(index) 재생 시작 후 다음 청크(index+1) 로딩 시작 ***
+				const nextIndex = index + 1;
+				if (nextIndex < this.chunkCount && !this.chunkAudioCache.has(nextIndex) && this.fetchingChunkIndex !== nextIndex) {
+					// console.log(`_playChunk: Chunk ${index} playing, triggering fetch for next chunk ${nextIndex}.`);
+					this._fetchSingleChunk(nextIndex);
+				}
+
+			}, (decodeError) => {
+				console.error(`청크 ${index} 디코딩 오류:`, decodeError);
+				this.options.onError(new Error(`청크 ${index} 디코딩 실패`));
+				this._handleChunkEnd(); // 디코딩 실패 시 다음 청크 시도 또는 종료
+			});
+	}
+
+	/**
+	 * 오디오 청크 재생이 자연스럽게 종료되었을 때 호출됩니다.
+	 * @private
+	 */
+	_handleChunkEnd() {
+		if (this.playbackState !== 'playing' || !this.currentAudioSource) {
+			return;
+		}
+
+		this.currentAudioSource = null;
+
+		const nextIndex = this.currentChunkIndex + 1;
+
+		if (nextIndex < this.chunkCount) {
+			this._playChunk(nextIndex);
+		} else {
+			this._setState('stopped');
+			this.currentChunkIndex = -1;
+			if (typeof this.options.onEnd === 'function') this.options.onEnd();
+		}
+	}
+
+	/**
+	 * 재생을 시작합니다. (청크 지원)
+	 * @param {string} text - 재생할 텍스트
+	 * @param {string} [langCode] - 재생할 언어 코드 (예: 'ko')
+	 */
+	async play(text, langCode) {
+		await this._startPlaybackOrPreload(text, langCode, true);
+	}
+
+	/**
+	 * 오디오를 미리 로드합니다. (청크 지원)
+	 * @param {string} text - 로드할 텍스트
+	 * @param {string} [langCode] - 로드할 언어 코드
+	 */
+	async preload(text, langCode) {
+		await this._startPlaybackOrPreload(text, langCode, false);
+	}
+
+	/**
+	 * 현재 재생 중인 오디오를 일시정지합니다.
+	 */
+	pause() {
+		if (this.playbackState === 'playing') {
+			if (this.audioContext.state === 'running') {
+				this.audioContext.suspend().then(() => {
+					this._setState('paused');
+					if (typeof this.options.onPause === 'function') this.options.onPause();
+				}).catch((err) => {
+					console.error("AudioContext 일시정지 오류:", err);
+					this.options.onError(err);
+					this.stop();
+				});
+			} else {
+				if(this.audioContext.state === 'suspended') this._setState('paused');
+			}
+		}
+	}
+
+	/**
+	 * 일시정지된 오디오를 이어서 재생합니다.
+	 */
+	resume() {
+		if (this.playbackState === 'paused') {
+			if (this.audioContext.state === 'suspended') {
+				this.audioContext.resume().then(() => {
+					this._setState('playing');
+					if (typeof this.options.onPlay === 'function') this.options.onPlay();
+				}).catch((err) => {
+					console.error("AudioContext 재개 오류:", err);
+					this.options.onError(err);
+					this.stop();
+				});
+			} else {
+				if (this.audioContext.state === 'running') {
+					this._setState('playing');
+				} else {
+					this.stop();
+				}
+			}
+		}
+	}
+
+	/**
+	 * 현재 재생을 중지하고 백그라운드 로딩을 취소합니다. 캐시는 유지합니다.
+	 */
+	stop() {
+		this.fetchingChunkIndex = -1; // 진행 중인 단일 청크 로딩 플래그 초기화
+
+		if (this.currentAudioSource) {
+			try {
+				this.currentAudioSource.onended = null;
+				this.currentAudioSource.stop(0);
+			} catch (e) {
+			}
+			this.currentAudioSource = null;
+		}
+
+		if (this.audioContext.state === 'suspended') {
+			this.audioContext.resume().catch(e => console.error("Error resuming context on stop:", e));
+		}
+
+		this.currentChunkIndex = -1;
+
+		if (this.playbackState !== 'stopped') {
+			const previousState = this.playbackState;
+			this._setState('stopped');
+			if ((previousState === 'playing' || previousState === 'paused') && typeof this.options.onEnd === 'function') {
+				this.options.onEnd();
+			}
+		}
+	}
+
+	/**
+	 * TTS 재생 볼륨을 설정합니다.
+	 * @param {number} volumeLevel - 설정할 볼륨 레벨 (0 ~ 1)
+	 * @param {boolean} [showToast=true] - 볼륨 변경 시 토스트 메시지 표시 여부
+	 */
+	setVolume(volumeLevel, showToast = true) {
+		this.volume = Math.max(0, Math.min(1, volumeLevel));
+		if (this.gainNode) {
+			this.gainNode.gain.setTargetAtTime(this.volume, this.audioContext.currentTime, 0.05);
+		}
+		if (showToast) {
+			this._showToast(`볼륨: ${Math.round(this.volume * 100)}%`);
+		}
+		if (this.volumeSlider && parseFloat(this.volumeSlider.value) !== this.volume) {
+			this.volumeSlider.value = this.volume;
+		}
+	}
+
+	/**
+	 * 현재 재생 상태를 반환합니다.
+	 * @returns {string} 'playing', 'paused', 'stopped', 'loading', 'buffering' 중 하나
+	 */
+	getState() {
+		return this.playbackState;
+	}
+
+	/**
+	 * TTS 플레이어 인스턴스에서 사용한 리소스를 정리합니다.
+	 */
+	destroy() {
+		this._resetStateAndCache();
+		if (this.audioContext && this.audioContext.state !== 'closed') {
+			this.audioContext.close().catch(e => console.error("AudioContext 닫기 오류:", e));
+		}
+	}
+
+	_hashString(str) {
+		let hash = 0;
+		for (let i = 0; i < str.length; i++) {
+			hash = Math.imul(31, hash) + str.charCodeAt(i) | 0;
+		}
+		return hash;
+	}
+}
+
+// 모듈 번들러를 사용하지 않는 경우 전역으로 클래스 노출 (선택사항)
+// window.TTSPlayer = TTSPlayer;
