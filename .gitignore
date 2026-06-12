@@ -1,0 +1,20 @@
+# 수집 산출물(대용량/개인작업물) — 코드만 버전관리
+data/jobs.csv
+data/jobs_clean.csv
+data/search_counts.csv
+data/crawl_log.csv
+data/failures.csv
+data/validation_report.txt
+
+# 임시/정찰 파일
+_*.html
+_*.txt
+_*.png
+_*.py
+_recon/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/

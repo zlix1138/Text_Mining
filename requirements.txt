@@ -1,0 +1,24 @@
+# 청년 일자리 데이터 수집·전처리 의존성 (잡코리아 + 사람인)
+# 설치: pip install -r requirements.txt
+# 그 외 모듈(csv, argparse, datetime, re, html, json, random, sys, time, os,
+#          pathlib, collections, statistics, urllib)은 모두 Python 표준 라이브러리.
+
+# ── HTTP 수집 (잡코리아·사람인 공통) ────────────────────────────────
+requests>=2.31
+
+# ── HTML 파싱 (잡코리아·사람인 공통) ───────────────────────────────
+beautifulsoup4>=4.12
+lxml>=5.0                 # BeautifulSoup(..., "lxml") 파서 백엔드
+
+# ── 잡코리아 상세 본문 폴백 전용 ───────────────────────────────────
+#   사람인 수집에는 불필요. 설치 후 브라우저 바이너리도 받아야 함:
+#       python -m playwright install chromium
+playwright>=1.40
+
+# ── 전처리 심화(형태소 분석) — src/build_clean.py 전용 ─────────────
+#   raw_text 명사 토큰화/스코어링 피처 생성에 사용.
+kiwipiepy>=0.18
+
+# ── 기초 EDA 시각화 — src/eda.py 전용 ──────────────────────────────
+#   지역·직무군 분포/임금/피처 차트(PNG) 생성. Windows 한글폰트 'Malgun Gothic' 사용.
+matplotlib>=3.7
